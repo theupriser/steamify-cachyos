@@ -405,7 +405,7 @@ EOF
     sudo pacman -S --needed --noconfirm steamos-manager inputplumber || { err "Installing hardware manager packages failed."; return 1; }
     sudo systemctl enable --now inputplumber.service
     sudo systemctl enable --now steamos-manager.service
-    systemctl --user enable steamos-manager.service 2>/dev/null
+    user_systemctl enable steamos-manager.service 2>/dev/null
     # HDMI-CEC ran before this and couldn't link cecd to steamos-manager yet.
     cec_status && cec_link_steamos_manager
 
@@ -422,7 +422,7 @@ EOF
 
 machine_disable() {
     info "Removing Steam Machine support..."
-    systemctl --user disable --now steamos-manager.service 2>/dev/null
+    user_systemctl disable --now steamos-manager.service 2>/dev/null
     sudo systemctl disable --now steamos-manager.service 2>/dev/null
     sudo systemctl disable --now inputplumber.service 2>/dev/null
     sudo pacman -Rns --noconfirm steamos-manager inputplumber 2>/dev/null

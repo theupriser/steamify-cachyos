@@ -15,11 +15,11 @@
 set -uo pipefail
 
 # Release version, see CHANGELOG.md.
-VERSION=2.5.2
+VERSION=2.6.0
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-for lib in common state packages login-manager single-user steam-desktop steam-machine fremont-poweroff vram-booster hdmi-refresh cec boot-session vapor-theme steamos-extras bios desktop-shortcut wizard-shortcut steam-game update-notifier menu backend; do
+for lib in common state packages login-manager single-user steam-desktop steam-machine fremont-poweroff vram-booster hdmi-refresh cec boot-session vapor-theme steamos-extras bios desktop-shortcut wizard-shortcut steam-game update-notifier first-login menu backend; do
     # shellcheck source=/dev/null
     source "$SCRIPT_DIR/lib/$lib.sh"
 done
@@ -28,6 +28,10 @@ require_root_helper
 
 BACKEND=false
 [[ "${1:-}" == --backend ]] && BACKEND=true
+# --defaults: apply what the menu would preselect, without the menu or any
+# prompt (the Steam Machine ISO's first login runs this; sudo must not ask).
+DEFAULTS=false
+[[ "${1:-}" == --defaults ]] && DEFAULTS=true
 
 if [[ "$BACKEND" == false ]]; then
     echo -e "${c_bold}Steamify CachyOS${c_reset} v$VERSION"
@@ -112,6 +116,25 @@ if [[ "$BACKEND" == true ]]; then
     shift
     backend_main "$@"
     exit $?
+fi
+
+if [[ "${1:-}" == --first-login ]]; then
+    first_login_run
+    exit 0
+fi
+
+if [[ "$DEFAULTS" == true ]]; then
+    RESTART_FOR_LOGIN=false
+    REAPPLY=false
+    sudo -n true 2>/dev/null || { err "--defaults needs sudo without a password."; exit 1; }
+    detect_components
+    plan_changes
+    apply_changes
+    # Run by the installer: the rest waits for the first desktop login.
+    user_session || first_login_schedule
+    [[ ${#FAILED[@]} -eq 0 ]] || { warn "These had problems (see above): ${FAILED[*]}"; exit 1; }
+    ok "Done; the changes take effect after a restart."
+    exit 0
 fi
 
 # Menu loop: after each run the menu comes back with the new state, until

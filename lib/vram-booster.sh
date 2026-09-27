@@ -101,7 +101,7 @@ vram_selectable() { vram_supported || vram_status; }
 vram_status() {
     pacman -Q "${VRAM_PKGS[@]}" >/dev/null 2>&1 &&
         systemctl is-enabled -q dmemcg-booster-system.service 2>/dev/null &&
-        systemctl --user is-enabled -q dmemcg-booster-user.service 2>/dev/null
+        user_systemctl is-enabled -q dmemcg-booster-user.service 2>/dev/null
 }
 
 vram_enable() {
@@ -115,18 +115,18 @@ vram_enable() {
     fi
     sudo systemctl enable --now dmemcg-booster-system.service >/dev/null 2>&1 ||
         { err "Starting dmemcg-booster failed."; return 1; }
-    systemctl --user enable --now dmemcg-booster-user.service >/dev/null 2>&1 ||
+    user_systemctl enable --now dmemcg-booster-user.service >/dev/null 2>&1 ||
         { err "Starting dmemcg-booster for $USER failed."; return 1; }
     kset vram kcgroupsrc "Foreground Booster" autostart true
     # Started by the Plasma session from now on; start it in this one too.
     [[ "${XDG_CURRENT_DESKTOP:-}" == KDE ]] &&
-        systemctl --user start plasma-foreground-booster.service >/dev/null 2>&1
+        user_systemctl start plasma-foreground-booster.service >/dev/null 2>&1
     ok "VRAM booster on: the game in front keeps its VRAM."
 }
 
 vram_disable() {
     local pkgs
-    systemctl --user disable --now plasma-foreground-booster.service dmemcg-booster-user.service >/dev/null 2>&1
+    user_systemctl disable --now plasma-foreground-booster.service dmemcg-booster-user.service >/dev/null 2>&1
     sudo systemctl disable --now dmemcg-booster-system.service >/dev/null 2>&1
     krevert vram
     pkgs="$(state_get vram installed_pkgs)"

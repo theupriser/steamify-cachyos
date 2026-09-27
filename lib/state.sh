@@ -123,7 +123,7 @@ migrate_layout() {
             "$(wizard_desktop_dir)/$WIZARD_DESKTOP_NAME"; do
             [[ -f "$f" ]] && sed -i "s|$old_bin/|$STEAMIFY_BIN/|g" "$f"
         done
-        systemctl --user daemon-reload 2>/dev/null
+        user_systemctl daemon-reload 2>/dev/null
     fi
     if [[ -f "$old_icon" ]]; then
         if [[ -e "$WIZARD_ICON" ]]; then rm -f "$old_icon"; else mv "$old_icon" "$WIZARD_ICON"; fi
