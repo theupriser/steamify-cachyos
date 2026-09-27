@@ -60,8 +60,8 @@ cec_reload_driver() {
 cec_driver_enable() {
     detect_valve_fremont || return 0
     local tmp k
-    if ! pacman -Q dkms >/dev/null 2>&1; then
-        sudo pacman -S --needed --noconfirm dkms || { err "Installing dkms failed."; return 1; }
+    if ! pacman -Q dkms patch >/dev/null 2>&1; then
+        sudo pacman -S --needed --noconfirm dkms patch || { err "Installing dkms failed."; return 1; }
     fi
     install_kernel_headers || return 1
     tmp="$(mktemp -d)"
@@ -72,13 +72,8 @@ cec_driver_enable() {
         err "Downloading Valve's CEC driver failed (or its checksum didn't match)."
         return 1
     fi
-    # amdgpu registers its HDMI notifier without a port name, which only
-    # matches the driver's named lookup ("Port C") if the driver loaded
-    # first; amdgpu loads from the initramfs, so it never does. With a
-    # single CEC port, look it up by device alone.
-    sed -i 's/cec_notifier_cec_adap_register(hdmi_dev, conns\[port_num\],/cec_notifier_cec_adap_register(hdmi_dev, conns[1] ? conns[port_num] : NULL,/' \
-        "$tmp/cros-ec-cec.c"
-    grep -q 'conns\[1\] ? conns\[port_num\] : NULL' "$tmp/cros-ec-cec.c" ||
+    # So it finds amdgpu's HDMI port (see the patch for why).
+    patch_file cros-ec-cec-single-port.patch | patch -s -d "$tmp" -p1 ||
         { rm -rf "$tmp"; err "Patching Valve's CEC driver failed."; return 1; }
     echo 'obj-m += cros-ec-cec.o' >"$tmp/Makefile"
     printf '%s\n' "# Written by Steamify: Valve's cros_ec_cec, which knows the Steam Machine." \

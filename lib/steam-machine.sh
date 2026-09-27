@@ -1,6 +1,7 @@
 #!/bin/bash
 # "Steam Machine support" menu item, only on Valve Fremont hardware: the
-# front LED bar driver, LED access for Steam, and steamos-manager.
+# front LED bar driver, LED access for Steam and steamos-manager. Its
+# sub-option "Power-off fix" is lib/fremont-poweroff.sh.
 # Sourced by steamify.sh; not meant to be run on its own.
 
 detect_valve_fremont() {
@@ -14,8 +15,8 @@ detect_valve_fremont() {
         [[ "$vendor" == "OEM" && "$product" == "F7F" ]]
 }
 
-# Kernel pinned on a Steam Machine: with newer linux-cachyos releases it
-# reboots instead of shutting down. The packages are kept in
+# Kernel pinned on a Steam Machine (optional): newer linux-cachyos releases
+# rebooted it instead of shutting down, which the power-off fix now handles. The packages are kept in
 # PINNED_KERNEL_DIR, so re-applying (or reinstalling after an update slipped
 # through) needs no download.
 PINNED_KERNEL_VER="7.1.6-1"
@@ -148,7 +149,9 @@ remove_kernel_pin() {
     RESTART_FOR_LOGIN=true
 }
 
-# "Pin the kernel" menu item, a sub-option of Steam Machine support.
+# "Pin the kernel" menu item, a sub-option of Steam Machine support. The
+# power-off fix made it unnecessary: only shown while on, to remove it.
+kpin_available() { detect_valve_fremont && kpin_status; }
 kpin_status() {
     pinned_kernel_installed && grep -Eq '^IgnorePkg\s*=.*\slinux-cachyos(\s|$)' /etc/pacman.conf
 }
@@ -334,13 +337,13 @@ reload_powerdevil() {
 kernel_overview() {
     # Per installed kernel: headers (needed to build DKMS modules), the
     # in-kernel Steam controller driver, and, on a Steam Machine, whether the
-    # LED driver is built for it. Printed in the menu so it's easy to verify
+    # LED driver and the power-off fix are built for it. Printed in the menu so it's easy to verify
     # a kernel update or a newly added kernel got everything.
     local mark="${c_green}yes${c_reset}" miss="${c_red}no ${c_reset}" leds=false
     detect_valve_fremont && command -v dkms >/dev/null 2>&1 && leds=true
-    local kdir k pkg headers hid led running line
+    local kdir k pkg headers hid led off running line
     local legend="> = running; controller = Steam controller driver"
-    [[ "$leds" == true ]] && legend+=", LEDs = LED bar driver built"
+    [[ "$leds" == true ]] && legend+=", LEDs = LED bar driver built, power-off = power-off fix built"
     echo -e "  ${c_bold}Kernels${c_reset} ($legend)"
     for kdir in /usr/lib/modules/*/; do
         k="$(basename "$kdir")"
@@ -352,7 +355,8 @@ kernel_overview() {
         line="$(printf '%-23s %-18s headers %b  controller %b' "$k" "$pkg" "$headers" "$hid")"
         if [[ "$leds" == true ]]; then
             led="$miss"; dkms status -k "$k" leds-valve-dkms 2>/dev/null | grep -q installed && led="$mark"
-            line+="$(printf '  LEDs %b' "$led")"
+            off="$miss"; dkms status -k "$k" "$POWEROFF_DKMS_NAME" 2>/dev/null | grep -q installed && off="$mark"
+            line+="$(printf '  LEDs %b  power-off %b' "$led" "$off")"
         fi
         echo -e "  ${running}${line}"
     done

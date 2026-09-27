@@ -197,19 +197,19 @@ class Backend(QObject):
         p.start()
 
     def _make_askpass(self, password):
-        """A private folder with the password, a helper that prints it for
-        `sudo -A`, and a `sudo` that always uses the helper (makepkg and
-        yay call plain sudo)."""
+        """A private folder with a helper that `sudo -A` runs for the
+        password, and a `sudo` that always uses it (makepkg and yay call
+        plain sudo). The password is never written to a file: the helper
+        reads it from a named pipe, and the app writes it into the pipe from
+        memory each time sudo asks, until _drop_askpass."""
         base = os.environ.get("XDG_RUNTIME_DIR") or tempfile.gettempdir()
         d = tempfile.mkdtemp(prefix="steamify-", dir=base)
         os.chmod(d, stat.S_IRWXU)
-        secret = os.path.join(d, "secret")
-        fd = os.open(secret, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-        with os.fdopen(fd, "w") as f:
-            f.write(password + "\n")
+        pipe = os.path.join(d, "pipe")
+        os.mkfifo(pipe, 0o600)
         askpass = os.path.join(d, "askpass")
         with open(askpass, "w") as f:
-            f.write("#!/bin/sh\nexec cat %s\n" % json.dumps(secret))
+            f.write("#!/bin/sh\nexec cat %s\n" % json.dumps(pipe))
         os.chmod(askpass, 0o700)
         bindir = os.path.join(d, "bin")
         os.mkdir(bindir)
@@ -217,9 +217,35 @@ class Backend(QObject):
         with open(wrapper, "w") as f:
             f.write("#!/bin/sh\nexec /usr/bin/sudo -A \"$@\"\n")
         os.chmod(wrapper, 0o700)
+        stop = threading.Event()
+        data = (password + "\n").encode()
+
+        def serve():
+            while not stop.is_set():
+                try:
+                    fd = os.open(pipe, os.O_WRONLY)  # waits for a reader
+                except OSError:
+                    return
+                try:
+                    if not stop.is_set():
+                        os.write(fd, data)
+                except OSError:
+                    pass
+                finally:
+                    os.close(fd)
+        threading.Thread(target=serve, daemon=True).start()
+        self._askpass_stop = (stop, pipe)
         return d, askpass, bindir
 
     def _drop_askpass(self):
+        if getattr(self, "_askpass_stop", None):
+            stop, pipe = self._askpass_stop
+            self._askpass_stop = None
+            stop.set()
+            try:  # wakes the writer waiting for a reader, which then ends
+                os.close(os.open(pipe, os.O_RDONLY | os.O_NONBLOCK))
+            except OSError:
+                pass
         if self._secret_dir:
             shutil.rmtree(self._secret_dir, ignore_errors=True)
             self._secret_dir = None

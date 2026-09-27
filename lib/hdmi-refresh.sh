@@ -56,18 +56,17 @@ hdmi_cmdline_param() {
 }
 
 hdmi_available() {
-    # Stays available while on, so it can be turned off after the pin is gone.
-    detect_valve_fremont || return 1
-    # Saved displays too, so they can be removed without the pin.
-    hdmi_status || [[ -n "$(hdmi_saved)" ]] || { pinned_kernel_installed && [[ -n "$(hdmi_connectors)" ]]; }
+    # No longer offered (it needed the pinned kernel): only shown while
+    # anything of it is left, so a normal run removes it.
+    detect_valve_fremont && hdmi_status
 }
 
 hdmi_status() {
-    # On = the connected display runs on its saved EDID. Another display on
-    # the port is off, so ticking it sets that one up. The command line: set
-    # up by an older version, re-applying moves it over.
-    [[ -n "$(hdmi_active_ids)" ]] ||
-        { [[ -n "$(hdmi_cmdline_param)" ]] && compgen -G "$HDMI_FW_DIR/steamify-*.bin" >/dev/null; }
+    # On while anything of it is left: saved displays (connected or not), the
+    # hotplug script, an EDID file, or the kernel parameter of versions
+    # before 2.1.0.
+    [[ -n "$(hdmi_saved)" || -f "$HDMI_UNIT" || -n "$(hdmi_cmdline_param)" ]] ||
+        compgen -G "$HDMI_FW_DIR/steamify-*.bin" >/dev/null
 }
 
 hdmi_saved() { [[ -f "$HDMI_MAP" ]] && grep -v '^#' "$HDMI_MAP"; }
@@ -688,16 +687,10 @@ hdmi_enable() {
 }
 
 hdmi_disable() {
-    # For the connected display; other saved displays stay (the app lists
-    # them). Without the pinned kernel none may stay: newer kernels read the
-    # EDID themselves.
-    local id
-    if [[ -n "$(hdmi_cmdline_param)" ]]; then
-        hdmi_forget all; hdmi_remove_boot_param || return 1; state_clear hdmi
-    elif [[ "${WANTED[kpin]:-1}" == 0 ]] || ! pinned_kernel_installed; then
-        hdmi_forget all
-    else
-        for id in $(hdmi_active_ids); do hdmi_forget "$id"; done
-    fi
-    ok "HDMI refresh boost removed for the connected display; it uses its own EDID again."
+    # Everything, for every saved display: newer kernels read the whole EDID
+    # themselves, and an old one loaded at the next hotplug would be wrong.
+    hdmi_forget all
+    hdmi_remove_boot_param || return 1
+    state_clear hdmi
+    ok "HDMI refresh boost removed; displays use their own EDID again."
 }

@@ -5,18 +5,30 @@
 
 # Menu order. Components are turned on in this order and off in reverse;
 # gaming must come first (single user builds on it).
-COMPONENTS=(gaming boot theme glyphs single launcher cec machine kpin hdmi bios)
+COMPONENTS=(gaming boot theme glyphs single launcher cec machine poweroff kpin hdmi bios)
 # One-off actions rather than on/off components: never preselected, never
 # re-applied, not listed as on or off.
 ACTIONS=(bios)
 # Sub-options, shown indented under their parent and only while it's ticked.
-declare -A PARENT=([boot]=gaming [kpin]=machine [hdmi]=machine [bios]=machine)
+declare -A PARENT=([boot]=gaming [poweroff]=machine [kpin]=machine [hdmi]=machine [bios]=machine)
 # Never preselected on a first run: booting into the desktop is a choice,
 # gamescope is the default; HDMI-CEC is opt-in (it can wake the machine or
 # upset other devices on the TV, even on SteamOS), except on a Steam Machine,
 # which has CEC like on SteamOS. HDMI refresh boost needs someone at the
 # screen to confirm each step.
-NO_PRESELECT=(boot cec hdmi)
+NO_PRESELECT=(boot cec kpin hdmi)
+# Feature versions: the Steamify version in which what a component's enable
+# sets up last changed; set it to the new VERSION whenever you change one.
+# Each successful run records it (state "features"); a component that's on
+# with an older one is ticked and re-applied by a normal run, and the app
+# shows it as an update. A setup from before these were recorded counts as
+# FEATURE_BASELINE.
+FEATURE_BASELINE=2.1.0
+declare -A FEATURE_VERSION=(
+    [gaming]=2.1.0 [boot]=2.1.0 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.1.0
+    [launcher]=2.1.0 [cec]=2.1.0 [machine]=2.2.0 [poweroff]=2.2.0
+    [kpin]=2.1.0 [hdmi]=2.1.0
+)
 
 declare -A LABEL=(
     [gaming]="SteamOS conversion: boot into gaming mode, Steam on the desktop"
@@ -27,7 +39,8 @@ declare -A LABEL=(
     [launcher]="Steamify shortcut: the app on the desktop, Steamify Terminal in the launcher"
     [cec]="HDMI-CEC: use Steam with the TV remote, TV on/off with the PC (experimental)"
     [machine]="Steam Machine support: LED bar driver, hardware settings in Steam"
-    [kpin]="Pin the kernel to $PINNED_KERNEL_VER (fixes rebooting after shutdown)"
+    [poweroff]="Power-off fix: the Steam Machine stays off after shutting down"
+    [kpin]="Pin the kernel to $PINNED_KERNEL_VER (untick for CachyOS's current kernel)"
     [hdmi]="HDMI refresh boost: highest refresh your HDMI display runs"
     [bios]="Update BIOS"
 )
@@ -35,7 +48,8 @@ declare -A CURRENT WANTED
 
 component_available() {
     case "$1" in
-        machine|kpin) machine_available ;;
+        machine|poweroff) machine_available ;;
+        kpin) kpin_available ;;
         hdmi) hdmi_available ;;
         bios) bios_available ;;
     esac
@@ -56,6 +70,42 @@ menu_visible() {
     [[ -z "${PARENT[$1]:-}" || "${WANTED[${PARENT[$1]}]:-0}" == 1 ]]
 }
 
+feature_record() {
+    # feature_record <component> <enable|disable>: after a successful run.
+    if [[ "$2" == enable ]]; then state_set features "$1" "${FEATURE_VERSION[$1]:-$FEATURE_BASELINE}"
+    else state_set features "$1" off; fi
+}
+
+feature_outdated() {
+    # On, but set up by an older version of that feature (compared as
+    # versions: 2.10.0 is newer than 2.9.0).
+    local have want
+    [[ "${CURRENT[$1]:-0}" == 1 ]] || return 1
+    have="$(state_get features "$1" "$FEATURE_BASELINE")"
+    [[ "$have" == off ]] && have="$FEATURE_BASELINE"
+    want="${FEATURE_VERSION[$1]:-$FEATURE_BASELINE}"
+    [[ "$have" != "$want" && "$(printf '%s\n' "$have" "$want" | sort -V | head -n 1)" == "$have" ]]
+}
+
+menu_label() {
+    # The label, with "(update)" after the name when a newer version of it
+    # will be applied.
+    local l="${LABEL[$1]}"
+    if feature_outdated "$1"; then
+        if [[ "$l" == *:* ]]; then l="${l%%:*} ${c_yellow}(update)${c_reset}:${l#*:}"
+        else l+=" ${c_yellow}(update)${c_reset}"; fi
+    fi
+    printf '%s' "$l"
+}
+
+feature_new() {
+    # A default sub-option added after its parent was set up (e.g. the
+    # power-off fix under Steam Machine support): never turned on or off.
+    [[ -n "${PARENT[$1]:-}" && "${CURRENT[${PARENT[$1]}]:-0}" == 1 && "${CURRENT[$1]:-0}" == 0 ]] &&
+        ! is_action "$1" && [[ " ${NO_PRESELECT[*]} " != *" $1 "* ]] &&
+        [[ -z "$(state_get features "$1")" ]]
+}
+
 component_selectable() {
     # Greyed out and not tickable when it has nothing to do.
     case "$1" in
@@ -72,6 +122,17 @@ detect_components() {
     done
     # HDMI-CEC set up by an older version: tick it, so a normal run fixes it.
     component_available cec && cec_repair && WANTED[cec]=1
+    # Updated features and new default sub-options: ticked, so a normal run
+    # applies them.
+    for c in "${COMPONENTS[@]}"; do
+        component_available "$c" || continue
+        { feature_outdated "$c" || feature_new "$c"; } && WANTED[$c]=1
+    done
+    # The kernel pin is no longer needed (the power-off fix), and HDMI
+    # refresh boost needed the pin: whatever is left of either is unticked,
+    # so a normal run removes it.
+    component_available kpin && WANTED[kpin]=0
+    component_available hdmi && WANTED[hdmi]=0
     # The terminal-only Steamify shortcut from before 2.0.1: tick it, so a
     # normal run replaces it with the app.
     launcher_repair && WANTED[launcher]=1
@@ -96,8 +157,10 @@ toggle_component() {
     if [[ "$c" == gaming && "${WANTED[gaming]}" == 0 ]]; then WANTED[single]=0; WANTED[boot]=0; fi
     # Where to boot to is part of the conversion, too.
     if [[ "$c" == boot && "${WANTED[boot]}" == 1 ]]; then WANTED[gaming]=1; fi
-    # The kernel pin is opt-out: ticked along with Steam Machine support.
-    if [[ "$c" == machine ]]; then WANTED[kpin]=${WANTED[machine]}; fi
+    # The power-off fix is opt-out: ticked along with Steam Machine support.
+    if [[ "$c" == machine ]]; then WANTED[poweroff]=${WANTED[machine]}; fi
+    if [[ "$c" == poweroff && "${WANTED[poweroff]}" == 1 ]]; then WANTED[machine]=1; fi
+    if [[ "$c" == machine && "${WANTED[machine]}" == 0 ]]; then WANTED[kpin]=0; fi
     if [[ "$c" == kpin && "${WANTED[kpin]}" == 1 ]]; then WANTED[machine]=1; fi
     # HDMI refresh boost and the BIOS update sit under Steam Machine support;
     # the boost also needs the pinned kernel (newer kernels don't need it).
@@ -131,9 +194,9 @@ show_menu() {
             local tree=""; [[ -n "${PARENT[$c]:-}" ]] && tree="  └ "
             printf "  %b%-3s %-6s %-6s %s%s (not available)%b\n" "$c_dim" "$i" "$now" "$want" "$tree" "${LABEL[$c]}" "$c_reset"
         elif [[ -n "${PARENT[$c]:-}" ]]; then
-            printf "  %-3s %b %-6s   └ %s\n" "$i" "$now" "$want" "${LABEL[$c]}"
+            printf "  %-3s %b %-6s   └ %b\n" "$i" "$now" "$want" "$(menu_label "$c")"
         else
-            printf "  %-3s %b %-6s %s\n" "$i" "$now" "$want" "${LABEL[$c]}"
+            printf "  %-3s %b %-6s %b\n" "$i" "$now" "$want" "$(menu_label "$c")"
         fi
     done
     echo
@@ -266,7 +329,7 @@ plan_changes() {
         component_available "$c" || continue
         [[ "${WANTED[$c]}" == 1 ]] || continue
         if is_action "$c"; then TO_ENABLE+=("$c"); continue; fi
-        if [[ "${CURRENT[$c]}" == 0 || "$REAPPLY" == true ]] ||
+        if [[ "${CURRENT[$c]}" == 0 || "$REAPPLY" == true ]] || feature_outdated "$c" ||
             [[ "$c" == gaming && "${CURRENT[single]}" != "${WANTED[single]}" ]]; then
             TO_ENABLE+=("$c")
         fi
@@ -281,13 +344,13 @@ apply_changes() {
     for c in "${TO_DISABLE[@]}"; do
         if [[ "$c" == boot ]]; then echo; echo -e "${c_bold}Boot into: gamescope${c_reset}"
         else echo; echo -e "${c_bold}Turning off: ${LABEL[$c]}${c_reset}"; fi
-        "${c}_disable" || failed+=("$c")
+        if "${c}_disable"; then feature_record "$c" disable; else failed+=("$c"); fi
     done
     for c in "${TO_ENABLE[@]}"; do
         if [[ "$c" == boot ]]; then echo; echo -e "${c_bold}Boot into: desktop${c_reset}"
         elif is_action "$c"; then echo; echo -e "${c_bold}Running: ${LABEL[$c]%%:*}${c_reset}"
         else echo; echo -e "${c_bold}Turning on: ${LABEL[$c]}${c_reset}"; fi
-        "${c}_enable" || failed+=("$c")
+        if "${c}_enable"; then is_action "$c" || feature_record "$c" enable; else failed+=("$c"); fi
     done
     FAILED=("${failed[@]}")
 }

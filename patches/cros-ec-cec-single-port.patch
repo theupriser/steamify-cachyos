@@ -1,0 +1,21 @@
+Steam Machine CEC: find amdgpu's HDMI port with a single CEC port.
+
+amdgpu registers its HDMI notifier without a port name, which only matches
+the driver's named lookup ("Port C") if the CEC driver loaded first; amdgpu
+loads from the initramfs, so it never does and /dev/cec0 stays at f.f.f.f.
+With a single CEC port, look the notifier up by device alone.
+
+Applies to Valve's drivers/media/cec/platform/cros-ec/cros-ec-cec.c
+(evlaV/linux-integration 10c8c880, see CEC_DRIVER_URL in lib/cec.sh).
+
+--- a/cros-ec-cec.c
++++ b/cros-ec-cec.c
+@@ -485,7 +485,7 @@
+ 		goto out_probe_adapter;
+ 	}
+ 
+-	port->notify = cec_notifier_cec_adap_register(hdmi_dev, conns[port_num],
++	port->notify = cec_notifier_cec_adap_register(hdmi_dev, conns[1] ? conns[port_num] : NULL,
+ 						      port->adap);
+ 	if (!port->notify) {
+ 		ret = -ENOMEM;

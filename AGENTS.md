@@ -15,6 +15,10 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
 - `steamify.sh` - the only entry point. Pre-flight checks,
   sources `lib/*.sh`, runs the menu and applies the plan. No component
   logic here.
+- `patches/` - kernel module sources and patches the scripts build or
+  apply, never inline in the shell code. Read them with `patch_file
+  <name>` (`lib/common.sh`, from the checkout); the bundle embeds every file
+  in `patches/` and overrides `patch_file`. Add new ones to its README.
 - `lib/*.sh` - one file per responsibility, each defining functions only
   (no top-level side effects besides constants). See the table in
   `TECHNICAL.md`.
@@ -25,6 +29,13 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `<id>_available` is checked via `component_available` (e.g. `machine`
   only on Fremont). Turn-on order is `COMPONENTS` order, turn-off reverse;
   `gaming` must stay first. Dependencies live in `toggle_component`.
+- **Feature versions.** Set `FEATURE_VERSION[<id>]` (`lib/menu.sh`) to the new
+  `VERSION` whenever what `<id>_enable` sets up changes (a new component gets
+  one too): installs recorded with an older version
+  are ticked and re-applied ("update" in the plan and the app). New default
+  sub-options are ticked for installs whose parent is on (`feature_new`).
+  Status still comes from the system; don't add ad-hoc `<id>_repair` checks
+  for new changes.
 - **Reversibility.** Every per-user KDE setting a component changes goes
   through `kset <component> <file> <group|group> <key> <value>`
   (`lib/state.sh`), which records the old value once; `<id>_disable` calls
@@ -204,6 +215,22 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   kernel only pairs that with a named lookup ("Port C") when the CEC driver
   registered first, which never happens since amdgpu loads from the
   initramfs. Without it `/dev/cec0` exists but stays at `f.f.f.f`.
+- Power-off fix (`poweroff`, `lib/fremont-poweroff.sh`, a default sub-option
+  of `machine`): recent kernels (7.2 and the 6.x/7.0/7.1 updates with the
+  backport) keep the firmware's S4/S5 wake bit on GPIO
+  pin 18, so the Steam Machine boots again right after powering off
+  (Valve's kernel clears it at probe, not for upstream). The DKMS module
+  `steamify-fremont-poweroff` (`patches/steamify-fremont-poweroff.c`) clears
+  it in a power-off-prepare handler, built for each kernel. It made the kernel pin
+  unnecessary: `kpin` is only available while on (`kpin_available`), and
+  `detect_components` unticks it, so a normal run removes an existing pin.
+  `hdmi` (it needed the pin) is retired the same way: `hdmi_status` is on
+  while anything of it is left (saved displays, hotplug unit, EDID files,
+  old kernel parameter), `hdmi_available` only then, it's always unticked,
+  and `hdmi_disable` removes all of it. CachyOS's
+  `linux-cachyos` is clang-built, `-bore` GCC-built: let DKMS pick the
+  compiler, never pass `LLVM=1`. Test shutdown on the real machine for every
+  new major kernel.
 - `Relogin=true` means a gamescope that fails to start is relaunched in a
   tight loop; keep that in mind when changing session handling.
 

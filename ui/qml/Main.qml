@@ -69,8 +69,11 @@ ApplicationWindow {
         machine: { label: "Steam Machine support", hint: "LED bar, fan and performance settings in Steam",
                    body: "The front LED bar works, Steam's hardware settings work, and the power button puts it to sleep like a console.",
                    changes: ["leds-valve driver for every kernel (DKMS)", "steamos-manager for Steam's settings", "Console-like power handling"] },
-        kpin: { label: "Pin the kernel", hint: "Fixes rebooting after shutdown",
-                body: "Newer CachyOS kernels make the Steam Machine reboot instead of shutting down. Untick once CachyOS fixes that.",
+        poweroff: { label: "Power-off fix", hint: "Stays off after shutting down",
+                    body: "With recent kernels the Steam Machine starts again right after shutting down: the firmware leaves a wake bit set, and newer kernels (7.2, and updates of 6.x, 7.0 and 7.1) no longer clear it. Valve's own kernel clears it; this small module does the same right before power-off.",
+                    changes: ["steamify-fremont-poweroff module for each installed kernel (DKMS)", "Only on a Steam Machine, only touches that one wake bit", "Off: recent kernels may start it again after shutting down"] },
+        kpin: { label: "Pin the kernel", hint: "Untick for CachyOS's current kernel",
+                body: "Keeps the Steam Machine on CachyOS kernel 7.1.6. Untick it to go back to CachyOS's current kernel; HDMI refresh boost goes with it.",
                 changes: ["linux-cachyos from Steamify's release (signature checked)", "Kept in /var/cache/steamify/kernel", "Added to IgnorePkg"] },
         hdmi: { label: "HDMI refresh boost", hint: "Higher refresh rates over HDMI",
                 body: "The pinned kernel keeps many HDMI displays at 60 Hz. Turning this on shows which refresh rates your display can run at the desktop resolution; you pick them, and each one is tried for 15 seconds so you can check the picture before it's installed.",
@@ -247,7 +250,9 @@ ApplicationWindow {
         if (id === "hdmi" && !hdmiChoice && hdmiSaved.length) { openHdmiList(); return; }
         if (id === "hdmi" && w.hdmi && !nowOn("hdmi") && !hdmiChoice) { startHdmi(); return; }
         if (id === "hdmi" && !w.hdmi) hdmiChoice = "";
-        if (id === "machine") w.kpin = w.machine;
+        if (id === "machine") w.poweroff = w.machine;
+        if (id === "poweroff" && w.poweroff) w.machine = true;
+        if (id === "machine" && !w.machine) w.kpin = false;
         if (id === "kpin" && w.kpin) w.machine = true;
         if (id === "hdmi" && w.hdmi) { w.machine = true; w.kpin = true; }
         if (!w.machine || !w.kpin) w.hdmi = false;
@@ -261,7 +266,7 @@ ApplicationWindow {
             if (it.parent && !want[it.parent]) { if (it.on) p.push({ id: it.id, action: "off" }); continue; }
             if (want[it.id] && !it.on) p.push({ id: it.id, action: "on" });
             else if (!want[it.id] && it.on) p.push({ id: it.id, action: "off" });
-            else if (want[it.id] && reapply) p.push({ id: it.id, action: "again" });
+            else if (want[it.id] && (reapply || it.update)) p.push({ id: it.id, action: reapply ? "again" : "update" });
         }
         var bootNow = nowOn("boot") ? "desktop" : "gamescope";
         if (want.gaming && boot !== bootNow) p.push({ id: "boot", action: boot === "desktop" ? "desktop" : "gaming" });
@@ -622,7 +627,11 @@ ApplicationWindow {
                                     x: row.modelData.parent ? 46 : 16
                                     width: controls.x - x - 16
                                     opacity: row.modelData.kind === "action" && !(bios && bios.selectable) ? 0.6 : 1
-                                    Text { text: label(row.modelData); color: t.textHi; font.family: t.body; font.pixelSize: 17; font.weight: Font.DemiBold; elide: Text.ElideRight; width: parent.width }
+                                    // The name, with an Update badge when a newer version of it will be applied.
+                                    Row { width: parent.width; spacing: 10
+                                        Text { text: label(row.modelData); color: t.textHi; font.family: t.body; font.pixelSize: 17; font.weight: Font.DemiBold; elide: Text.ElideRight
+                                               width: Math.min(implicitWidth, parent.width - (upd.visible ? upd.width + parent.spacing : 0)) }
+                                        Chip { id: upd; visible: !!row.modelData.update; text: "Update"; fg: t.warn; bgc: t.warnBg; height: 20; anchors.verticalCenter: parent.verticalCenter } }
                                     Text { text: row.modelData.id === "bios" ? biosHint() : ((row.modelData.id === "hdmi" && hdmiRowHint()) || (texts[row.modelData.id] && texts[row.modelData.id].hint) || row.modelData.hint); color: t.mute; font.family: t.body; font.pixelSize: 13; elide: Text.ElideRight; width: parent.width }
                                 }
                                 // Right: every control ends on the same edge
@@ -748,7 +757,7 @@ ApplicationWindow {
                     model: plan
                     ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
                     delegate: Rectangle { required property var modelData; width: 740; height: 56; radius: 12; color: t.card
-                        readonly property var st: ({ on: ["Turn on", t.good, t.goodBg], off: ["Turn off", t.bad, t.badBg], again: ["Re-apply", "#7cc4ff", "#1b2b40"],
+                        readonly property var st: ({ on: ["Turn on", t.good, t.goodBg], off: ["Turn off", t.bad, t.badBg], again: ["Re-apply", "#7cc4ff", "#1b2b40"], update: ["Update", t.warn, t.warnBg],
                                                      desktop: ["Desktop", "#7cc4ff", "#1b2b40"], gaming: ["Gaming", "#7cc4ff", "#1b2b40"],
                                                      check: ["Check", t.warn, t.warnBg], flash: ["Flash", t.bad, t.badBg] })[modelData.action] || ["", t.text, t.card]
                         Row { anchors.fill: parent; anchors.leftMargin: 18; spacing: 14
@@ -761,10 +770,10 @@ ApplicationWindow {
                     Text { anchors.verticalCenter: parent.verticalCenter; x: 18; text: "Your password is asked once. Changes to how the PC starts need a restart."; color: t.soft; font.family: t.body; font.pixelSize: 14 } }
             }
             Rectangle {
-                x: parent.width - 468; y: 32; width: 428; height: 210; radius: 16; color: t.card
+                x: parent.width - 468; y: 32; width: 428; height: 250; radius: 16; color: t.card
                 Column { anchors.fill: parent; anchors.margins: 24; spacing: 12
                     Text { text: "SUMMARY"; color: t.faint; font.family: t.body; font.pixelSize: 12; font.weight: Font.DemiBold; font.letterSpacing: 0.8 }
-                    Repeater { model: [["Turn on", "on"], ["Re-apply", "again"], ["Turn off", "off"]]
+                    Repeater { model: [["Turn on", "on"], ["Update", "update"], ["Re-apply", "again"], ["Turn off", "off"]]
                         Row { required property var modelData; width: 380
                             Text { text: parent.modelData[0]; color: t.soft; font.family: t.body; font.pixelSize: 15; width: 300 }
                             Text { text: plan.filter(function (p) { return p.action === parent.modelData[1]; }).length; color: t.text; font.family: t.mono; font.pixelSize: 15; width: 80; horizontalAlignment: Text.AlignRight } } }
@@ -849,8 +858,15 @@ ApplicationWindow {
                                 border.width: parent.parent.st === "wait" || parent.parent.st === "run" ? 2 : 0; border.color: parent.parent.st === "run" ? t.accent : "#343f50"
                                 Text { anchors.centerIn: parent; text: parent.parent.parent.st === "ok" ? "✓" : (parent.parent.parent.st === "fail" ? "!" : ""); color: parent.parent.parent.st === "ok" ? t.good : t.bad; font.pixelSize: 13; font.weight: Font.Bold }
                                 RotationAnimator on rotation { running: parent.parent.parent.st === "run"; from: 0; to: 360; duration: 1000; loops: Animation.Infinite } }
-                            Text { text: ({ on: "Turn on ", off: "Turn off ", again: "Re-apply ", desktop: "Boot into ", gaming: "Boot into ", check: "Download and check the ", flash: "Hand to fwupd: the " })[parent.parent.modelData.action] + ((texts[parent.parent.modelData.id] || {}).label || parent.parent.modelData.id)
-                                   color: parent.parent.st === "wait" ? t.faint : t.textHi; font.family: t.body; font.pixelSize: 16; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter; width: 380; elide: Text.ElideRight }
+                            // The step; an update shows the name with an Update badge, like the menu.
+                            Item { width: 380; height: parent.height
+                                readonly property var step: parent.parent.modelData
+                                readonly property bool update: step.action === "update"
+                                Row { anchors.verticalCenter: parent.verticalCenter; width: parent.width; spacing: 10
+                                    Text { text: (({ on: "Turn on ", off: "Turn off ", again: "Re-apply ", desktop: "Boot into ", gaming: "Boot into ", check: "Download and check the ", flash: "Hand to fwupd: the " })[parent.parent.step.action] || "") + ((texts[parent.parent.step.id] || {}).label || parent.parent.step.id)
+                                           color: parent.parent.parent.parent.st === "wait" ? t.faint : t.textHi; font.family: t.body; font.pixelSize: 16; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter; elide: Text.ElideRight
+                                           width: Math.min(implicitWidth, parent.width - (stepUpd.visible ? stepUpd.width + parent.spacing : 0)) }
+                                    Chip { id: stepUpd; visible: parent.parent.update; text: "Update"; fg: t.warn; bgc: t.warnBg; height: 20; anchors.verticalCenter: parent.verticalCenter } } }
                             Text { text: ({ wait: "Waiting", run: "Working…", ok: "Done", fail: "Problem" })[parent.parent.st]; color: parent.parent.st === "ok" ? t.good : (parent.parent.st === "fail" ? t.bad : "#b8c3d1"); font.family: t.body; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
                         }
                     }

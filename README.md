@@ -43,20 +43,11 @@ What Steamify can do on a Valve Steam Machine:
   TV's remote, and the TV turns on and off with the Steam Machine
   ([details](TECHNICAL.md#hdmi-cec)).
 - **Steam Machine support** - the front **LED bar** works, Steam's
-  **hardware settings** (fan, performance) work, and the power
-  button puts it to sleep like a console.
-  - **Pin the kernel to 7.1.6-1** - on by default: with newer CachyOS kernels
-    the Steam Machine reboots instead of shutting down. Untick it once CachyOS
-    fixes that. The kernel comes from its own
-    [release](https://github.com/theupriser/steamify-cachyos/releases/tag/kernel-7.1.6-1),
-    checked against CachyOS's signature
-    ([details](TECHNICAL.md#kernel-pin-steam-machine)).
-  - **HDMI refresh boost** - only with the pinned kernel, never ticked by
-    default: gets the highest refresh rate your HDMI display runs at the
-    desktop resolution (e.g. 110 Hz instead of 60 on a 3440x1440 monitor).
-    Each step is shown and you confirm it; no answer within 15 s switches
-    back. For more (e.g. 175 Hz), use DisplayPort
-    ([details](TECHNICAL.md#hdmi-refresh-boost-steam-machine)).
+  **hardware settings** (fan, performance) work, and the power button puts
+  it to sleep like a console.
+  - **Power-off fix** - on by default: shutting down really turns the Steam
+    Machine off, also with the newest CachyOS kernel
+    ([details](TECHNICAL.md#power-off-fix-steam-machine)).
   - **Update BIOS** - installs Valve's newest Steam Machine BIOS. Never ticked
     by default, at your own risk, and only after two warnings
     ([details](TECHNICAL.md#bios-updates-steam-machine)).

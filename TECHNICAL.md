@@ -208,84 +208,54 @@ upset CEC for the TV's other devices
 Turning it off removes the packages again (`linuxconsole` only if the
 wizard installed it).
 
-## Kernel pin (Steam Machine)
+## Power-off fix (Steam Machine)
 
-With CachyOS kernels newer than 7.1.6 a Steam Machine reboots instead of
-shutting down. The **Pin the kernel** sub-option (ticked along with Steam
-Machine support) installs `linux-cachyos` and `linux-cachyos-headers`
-7.1.6-1 and adds them to `IgnorePkg` in `/etc/pacman.conf`, so updates skip
-them. DKMS builds the LED driver for it; restart to boot it.
+With recent kernels a Steam Machine starts again right after powering off:
+the newer 6.x, 7.0 and 7.1 updates and 7.2 (and probably every kernel after
+it). Linux stopped clearing the S4/S5 wake bits at probe
+(`pinctrl-amd: Don't clear S4 wake bits at probe`, in 7.2 and backported to
+stable kernels), and the firmware leaves
+that bit set on GPIO pin 18 (`_SB.PCI0.GPP6`). Valve's own kernel
+(`linux-neptune-72`) clears it at probe on Fremont, in a patch marked not
+for upstream ("until the firmware is fixed"), so CachyOS and mainline won't
+get it.
 
-The packages (and their signatures, which pacman checks) are kept in
-`/var/cache/steamify/kernel`, so re-applying needs no download. Missing
-files are taken from pacman's cache, else downloaded from this repo's
-`kernel-7.1.6-1` release, then `archive.cachyos.org`, then
-`mirror.cachyos.org` (which only has the current kernel). Every file must
-match the SHA-256 in the script and have a valid CachyOS signature; a bad
-one is deleted, so the next run downloads it again. Set `PINNED_KERNEL_URL`
-to a directory URL with the files to try another source first, or drop them
-into the kernel directory yourself.
+The **Power-off fix** sub-option of Steam Machine support (ticked along with
+it, can be unticked) builds a small module with DKMS for every installed
+kernel, `steamify-fremont-poweroff` (source in
+[`patches/steamify-fremont-poweroff.c`](patches/steamify-fremont-poweroff.c)).
+It only loads on Fremont (DMI board name) and touches one register: right
+before power-off (a `SYS_OFF_MODE_POWER_OFF_PREPARE` handler, after the
+drivers have shut down) it clears that pin's S4/S5 wake bit. On a kernel
+that already clears it, it does nothing. It logs the pin's state at load:
+`dmesg | grep 'GPIO 18'`; `/sys/kernel/debug/gpio` shows the S4/S5 column.
+Tested on a Steam Machine with `linux-cachyos-bore` 7.2.8: it stayed off
+three times in a row, and rebooted right away with the module unloaded.
 
-Unticking it removes the pin and runs `sudo pacman -Syu`, which brings the
-kernel back to CachyOS's current version; the files stay for next time.
+Where Steam Machine support was set up before 2.2.0, the menu ticks the
+power-off fix as a new default sub-option (see feature versions below), so a
+normal run adds it.
 
-## HDMI refresh boost (Steam Machine)
+## Feature versions (updates)
 
-With the pinned kernel (7.1.6), HDMI displays often stay at 60 Hz. Two
-reasons:
+Each component has a feature version (`FEATURE_VERSION` in `lib/menu.sh`):
+the Steamify version in which what it sets up last changed (2.1.0 for
+everything that hasn't changed since). After a component is turned on
+successfully, that version is recorded in `~/.local/state/cachyos-gamescope-boot/features.state`
+(turning it off records `off`). Whether a component is on is always checked
+on the system itself; the version only decides about updates:
 
-- Monitors list their fast modes in an extra EDID block, announced by the
-  HDMI Forum EEODB data block. 7.1.6 only reads the first extension block,
-  so it never sees them. Newer kernels do.
-- Their fastest modes need HDMI 2.1 (FRL). 7.1.6's amdgpu only does HDMI
-  2.0 (TMDS, at most 600 MHz), but a mode with the display's own shortest
-  blanking at a slightly lower rate often fits.
+- **On, recorded version older** than the current one: ticked and
+  re-applied by a normal run; the plan (and the app's review) says
+  "update". A setup from before versions were recorded counts as 2.1.0,
+  so on a machine set up with 2.1.0, Steam Machine support (2.2.0) is
+  updated.
+- **A new default sub-option** (not in `NO_PRESELECT`) whose parent is on
+  and that was never turned on or off: ticked, so a normal run adds it.
+  Turning it off once records `off`, so it isn't ticked again.
 
-The menu item (only on a Steam Machine with the pinned kernel, never
-ticked by default, run from the desktop in Konsole):
-
-1. Takes the desktop resolution from KDE (`kscreen-doctor -j`) and reads the
-   display's complete EDID over DDC (`i2ctransfer`, segment pointer 0x30).
-   A live EDID left by an earlier test is cleared first.
-2. Calculates the highest rate that fits: the display's TMDS limit (HDMI
-   Forum VSDB, capped at amdgpu's 600 MHz), its shortest blanking at that
-   resolution and its maximum refresh (range limits, VRR maximum). Steps:
-   that rate rounded down to ten, and the hundred below it as a safe option.
-   Rates the display already lists, or that aren't faster than what works
-   now, are left out.
-3. Builds the EDID: all of the display's blocks, the block count and EEODB
-   fixed, plus a DisplayID block with the steps.
-4. Loads it live (debugfs `edid_override`, `trigger_hotplug`) and switches
-   to each step, lowest first. Each one needs a "y" within 15 s
-   (`WIZARD_HDMI_CONFIRM_SECONDS` for tests); anything else switches back
-   and stops.
-5. Saves the confirmed steps for that display: the EDID as
-   `/usr/lib/firmware/edid/steamify-<id>.bin`, where `<id>` is the display's
-   manufacturer, model, serial and date (EDID bytes 8-17), and a line in
-   `/etc/steamify/hdmi-edid.conf` (id, name, mode, rates). Other saved
-   displays are kept.
-
-`steamify-edid.service` (at boot, before the login manager) and a udev rule
-(`90-steamify-edid.rules`, every drm hotplug) run
-`/usr/local/bin/steamify-edid-hotplug`. Per HDMI port it reads the connected
-display's ID over DDC (the real display, even while an override is loaded)
-and loads that display's saved EDID through debugfs, or resets the port to
-the display's own EDID when there is none, or no display. What's loaded per
-port is kept in `/run/steamify-edid`, so the hotplug the script triggers
-itself doesn't loop.
-
-The item is on when the connected display runs on its saved EDID; with
-another display it's off, and ticking it sets that one up. Turning it off
-removes the connected display's EDID; the unit and rule go with the last
-one. In the app the item is a **Set up…** button, and **Manage** once a
-display is saved: it lists every saved display, removes any of them, and
-sets up the connected display when it has none. Unpinning the kernel
-removes them all.
-
-Versions before 2.1.0 used `drm.edid_firmware=` on the kernel command line
-(and the initramfs), which applied to any display on that port; re-applying
-saves such a setup per display and removes the parameter. Untick it before removing the
-kernel pin: newer kernels read the EDID themselves and can do HDMI 2.1.
+Set a component's entry to the new `VERSION` whenever what its
+`<id>_enable` sets up changes.
 
 ## BIOS updates (Steam Machine)
 
@@ -355,9 +325,10 @@ immediately, which can turn into a loop - see
 | `lib/wizard-shortcut.sh` | Steamify shortcut: desktop icon and launcher entry that run the newest release |
 | `lib/bios.sh` | Update BIOS (Steam Machine, opt-in): current/newest version, double confirmation, fwupd |
 | `lib/cec.sh` | HDMI-CEC: Valve's `cecd` and friends from its `holo` repository |
-| `lib/steam-machine.sh` | Steam Machine support: LED driver, LED access, steamos-manager; kernel pin |
-| `lib/hdmi-refresh.sh` | HDMI refresh boost (Steam Machine, pinned kernel): EDID over DDC, calculated steps, live test, `drm.edid_firmware` |
-| `.github/tools/bundle.sh` | Builds the single-file version (`dist/steamify.sh`) |
+| `lib/steam-machine.sh` | Steam Machine support: LED driver, LED access, steamos-manager |
+| `lib/fremont-poweroff.sh` | Steam Machine support: the power-off fix (DKMS module from `patches/`) |
+| `patches/` | Module sources and patches the scripts build or apply (`patch_file`); see its README |
+| `.github/tools/bundle.sh` | Builds the single-file version (`dist/steamify.sh`), with `patches/` embedded |
 | `.github/workflows/bundle.yml` | Builds and checks it on every push; publishes it on `main` |
 
 The single-file version is generated: on every push to `main`, GitHub
