@@ -234,7 +234,7 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   new major kernel.
 - VRAM booster (`vram`, `lib/vram-booster.sh`, top-level, ticked by
   default, 2.3.0; only available when `/sys/fs/cgroup/dmem.capacity` lists a
-  region): CachyOS's `dmemcg-booster` (system + user service) and
+  VRAM region of at least 2 GB): CachyOS's `dmemcg-booster` (system + user service) and
   `plasma-foreground-booster`, like SteamOS 3.9's VRAM management. The
   latter only starts with `kcgroupsrc [Foreground Booster] autostart=true`
   (set with `kset`). Disable removes only the packages it installed

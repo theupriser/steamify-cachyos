@@ -4,7 +4,7 @@
 # are evicted first, so a game that needs most of it doesn't spill into
 # system RAM and stutter. The kernel side is the dmem cgroup controller
 # (7.2; amdgpu and xe register their VRAM, NVIDIA's driver doesn't), so it's
-# only offered when the kernel lists a region. CachyOS packages the userspace
+# only offered when the kernel lists a VRAM region of at least 2 GB. CachyOS packages the userspace
 # side: dmemcg-booster (a system service that enables the controller and
 # sets the limits, plus a user service) and plasma-foreground-booster, which
 # tells it which window is in front on the desktop. The latter only starts
@@ -12,10 +12,13 @@
 # Sourced by steamify.sh; not meant to be run on its own.
 
 VRAM_PKGS=(dmemcg-booster plasma-foreground-booster)
+VRAM_MIN_BYTES=$((2 * 1024 * 1024 * 1024))
 
 vram_available() {
-    # cgroupfs files have size 0, so read it.
-    grep -q . /sys/fs/cgroup/dmem.capacity 2>/dev/null || vram_status
+    # Only for a GPU with its own VRAM: an integrated GPU registers a small
+    # carve-out too, but mostly uses system RAM, so there's little to boost.
+    awk -v min="$VRAM_MIN_BYTES" '$1 ~ /\/vram$/ && $2 >= min { found = 1 } END { exit !found }' \
+        /sys/fs/cgroup/dmem.capacity 2>/dev/null || vram_status
 }
 
 vram_status() {

@@ -7,7 +7,8 @@ one per merged pull request.
 
 ## 2.3.0 - 2026-09-27
 
-- **feat: VRAM booster for every supported GPU, not only the Steam Machine**
+- **feat: VRAM booster only for GPUs with at least 2 GB of their own VRAM**
+- `3f97c85` **feat: VRAM booster for every supported GPU, not only the Steam Machine**
 - `fd162c1` **feat: New badge for default sub-options added in this version**
 - `54ebddf` **feat: VRAM booster for the Steam Machine**
 
