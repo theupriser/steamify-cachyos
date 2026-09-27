@@ -10,9 +10,9 @@ WIZARD_RELEASE="https://github.com/theupriser/steamify-cachyos/releases/latest/d
 WIZARD_URL="$WIZARD_RELEASE/steamify.sh"
 WIZARD_APP_URL="$WIZARD_RELEASE/steamify-app.sh"
 # Steam logo with a gear (assets/ in the repo, published with every release).
-WIZARD_ICON="${XDG_DATA_HOME:-$HOME/.local/share}/icons/hicolor/scalable/apps/cachyos-gamescope-boot-wizard.svg"
-WIZARD_LAUNCHER="${XDG_DATA_HOME:-$HOME/.local/share}/cachyos-gamescope-boot/run-wizard"
-WIZARD_APP_LAUNCHER="${XDG_DATA_HOME:-$HOME/.local/share}/cachyos-gamescope-boot/run-app"
+WIZARD_ICON="${XDG_DATA_HOME:-$HOME/.local/share}/icons/hicolor/scalable/apps/steamify.svg"
+WIZARD_LAUNCHER="$STEAMIFY_BIN/run-wizard"
+WIZARD_APP_LAUNCHER="$STEAMIFY_BIN/run-app"
 WIZARD_APPS="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
 # steamify-ui: the id the app gives itself, so its window belongs to this
 # entry. steamify-app.sh leaves an entry with X-Steamify-Shortcut alone.
@@ -91,7 +91,7 @@ EOF
     tmp="$(mktemp)"
     if curl -fsSL --max-time 20 "$WIZARD_RELEASE/steam-gaming-settings.svg" -o "$tmp" && grep -q '<svg' "$tmp"; then
         install -D -m 644 "$tmp" "$WIZARD_ICON"
-        icon=cachyos-gamescope-boot-wizard
+        icon=steamify
         gtk-update-icon-cache -q -f -t "${XDG_DATA_HOME:-$HOME/.local/share}/icons/hicolor" 2>/dev/null || true
     else
         warn "Couldn't download the shortcut's icon; using Steam's icon instead."

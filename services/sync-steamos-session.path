@@ -1,0 +1,8 @@
+[Unit]
+Description=Watch for steamos session changes
+
+[Path]
+PathModified=/etc/plasmalogin.conf.d/zz-steamos-autologin.conf
+
+[Install]
+WantedBy=multi-user.target

@@ -54,7 +54,11 @@ backend_status() {
         items+=",\"wanted\":$( [[ "${WANTED[$c]:-0}" == 1 ]] && echo true || echo false)"
         items+=",\"update\":$(feature_outdated "$c" && echo true || echo false)"
         items+=",\"new\":$(feature_new "$c" && echo true || echo false)"
-        items+=",\"selectable\":$(component_selectable "$c" && echo true || echo false)}"
+        items+=",\"selectable\":$(component_selectable "$c" && echo true || echo false)"
+        # Why it can't be turned on, for the app's explanation.
+        [[ "$c" == vram && -n "${VRAM_NVIDIA_CASE:-}" ]] &&
+            items+=",\"note\":$(json_str "$(vram_nvidia_note "$VRAM_NVIDIA_CASE")")"
+        items+="}"
     done
     local cec="" f
     for f in /dev/cec*; do [[ -e "$f" ]] && cec+="${cec:+ }$(basename "$f")"; done
@@ -156,6 +160,7 @@ backend_apply() {
     plan_changes
     backend_event plan "\"disable\":$(json_list "${TO_DISABLE[@]}"),\"enable\":$(json_list "${TO_ENABLE[@]}")"
     if [[ ${#TO_DISABLE[@]} -eq 0 && ${#TO_ENABLE[@]} -eq 0 ]]; then
+        feature_record_unticked
         backend_event finished '"failed":[],"restart":false,"nothing":true'
         return 0
     fi
@@ -171,6 +176,7 @@ backend_apply() {
     for c in "${TO_ENABLE[@]}"; do
         if backend_run_component "$c" enable; then is_action "$c" || feature_record "$c" enable; else failed+=("$c"); fi
     done
+    feature_record_unticked
     [[ " ${TO_DISABLE[*]} ${TO_ENABLE[*]} " =~ \ (gaming|single|boot|kpin)\  ]] && RESTART_FOR_LOGIN=true
     backend_event finished "\"failed\":$(json_list "${failed[@]}"),\"restart\":$(restart_needed && echo true || echo false)"
 }

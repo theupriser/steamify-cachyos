@@ -5,6 +5,23 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.5.0 - 2026-09-27
+
+- **docs: README: what the VRAM booster says with NVIDIA's closed driver; shorter unsupported text in the app**
+- `32c33e4` **fix: An option left unticked stays off: it came back ticked as "new" on the next run (since 2.3.0)**
+- `2dd0f3a` **feat: VRAM booster with NVIDIA says what to do: update, switch to the open driver (chwd command), or not supported by the card**
+- `57995bc` **docs: VRAM booster works with NVIDIA's open kernel modules (driver 615+); only the closed driver is greyed out**
+- `d57e8d8` **docs: AGENTS.md and changelog for the vidmem detection**
+- `5a34633` **feat: VRAM booster also for drivers that name their region vidmem (or numbered), NVIDIA included once its driver registers it**
+- `479b70b` **feat: Everything in the home folder under steamify (state, scripts, icon), moved once from the old name**
+- `2e0881b` **fix: fill takes values literally; the notifier path is quoted in its unit**
+- `cce31e1` **refactor: DKMS confs in patches/; an existing leds-valve DKMS override is kept and restored**
+- `bd4fa3a` **refactor: The session sync and kernel headers scripts in patches/**
+- `8ffa0f2` **refactor: systemd units in services/, read with service_file like patches/**
+- `8a2601d` **docs: README screenshot at 2.5.0 with Update notifications; AGENTS.md: retake it when rows change**
+- `572417b` **fix: Open Steamify from the notification starts the app (own scope), the same way it was last used (app or terminal)**
+- `cf73229` **feat: Update notifications: a notification and tray icon when there's a new Steamify**
+
 ## 2.4.1 - 2026-09-27
 
 - **chore: Version 2.4.1**

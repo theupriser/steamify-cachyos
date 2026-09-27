@@ -21,8 +21,11 @@ QtObject {
         launcher: { label: "Steamify shortcut", hint: "The app on the desktop and in the launcher",
                     body: "Opens the newest Steamify app, so you never need the install command again. Steamify Terminal in the launcher opens the terminal menu.",
                     changes: ["Steamify CachyOS on the desktop and in the launcher (the app)", "Steamify Terminal in the launcher"] },
+        notify: { label: "Update notifications", hint: "A notification when there's a new Steamify",
+                  body: "Checks once a day and when you log in to the desktop. When there's a new Steamify you get a notification and a tray icon: open the app to see what's new and choose what to update, or skip that version. It never updates anything by itself.",
+                  changes: ["A daily check (systemd user timer), only on the desktop", "Tray icon only while an update is waiting", "Skip this version: quiet until the next one"] },
         vram: { label: "VRAM booster", hint: "The game in front keeps its VRAM",
-                body: "Like SteamOS 3.9: the game you're playing keeps its video memory, and background apps are moved out first. Without it a game that needs most of the video memory can spill into system RAM and stutter. Shown for GPUs whose driver supports it (AMD, Intel) on kernel 7.2 or newer.",
+                body: "Like SteamOS 3.9: the game you're playing keeps its video memory, and background apps are moved out first. Without it a game that needs most of the video memory can spill into system RAM and stutter. Shown for GPUs whose driver supports it (AMD, Intel, NVIDIA with its open kernel modules from driver 615) on kernel 7.2 or newer.",
                 changes: ["dmemcg-booster (system and user service)", "plasma-foreground-booster, which tells it which window is in front", "Off: removed again, unless you had installed them yourself"] },
         cec: { label: "HDMI-CEC", hint: "Use Steam with the TV remote, TV on/off with the PC", experimental: true,
                body: "Use Steam with your TV remote, and the TV turns on and off with the PC. Turn on CEC on the TV too (Sony: BRAVIA Sync, Samsung: Anynet+, LG: SimpLink).",
@@ -45,8 +48,8 @@ QtObject {
     })
     // Replaces the explanation of an option that can't be turned on here.
     readonly property var unsupported: ({
-        vram: { body: "Not available with your NVIDIA graphics card: NVIDIA's driver doesn't tell Linux how its video memory is used yet, so there's nothing to steer. It works with AMD and Intel graphics cards, and shows up here as soon as NVIDIA's driver supports it.",
-                changes: ["Nothing: can't be turned on with NVIDIA's driver"] }
+        // The body comes from the backend (item.note): it depends on the driver.
+        vram: { changes: ["Nothing until then"] }
     })
 
     // Per plan action: the review's chip [text, colour, background] and the
@@ -60,7 +63,8 @@ QtObject {
 
     function of(item) {
         var tx = items[item.id] || {};
-        return item.selectable === false && unsupported[item.id] ? Object.assign({}, tx, unsupported[item.id]) : tx;
+        if (item.selectable !== false || !unsupported[item.id]) return tx;
+        return Object.assign({}, tx, unsupported[item.id], item.note ? { body: item.note } : {});
     }
     function label(id, fallback) { return (items[id] || {}).label || fallback || id; }
 }

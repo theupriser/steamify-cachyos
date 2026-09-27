@@ -30,12 +30,19 @@ Steam Machine.
 5. **Steamify shortcut** - "Steamify CachyOS" on the desktop and in the
    launcher opens the newest Steamify app, so you don't need the install
    command again. "Steamify Terminal" in the launcher opens the terminal menu.
-6. **VRAM booster** - on by default: the game you're playing keeps its video
+6. **Update notifications** - on by default: a notification and a tray icon
+   when there's a new Steamify, with Open Steamify and Skip this version. It
+   never updates anything by itself
+   ([details](TECHNICAL.md#update-notifications)).
+7. **VRAM booster** - on by default: the game you're playing keeps its video
    memory and background apps make room, like SteamOS 3.9. Shown for GPUs
-   whose driver supports it (AMD, Intel) on kernel 7.2 or newer; greyed out
-   with an NVIDIA card until NVIDIA's driver supports it
+   whose driver supports it (AMD, Intel, NVIDIA with its open kernel modules
+   from driver 615) on kernel 7.2 or newer. With NVIDIA's closed driver it's
+   greyed out and says what to do: switch to the open driver when your card
+   supports it (RTX 20 series and newer; Steamify shows the command, it
+   doesn't switch drivers itself)
    ([details](TECHNICAL.md#vram-booster)).
-7. **HDMI-CEC** (experimental; off by default, on by default on a Steam
+8. **HDMI-CEC** (experimental; off by default, on by default on a Steam
    Machine) - use Steam with your TV's
    remote, and the TV turns on and off with the PC. Needs a PC with CEC (like
    the Steam Machine) or a USB CEC adapter; most graphics cards, NVIDIA

@@ -14,7 +14,7 @@ and turns on what you ticked. To be able to undo:
   off.
 - **KDE settings** in your home directory are recorded with their previous
   value the first time the wizard changes them, in an undo journal under
-  `~/.local/state/cachyos-gamescope-boot/`. Turning the component off writes
+  `~/.local/state/steamify/`. Turning the component off writes
   the old values back (or removes keys that didn't exist before). Setups
   made by older versions of the script, without a journal, fall back to
   KDE's defaults.
@@ -236,17 +236,49 @@ Where Steam Machine support was set up before 2.2.0, the menu ticks the
 power-off fix as a new default sub-option (see feature versions below), so a
 normal run adds it.
 
+## Update notifications
+
+The **Update notifications** option (new in 2.5.0, ticked by default)
+installs `patches/steamify-notifier.py` as
+`~/.local/share/steamify/bin/steamify-notifier` with two user
+units in `~/.config/systemd/user`: `steamify-update-check.timer` (daily,
+`Persistent=`) and `steamify-update-check.service` (also wanted by
+`plasma-workspace.target`, so it checks a minute after each desktop login).
+Nothing stays running while there's no update.
+
+Every Steamify run records its version as `seen` (`notify.state`). The check
+asks GitHub for the newest release; when it's newer than `seen` and not the
+`skipped` version, it shows a notification (`notify-send` with the buttons
+**Open Steamify** and **Skip this version**) and a tray icon (click: open;
+menu: open, skip, remind me later). Closing the notification keeps the
+icon; opening Steamify in any way records the new version and ends it. It
+only runs on the Plasma desktop: gamescope shows no notifications or tray,
+so an update found in gaming mode waits for the next desktop login. It never
+installs anything: the shortcut always starts the newest release, which then
+shows what's new or updated for this install.
+
 ## VRAM booster
 
 SteamOS 3.9 manages the dGPU's VRAM per cgroup: the game in front is
 protected, background apps are evicted first. Without it a game that needs
 most of the VRAM (8 GB on the Steam Machine) can be pushed into system RAM
 by the desktop and other apps, and stutter. The kernel side is the `dmem`
-cgroup controller (7.2); amdgpu and Intel's xe register their VRAM with it,
-NVIDIA's driver doesn't: with an NVIDIA card the option is shown greyed
-out, with why (`WIZARD_VRAM_FAKE_NVIDIA=1` fakes that for tests). Otherwise
+cgroup controller (7.2); amdgpu and Intel's xe register their VRAM with it
+(`drm/<pci>/vram`), NVIDIA's open kernel modules from driver 615 too
+(`nvidia/<pci>/vidmem`); `dmemcg-booster` protects every region it lists,
+whatever its name. NVIDIA's closed modules don't: with such a card the option is shown greyed
+out with what to do (`vram_nvidia_case`): open modules older than 615 ->
+update; the closed driver on a card the open one supports (not in chwd's
+legacy lists `/var/lib/chwd/ids/nvidia-{580,470,390}.ids`) -> the `chwd`
+commands to switch, never switched by Steamify itself (a failed switch
+means a black screen, and it can't be tested here); a legacy card or
+nouveau -> not supported. Shown greyed
+out, with why, until its driver lists a region: then it's offered like any
+other (`WIZARD_VRAM_FAKE_NVIDIA=1` fakes the grey-out, `WIZARD_VRAM_CAPACITY=<file>`
+reads the regions from a copy, for tests). Otherwise
 the **VRAM booster** option is only shown when
-`/sys/fs/cgroup/dmem.capacity` lists a VRAM region of at least 2 GB (a
+`/sys/fs/cgroup/dmem.capacity` lists a VRAM region (`vram`, or `vidmem`
+as other drivers name it, numbered with several) of at least 2 GB (a
 dedicated GPU; an integrated one registers a small carve-out) or it's already on, and is
 ticked by default; new in 2.3.0, so setups with the SteamOS conversion on
 get it ticked. CachyOS packages the userspace side, which it installs:
@@ -269,7 +301,7 @@ worth it if the booster itself turns out to cause stutter.
 Each component has a feature version (`FEATURE_VERSION` in `lib/menu.sh`):
 the Steamify version in which what it sets up last changed (2.1.0 for
 everything that hasn't changed since). After a component is turned on
-successfully, that version is recorded in `~/.local/state/cachyos-gamescope-boot/features.state`
+successfully, that version is recorded in `~/.local/state/steamify/features.state`
 (turning it off records `off`). Whether a component is on is always checked
 on the system itself; the version only decides about updates:
 
@@ -323,6 +355,31 @@ To walk through it without flashing anything, run the wizard with
 `WIZARD_BIOS_DRY_RUN=1`: it downloads and checks the package and shows both
 warnings, skips fwupd's device check, and only prints the install command.
 
+## Where Steamify keeps its files
+
+In the home folder, everything is under `steamify`:
+
+| Where | What |
+|---|---|
+| `~/.local/state/steamify/` | State (`*.state`), undo journals (`*.journal`), the saved panel layout (`theme-layout/`) |
+| `~/.local/share/steamify/app/` | The app (`steamify-app.sh` downloads it here) |
+| `~/.local/share/steamify/bin/` | The shortcut's start scripts (`run-app`, `run-wizard`) and `steamify-notifier` |
+| `~/.local/share/icons/hicolor/scalable/apps/steamify.svg` | The shortcut's icon |
+| `~/.local/share/applications/steamify-*.desktop` | The launcher entries |
+| `~/.config/systemd/user/` | `steamify-update-check.*`, `steam-desktop-autostart.service` |
+
+System-wide: `/usr/local/lib/steamify/` (kernel headers script),
+`/usr/src/steamify-*` (DKMS modules), `/var/cache/steamify/kernel` (the old
+kernel pin's packages), and `*.bak-gamescope-wizard` backups next to the
+system files that were edited (that name stays: it's how they're found again).
+
+Before 2.5.0 the home folder paths used the project's old name
+(`cachyos-gamescope-boot`). `migrate_layout` (`lib/state.sh`) moves them at
+every start of a newer version, once, and leaves symlinks under the old names
+so an older release still finds the same state; it fixes the paths in the
+launcher entries and the update check's unit, and merges when both exist.
+The headers script moves when Steam Machine support is set up again.
+
 ## Manual session control
 
 ```bash
@@ -357,9 +414,11 @@ immediately, which can turn into a loop - see
 | `lib/cec.sh` | HDMI-CEC: Valve's `cecd` and friends from its `holo` repository |
 | `lib/steam-machine.sh` | Steam Machine support: LED driver, LED access, steamos-manager |
 | `lib/fremont-poweroff.sh` | Steam Machine support: the power-off fix (DKMS module from `patches/`) |
+| `lib/update-notifier.sh` | Update notifications: the notifier from `patches/` and its user timer |
 | `lib/vram-booster.sh` | VRAM booster (`dmemcg-booster`, `plasma-foreground-booster`) |
+| `services/` | The systemd units the scripts install (`service_file`, `@KEY@` placeholders); see its README |
 | `patches/` | Module sources and patches the scripts build or apply (`patch_file`); see its README |
-| `.github/tools/bundle.sh` | Builds the single-file version (`dist/steamify.sh`), with `patches/` embedded |
+| `.github/tools/bundle.sh` | Builds the single-file version (`dist/steamify.sh`), with `patches/` and `services/` embedded |
 | `.github/workflows/bundle.yml` | Builds and checks it on every push; publishes it on `main` |
 
 The single-file version is generated: on every push to `main`, GitHub

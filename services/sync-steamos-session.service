@@ -1,0 +1,9 @@
+[Unit]
+Description=Sync steamos session selection into plasmalogin.conf
+# Session switches can come in bursts (switch + autologin reset); never
+# let systemd's start rate limit silently stop the bridge.
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/sync-steamos-session.sh

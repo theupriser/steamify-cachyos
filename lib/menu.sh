@@ -5,7 +5,7 @@
 
 # Menu order. Components are turned on in this order and off in reverse;
 # gaming must come first (single user builds on it).
-COMPONENTS=(gaming boot theme glyphs single launcher vram cec machine poweroff kpin hdmi bios)
+COMPONENTS=(gaming boot theme glyphs single launcher notify vram cec machine poweroff kpin hdmi bios)
 # One-off actions rather than on/off components: never preselected, never
 # re-applied, not listed as on or off.
 ACTIONS=(bios)
@@ -26,7 +26,7 @@ NO_PRESELECT=(boot cec kpin hdmi)
 FEATURE_BASELINE=2.1.0
 declare -A FEATURE_VERSION=(
     [gaming]=2.1.0 [boot]=2.1.0 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.1.0
-    [launcher]=2.1.0 [cec]=2.1.0 [machine]=2.2.0 [poweroff]=2.2.0 [vram]=2.3.0
+    [launcher]=2.1.0 [cec]=2.1.0 [machine]=2.2.0 [poweroff]=2.2.0 [vram]=2.3.0 [notify]=2.5.0
     [kpin]=2.1.0 [hdmi]=2.1.0
 )
 
@@ -37,6 +37,7 @@ declare -A LABEL=(
     [glyphs]="Install Steam Deck/Machine icons: Deck button icons in gaming mode"
     [single]="Single user mode: no password, lock screen or log out (SDDM)"
     [launcher]="Steamify shortcut: the app on the desktop, Steamify Terminal in the launcher"
+    [notify]="Update notifications: a notification when there's a new Steamify, never updates by itself"
     [vram]="VRAM booster: the game in front keeps its VRAM, background apps make room"
     [cec]="HDMI-CEC: use Steam with the TV remote, TV on/off with the PC (experimental)"
     [machine]="Steam Machine support: LED bar driver, hardware settings in Steam"
@@ -70,6 +71,21 @@ menu_visible() {
     # while its parent is ticked.
     component_available "$1" || return 1
     [[ -z "${PARENT[$1]:-}" || "${WANTED[${PARENT[$1]}]:-0}" == 1 ]]
+}
+
+feature_record_unticked() {
+    # After a run the user confirmed: options shown but left unticked that
+    # have no record yet count as turned off, or the next run would offer a
+    # default one again as "new" (feature_new) and tick it: e.g. single user
+    # mode unticked on a first run came back ticked when anything else
+    # changed. Hidden sub-options weren't a choice, so they're left alone.
+    local c
+    for c in "${COMPONENTS[@]}"; do
+        is_action "$c" && continue
+        menu_visible "$c" || continue
+        [[ "${WANTED[$c]:-0}" == 0 && -z "$(state_get features "$c")" ]] && state_set features "$c" off
+    done
+    return 0
 }
 
 feature_record() {
@@ -146,8 +162,11 @@ detect_components() {
     launcher_repair && WANTED[launcher]=1
     # Shows the current and newest BIOS version.
     bios_available && { bios_lookup_newest; LABEL[bios]="$(bios_label)"; }
-    # Greyed out with an NVIDIA card: say why.
-    component_available vram && ! vram_selectable && LABEL[vram]="VRAM booster: not supported by NVIDIA's driver yet"
+    # Greyed out with an NVIDIA card: say why, and what to do.
+    if component_available vram && ! vram_selectable; then
+        VRAM_NVIDIA_CASE="$(vram_nvidia_case)"
+        LABEL[vram]="VRAM booster: $(vram_nvidia_hint "$VRAM_NVIDIA_CASE")"
+    fi
     # First run: preselect the full SteamOS experience (never an action).
     if [[ "$any" == false ]]; then
         for c in "${COMPONENTS[@]}"; do
@@ -357,5 +376,6 @@ apply_changes() {
         else echo; echo -e "${c_bold}Turning on: ${LABEL[$c]}${c_reset}"; fi
         if "${c}_enable"; then is_action "$c" || feature_record "$c" enable; else failed+=("$c"); fi
     done
+    feature_record_unticked
     FAILED=("${failed[@]}")
 }

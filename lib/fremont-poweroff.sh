@@ -28,10 +28,7 @@ poweroff_fix_enable() {
     tmp="$(mktemp -d)"
     patch_file "$POWEROFF_DKMS_NAME.c" > "$tmp/$POWEROFF_DKMS_NAME.c"
     echo "obj-m += $POWEROFF_DKMS_NAME.o" >"$tmp/Makefile"
-    printf '%s\n' "# Written by Steamify: the Steam Machine powers off instead of booting up again." \
-        "PACKAGE_NAME=\"$POWEROFF_DKMS_NAME\"" "PACKAGE_VERSION=\"$POWEROFF_DKMS_VER\"" \
-        "BUILT_MODULE_NAME[0]=\"$POWEROFF_DKMS_NAME\"" 'DEST_MODULE_LOCATION[0]="/updates/dkms"' \
-        'AUTOINSTALL="yes"' >"$tmp/dkms.conf"
+    patch_file "$POWEROFF_DKMS_NAME.dkms.conf" | fill NAME="$POWEROFF_DKMS_NAME" VERSION="$POWEROFF_DKMS_VER" >"$tmp/dkms.conf"
     sudo dkms remove "$POWEROFF_DKMS_NAME/$POWEROFF_DKMS_VER" --all >/dev/null 2>&1
     sudo rm -rf "$POWEROFF_DKMS_SRC"
     sudo install -d "$POWEROFF_DKMS_SRC" &&

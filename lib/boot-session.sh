@@ -23,19 +23,7 @@ boot_enable() {
     # the session into the base config; run it right away rather than rely
     # on its path unit, which could still be pending when the login manager
     # starts.
-    sudo tee "$BOOT_UNIT" > /dev/null << EOF
-[Unit]
-Description=Steamify CachyOS: boot into the desktop instead of gaming mode
-Before=display-manager.service sddm.service plasmalogin.service
-
-[Service]
-Type=oneshot
-ExecStart=/usr/lib/steamos/steam-set-session plasma.desktop
-ExecStart=/bin/sh -c '[ -x $SESSION_SYNC ] && exec $SESSION_SYNC || true'
-
-[Install]
-WantedBy=graphical.target
-EOF
+    service_file "$BOOT_UNIT_NAME" SESSION_SYNC="$SESSION_SYNC" | sudo tee "$BOOT_UNIT" > /dev/null
     sudo systemctl daemon-reload
     sudo systemctl enable "$BOOT_UNIT_NAME" || { err "Enabling $BOOT_UNIT_NAME failed."; return 1; }
     ok "Boots into the desktop from the next boot on (Return to Gaming Mode still works)."

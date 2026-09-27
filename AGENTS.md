@@ -19,6 +19,12 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   apply, never inline in the shell code. Read them with `patch_file
   <name>` (`lib/common.sh`, from the checkout); the bundle embeds every file
   in `patches/` and overrides `patch_file`. Add new ones to its README.
+- `services/` - the systemd units the scripts install (`.service`,
+  `.timer`, `.path`), never inline in the shell code. Read them with
+  `service_file <name> [KEY=value...]` (`lib/common.sh`), which fills in
+  `@KEY@` placeholders; the bundle embeds every file in `services/` too
+  (`service_raw`). Add new ones to its README. Small drop-ins for other
+  packages' units stay inline.
 - `ui/` - the app: `steamify-ui` (PySide6; runs `steamify.sh --backend`,
   `lib/backend.sh`) and `ui/qml/`: `Main.qml` (window, header, which screen
   shows), `AppState.qml` (all state and logic, input actions), one
@@ -26,6 +32,12 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   the singletons `Theme` (colours, fonts), `Texts` (item texts) and `Input`
   (controller/keyboard/remote and its button names), listed in `qmldir`.
   Screens get the `AppState` as `app` and only show it or call its functions.
+- **Paths.** Everything in the home folder lives under `steamify`:
+  `$STATE_DIR` (`~/.local/state/steamify`), `$STEAMIFY_DATA`/`$STEAMIFY_BIN`
+  (`~/.local/share/steamify/{app,bin}`), `lib/state.sh`. Never add files
+  under the old name `cachyos-gamescope-boot`; `migrate_layout` moves those
+  of older versions (symlinks keep older releases working). Keep the
+  `.bak-gamescope-wizard` backup suffix: existing backups are found by it.
 - `lib/*.sh` - one file per responsibility, each defining functions only
   (no top-level side effects besides constants). See the table in
   `TECHNICAL.md`.
@@ -42,6 +54,8 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   are ticked and re-applied ("update" in the plan and the app). New default
   options are ticked for installs whose parent (top-level: `gaming`) is on
   (`feature_new`, shown as "new").
+  Options shown but left unticked in a confirmed run are recorded as
+  `off` (`feature_record_unticked`), or `feature_new` would tick them again.
   Status still comes from the system; don't add ad-hoc `<id>_repair` checks
   for new changes.
 - **Reversibility.** Every per-user KDE setting a component changes goes
@@ -89,6 +103,10 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
     changelog section) and marks it latest. An existing version is never
     overwritten: without a bump nothing is released, and pull requests show
     a warning.
+  - A release that adds, removes or renames a menu row also retakes the
+    README screenshot (`assets/screenshot-menu.png`): the app from the
+    branch on a Steam Machine, every row visible (window 1280 wide, tall
+    enough), the header showing the new `VERSION`, scaled to 1600 px wide.
   - Users install through `releases/latest/download/steamify.sh`
     (GitHub's newest release). The `latest` tag and release follow the newest
     version tag too (moved, asset replaced, when a new version is released),
@@ -144,7 +162,9 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `restart_plasmashell_if_stopped` (`lib/common.sh`).
 - LED driver: `leds-valve-dkms-git`'s Makefile builds against `uname -r`,
   not DKMS's target kernel: `/etc/dkms/leds-valve-dkms.conf` sets
-  `MAKE[0]="make KVERSION=${kernelver}"` (written before the AUR install).
+  `MAKE[0]="make KVERSION=${kernelver}"` (written before the AUR install;
+  someone's own override there is backed up, kept with ours appended, and
+  restored on disable).
   Without it, other kernels build against the running kernel's tree and
   fail (CachyOS kernels are clang-built; DKMS adds `LLVM=1` only for the
   target's tree). Headers for every installed kernel are installed first,
@@ -223,10 +243,19 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `linux-cachyos` is clang-built, `-bore` GCC-built: let DKMS pick the
   compiler, never pass `LLVM=1`. Test shutdown on the real machine for every
   new major kernel.
+- Update notifications (`notify`, `lib/update-notifier.sh`, top-level,
+  ticked by default, 2.5.0): a user timer (daily, and the service is wanted
+  by `plasma-workspace.target`) runs `patches/steamify-notifier.py`, which
+  compares GitHub's newest release with the `seen` version every run records
+  (`notify_seen` in the entry point, only while it's on, with `frontend`: app or terminal, which Open Steamify starts again, in a `systemd-run --scope` since the check's own unit is stopped when it exits). It must never
+  update anything itself: notification + tray icon, Open Steamify / Skip
+  this version (`skipped`). Desktop only (exits without `plasmashell`).
 - VRAM booster (`vram`, `lib/vram-booster.sh`, top-level, ticked by
   default, 2.3.0; only available when `/sys/fs/cgroup/dmem.capacity` lists a
-  VRAM region of at least 2 GB; greyed out with an NVIDIA card,
-  `vram_selectable`, faked with `WIZARD_VRAM_FAKE_NVIDIA=1`): CachyOS's `dmemcg-booster` (system + user service) and
+  `vram`/`vidmem` region (numbered too) of at least 2 GB, whatever the brand;
+  greyed out with an NVIDIA card whose driver lists none, `vram_selectable`,
+  faked with `WIZARD_VRAM_FAKE_NVIDIA=1`; `WIZARD_VRAM_CAPACITY=<file>` reads
+  the regions from a copy): CachyOS's `dmemcg-booster` (system + user service) and
   `plasma-foreground-booster`, like SteamOS 3.9's VRAM management. The
   latter only starts with `kcgroupsrc [Foreground Booster] autostart=true`
   (set with `kset`). Disable removes only the packages it installed

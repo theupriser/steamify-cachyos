@@ -185,24 +185,7 @@ install_session_sync() {
     local SYNC_SCRIPT="/usr/local/bin/sync-steamos-session.sh"
     info "Installing session sync bridge at $SYNC_SCRIPT"
 
-    sudo tee "$SYNC_SCRIPT" > /dev/null << 'EOF'
-#!/bin/bash
-SRC="/etc/plasmalogin.conf.d/zz-steamos-autologin.conf"
-DEST="/etc/plasmalogin.conf"
-
-[[ -f "$SRC" ]] || exit 0
-SESSION=$(grep -oP '^Session=\K.*' "$SRC")
-[[ -z "$SESSION" ]] && exit 0
-
-# Only touch Session= inside [Autologin]; other sections may have their own.
-if sed -n '/^\[Autologin\]/,/^\[/p' "$DEST" | grep -q '^Session='; then
-    sed -i "/^\[Autologin\]/,/^\[/ s|^Session=.*|Session=$SESSION|" "$DEST"
-elif grep -q '^\[Autologin\]' "$DEST"; then
-    sed -i "/^\[Autologin\]/a Session=$SESSION" "$DEST"
-else
-    printf '\n[Autologin]\nSession=%s\n' "$SESSION" >> "$DEST"
-fi
-EOF
+    patch_file sync-steamos-session.sh | sudo tee "$SYNC_SCRIPT" > /dev/null
 
     sudo chmod +x "$SYNC_SCRIPT"
     ok "Sync script installed."
@@ -211,28 +194,9 @@ EOF
     # 7. systemd path watcher + service
     info "Installing systemd path watcher so session switches take effect immediately"
 
-    sudo tee /etc/systemd/system/sync-steamos-session.path > /dev/null << 'EOF'
-[Unit]
-Description=Watch for steamos session changes
+    service_file sync-steamos-session.path | sudo tee /etc/systemd/system/sync-steamos-session.path > /dev/null
 
-[Path]
-PathModified=/etc/plasmalogin.conf.d/zz-steamos-autologin.conf
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-    sudo tee /etc/systemd/system/sync-steamos-session.service > /dev/null << 'EOF'
-[Unit]
-Description=Sync steamos session selection into plasmalogin.conf
-# Session switches can come in bursts (switch + autologin reset); never
-# let systemd's start rate limit silently stop the bridge.
-StartLimitIntervalSec=0
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/sync-steamos-session.sh
-EOF
+    service_file sync-steamos-session.service | sudo tee /etc/systemd/system/sync-steamos-session.service > /dev/null
 
     sudo systemctl daemon-reload
     sudo systemctl enable --now sync-steamos-session.path
