@@ -67,10 +67,10 @@ ApplicationWindow {
                body: "Use Steam with your TV remote, and the TV turns on and off with the PC. Turn on CEC on the TV too (Sony: BRAVIA Sync, Samsung: Anynet+, LG: SimpLink).",
                changes: ["Valve's cecd and cec-audio-control", "HDMI CEC section in Steam's Display settings", "Volume buttons for the TV in the Quick Access menu"] },
         machine: { label: "Steam Machine support", hint: "LED bar, fan and performance settings in Steam",
-                   body: "The front LED bar works, Steam's hardware settings work, and the power button puts it to sleep like a console.",
-                   changes: ["leds-valve driver for every kernel (DKMS)", "steamos-manager for Steam's settings", "Console-like power handling"] },
-        kpin: { label: "Pin the kernel", hint: "Fixes rebooting after shutdown",
-                body: "Newer CachyOS kernels make the Steam Machine reboot instead of shutting down. Untick once CachyOS fixes that.",
+                   body: "The front LED bar works, Steam's hardware settings work, the power button puts it to sleep like a console, and shutting down really turns it off on every kernel.",
+                   changes: ["leds-valve driver for every kernel (DKMS)", "steamos-manager for Steam's settings", "Console-like power handling", "Power-off fix: stays off after shutting down (DKMS)"] },
+        kpin: { label: "Pin the kernel", hint: "Optional: stay on an older kernel",
+                body: "Keeps the Steam Machine on CachyOS kernel 7.1.6. Not needed for shutting down any more (Steam Machine support fixes that on every kernel); HDMI refresh boost needs it, since newer kernels do HDMI 2.1 themselves.",
                 changes: ["linux-cachyos from Steamify's release (signature checked)", "Kept in /var/cache/steamify/kernel", "Added to IgnorePkg"] },
         hdmi: { label: "HDMI refresh boost", hint: "Higher refresh rates over HDMI",
                 body: "The pinned kernel keeps many HDMI displays at 60 Hz. Turning this on shows which refresh rates your display can run at the desktop resolution; you pick them, and each one is tried for 15 seconds so you can check the picture before it's installed.",
@@ -247,7 +247,7 @@ ApplicationWindow {
         if (id === "hdmi" && !hdmiChoice && hdmiSaved.length) { openHdmiList(); return; }
         if (id === "hdmi" && w.hdmi && !nowOn("hdmi") && !hdmiChoice) { startHdmi(); return; }
         if (id === "hdmi" && !w.hdmi) hdmiChoice = "";
-        if (id === "machine") w.kpin = w.machine;
+        if (id === "machine" && !w.machine) w.kpin = false;
         if (id === "kpin" && w.kpin) w.machine = true;
         if (id === "hdmi" && w.hdmi) { w.machine = true; w.kpin = true; }
         if (!w.machine || !w.kpin) w.hdmi = false;

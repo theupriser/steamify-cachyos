@@ -16,7 +16,7 @@ declare -A PARENT=([boot]=gaming [kpin]=machine [hdmi]=machine [bios]=machine)
 # upset other devices on the TV, even on SteamOS), except on a Steam Machine,
 # which has CEC like on SteamOS. HDMI refresh boost needs someone at the
 # screen to confirm each step.
-NO_PRESELECT=(boot cec hdmi)
+NO_PRESELECT=(boot cec kpin hdmi)
 
 declare -A LABEL=(
     [gaming]="SteamOS conversion: boot into gaming mode, Steam on the desktop"
@@ -27,7 +27,7 @@ declare -A LABEL=(
     [launcher]="Steamify shortcut: the app on the desktop, Steamify Terminal in the launcher"
     [cec]="HDMI-CEC: use Steam with the TV remote, TV on/off with the PC (experimental)"
     [machine]="Steam Machine support: LED bar driver, hardware settings in Steam"
-    [kpin]="Pin the kernel to $PINNED_KERNEL_VER (fixes rebooting after shutdown)"
+    [kpin]="Pin the kernel to $PINNED_KERNEL_VER (optional, stays on an older kernel)"
     [hdmi]="HDMI refresh boost: highest refresh your HDMI display runs"
     [bios]="Update BIOS"
 )
@@ -72,6 +72,8 @@ detect_components() {
     done
     # HDMI-CEC set up by an older version: tick it, so a normal run fixes it.
     component_available cec && cec_repair && WANTED[cec]=1
+    # Steam Machine support from before 2.2.0 lacks the power-off fix.
+    component_available machine && machine_repair && WANTED[machine]=1
     # The terminal-only Steamify shortcut from before 2.0.1: tick it, so a
     # normal run replaces it with the app.
     launcher_repair && WANTED[launcher]=1
@@ -96,8 +98,8 @@ toggle_component() {
     if [[ "$c" == gaming && "${WANTED[gaming]}" == 0 ]]; then WANTED[single]=0; WANTED[boot]=0; fi
     # Where to boot to is part of the conversion, too.
     if [[ "$c" == boot && "${WANTED[boot]}" == 1 ]]; then WANTED[gaming]=1; fi
-    # The kernel pin is opt-out: ticked along with Steam Machine support.
-    if [[ "$c" == machine ]]; then WANTED[kpin]=${WANTED[machine]}; fi
+    # The kernel pin is opt-in (the power-off fix made it optional).
+    if [[ "$c" == machine && "${WANTED[machine]}" == 0 ]]; then WANTED[kpin]=0; fi
     if [[ "$c" == kpin && "${WANTED[kpin]}" == 1 ]]; then WANTED[machine]=1; fi
     # HDMI refresh boost and the BIOS update sit under Steam Machine support;
     # the boost also needs the pinned kernel (newer kernels don't need it).

@@ -5,6 +5,23 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.2.0 - 2026-09-27
+
+- **feat: Power-off fix for the Steam Machine; the kernel pin is optional**
+  - With kernels 7.2 and newer the Steam Machine started again right after
+    shutting down: Linux 7.2 keeps the wake bit the firmware sets on GPIO
+    pin 18, which Valve's own kernel clears in a patch that won't reach
+    CachyOS. Steam Machine support now builds a small module with DKMS for
+    every kernel that clears it right before power-off. Tested with
+    CachyOS 7.2.8: stays off, and without the module it rebooted.
+  - The kernel pin is no longer ticked with Steam Machine support or on a
+    first run; it stays available (HDMI refresh boost needs it). An
+    existing pin is kept. Steam Machine support from before 2.2.0 is
+    ticked in the menu to add the fix.
+  - Module sources and patches live in `patches/` instead of inside the
+    shell code; the single-file build embeds them. The Steam Machine CEC
+    driver change is now `patches/cros-ec-cec-single-port.patch`.
+
 ## 2.1.0 - 2026-09-26
 
 - **feat(ui): Manage button for HDMI refresh boost**

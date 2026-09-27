@@ -208,11 +208,36 @@ upset CEC for the TV's other devices
 Turning it off removes the packages again (`linuxconsole` only if the
 wizard installed it).
 
+## Power-off fix (Steam Machine)
+
+With kernels 7.2 and newer a Steam Machine starts again right after
+powering off. Linux 7.2 stopped clearing the S4/S5 wake bits at probe
+(`pinctrl-amd: Don't clear S4 wake bits at probe`), and the firmware leaves
+that bit set on GPIO pin 18 (`_SB.PCI0.GPP6`). Valve's own kernel
+(`linux-neptune-72`) clears it at probe on Fremont, in a patch marked not
+for upstream ("until the firmware is fixed"), so CachyOS and mainline won't
+get it.
+
+Steam Machine support builds a small module with DKMS for every installed
+kernel, `steamify-fremont-poweroff` (source in
+[`patches/steamify-fremont-poweroff.c`](patches/steamify-fremont-poweroff.c)).
+It only loads on Fremont (DMI board name) and touches one register: right
+before power-off (a `SYS_OFF_MODE_POWER_OFF_PREPARE` handler, after the
+drivers have shut down) it clears that pin's S4/S5 wake bit. On a kernel
+that already clears it, it does nothing. It logs the pin's state at load:
+`dmesg | grep 'GPIO 18'`; `/sys/kernel/debug/gpio` shows the S4/S5 column.
+Tested on a Steam Machine with `linux-cachyos-bore` 7.2.8: it stayed off
+three times in a row, and rebooted right away with the module unloaded.
+
+Steam Machine support set up before 2.2.0 has no power-off fix; the menu
+ticks it, so a normal run adds it.
+
 ## Kernel pin (Steam Machine)
 
-With CachyOS kernels newer than 7.1.6 a Steam Machine reboots instead of
-shutting down. The **Pin the kernel** sub-option (ticked along with Steam
-Machine support) installs `linux-cachyos` and `linux-cachyos-headers`
+With CachyOS kernels newer than 7.1.6 a Steam Machine rebooted instead of
+shutting down; the power-off fix above handles that now, so the pin is
+optional. The **Pin the kernel** sub-option (off by default; HDMI refresh
+boost needs it) installs `linux-cachyos` and `linux-cachyos-headers`
 7.1.6-1 and adds them to `IgnorePkg` in `/etc/pacman.conf`, so updates skip
 them. DKMS builds the LED driver for it; restart to boot it.
 
@@ -356,8 +381,10 @@ immediately, which can turn into a loop - see
 | `lib/bios.sh` | Update BIOS (Steam Machine, opt-in): current/newest version, double confirmation, fwupd |
 | `lib/cec.sh` | HDMI-CEC: Valve's `cecd` and friends from its `holo` repository |
 | `lib/steam-machine.sh` | Steam Machine support: LED driver, LED access, steamos-manager; kernel pin |
-| `lib/hdmi-refresh.sh` | HDMI refresh boost (Steam Machine, pinned kernel): EDID over DDC, calculated steps, live test, `drm.edid_firmware` |
-| `.github/tools/bundle.sh` | Builds the single-file version (`dist/steamify.sh`) |
+| `lib/fremont-poweroff.sh` | Steam Machine support: the power-off fix (DKMS module from `patches/`) |
+| `lib/hdmi-refresh.sh` | HDMI refresh boost (Steam Machine, pinned kernel): EDID over DDC, calculated steps, live test, per-display EDID hotplug script |
+| `patches/` | Module sources and patches the scripts build or apply (`patch_file`); see its README |
+| `.github/tools/bundle.sh` | Builds the single-file version (`dist/steamify.sh`), with `patches/` embedded |
 | `.github/workflows/bundle.yml` | Builds and checks it on every push; publishes it on `main` |
 
 The single-file version is generated: on every push to `main`, GitHub

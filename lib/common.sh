@@ -6,6 +6,9 @@ c_reset="\033[0m"; c_bold="\033[1m"; c_green="\033[32m"; c_yellow="\033[33m"; c_
 
 info()  { echo -e "${c_cyan}[INFO]${c_reset} $*"; }
 ok()    { echo -e "${c_green}[OK]${c_reset} $*"; }
+# patch_file <name>: a file from patches/ (module sources, patches). The
+# single-file build replaces this with one that has them embedded.
+patch_file() { cat "$SCRIPT_DIR/patches/$1"; }
 warn()  { echo -e "${c_yellow}[WARN]${c_reset} $*"; }
 err()   { echo -e "${c_red}[ERROR] $*${c_reset}" >&2; }
 ask_yn() {
