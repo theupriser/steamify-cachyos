@@ -33,8 +33,8 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `VERSION` whenever what `<id>_enable` sets up changes (a new component gets
   one too): installs recorded with an older version
   are ticked and re-applied ("update" in the plan and the app). New default
-  sub-options are ticked for installs whose parent is on (`feature_new`,
-  shown as "new").
+  options are ticked for installs whose parent (top-level: `gaming`) is on
+  (`feature_new`, shown as "new").
   Status still comes from the system; don't add ad-hoc `<id>_repair` checks
   for new changes.
 - **Reversibility.** Every per-user KDE setting a component changes goes
@@ -232,8 +232,9 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `linux-cachyos` is clang-built, `-bore` GCC-built: let DKMS pick the
   compiler, never pass `LLVM=1`. Test shutdown on the real machine for every
   new major kernel.
-- VRAM booster (`vram`, `lib/vram-booster.sh`, a default sub-option of
-  `machine`, 2.3.0): CachyOS's `dmemcg-booster` (system + user service) and
+- VRAM booster (`vram`, `lib/vram-booster.sh`, top-level, ticked by
+  default, 2.3.0; only available when `/sys/fs/cgroup/dmem.capacity` lists a
+  region): CachyOS's `dmemcg-booster` (system + user service) and
   `plasma-foreground-booster`, like SteamOS 3.9's VRAM management. The
   latter only starts with `kcgroupsrc [Foreground Booster] autostart=true`
   (set with `kset`). Disable removes only the packages it installed

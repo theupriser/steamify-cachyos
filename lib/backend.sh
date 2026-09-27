@@ -163,8 +163,7 @@ backend_apply() {
     [[ "${WANTED[single]:-0}" == 1 ]] && WANTED[gaming]=1
     [[ "${WANTED[gaming]:-0}" == 0 ]] && { WANTED[single]=0; WANTED[boot]=0; }
     [[ "${WANTED[poweroff]:-0}" == 1 ]] && WANTED[machine]=1
-    [[ "${WANTED[vram]:-0}" == 1 ]] && WANTED[machine]=1
-    [[ "${WANTED[machine]:-0}" == 0 ]] && { WANTED[poweroff]=0; WANTED[vram]=0; }
+    [[ "${WANTED[machine]:-0}" == 0 ]] && WANTED[poweroff]=0
     [[ "${WANTED[kpin]:-0}" == 1 ]] && WANTED[machine]=1
     [[ "${WANTED[machine]:-0}" == 0 ]] && WANTED[kpin]=0
     [[ "${WANTED[hdmi]:-0}" == 1 ]] && { WANTED[machine]=1; WANTED[kpin]=1; }
