@@ -16,23 +16,7 @@ steam_enable() {
     systemd_user_dir="$HOME/.config/systemd/user"
     mkdir -p "$systemd_user_dir"
 
-    cat << 'EOF' > "$systemd_user_dir/steam-desktop-autostart.service"
-[Unit]
-Description=Steam Background Autostart for Virtual Keyboard
-After=graphical-session.target
-PartOf=graphical-session.target
-
-[Service]
-Type=simple
-# Only in the Plasma desktop session; gamescope-session starts its own Steam.
-ExecCondition=/bin/sh -c '[ "$XDG_CURRENT_DESKTOP" = KDE ]'
-ExecStart=/usr/bin/steam -silent
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=graphical-session.target
-EOF
+    service_file steam-desktop-autostart.service > "$systemd_user_dir/steam-desktop-autostart.service"
 
     # Clean out old .desktop shortcut so they don't fight
     rm -f "$HOME/.config/autostart/steam.desktop"

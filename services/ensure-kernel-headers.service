@@ -1,0 +1,11 @@
+[Unit]
+Description=Install missing kernel headers so DKMS builds leds-valve for every kernel
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=@HEADERS_SCRIPT@
+
+[Install]
+WantedBy=multi-user.target

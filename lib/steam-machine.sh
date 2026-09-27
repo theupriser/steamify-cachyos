@@ -312,19 +312,7 @@ echo "Installing missing kernel headers: ${missing[*]}"
 exec pacman -S --needed --noconfirm "${missing[@]}"
 EOF
     sudo chmod 755 "$HEADERS_SCRIPT"
-    sudo tee "$HEADERS_UNIT" > /dev/null << EOF
-[Unit]
-Description=Install missing kernel headers so DKMS builds leds-valve for every kernel
-Wants=network-online.target
-After=network-online.target
-
-[Service]
-Type=oneshot
-ExecStart=$HEADERS_SCRIPT
-
-[Install]
-WantedBy=multi-user.target
-EOF
+    service_file ensure-kernel-headers.service HEADERS_SCRIPT="$HEADERS_SCRIPT" | sudo tee "$HEADERS_UNIT" > /dev/null
     sudo systemctl daemon-reload
     sudo systemctl enable ensure-kernel-headers.service
 }

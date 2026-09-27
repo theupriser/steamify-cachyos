@@ -1,0 +1,11 @@
+[Unit]
+Description=Steamify CachyOS: boot into the desktop instead of gaming mode
+Before=display-manager.service sddm.service plasmalogin.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/steamos/steam-set-session plasma.desktop
+ExecStart=/bin/sh -c '[ -x @SESSION_SYNC@ ] && exec @SESSION_SYNC@ || true'
+
+[Install]
+WantedBy=graphical.target

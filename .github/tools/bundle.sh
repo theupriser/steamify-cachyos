@@ -31,23 +31,28 @@ version="v$(grep -oP '^VERSION=\K.*' "$entry"), $(git describe --always --dirty 
         sed -e '1{/^#!/d}' -e '/^# Sourced by steamify.sh/d' "lib/$lib.sh"
         echo
     done
-    # patches/ embedded: replaces lib/common.sh's patch_file, which reads
-    # them from the checkout.
-    echo "# ----- patches/ -----"
-    echo "patch_file() {"
-    echo '    case "$1" in'
-    for f in patches/*; do
-        [[ "$f" == patches/README.md ]] && continue
-        grep -q '^STEAMIFY_PATCH_EOF$' "$f" && { echo "bundle: $f contains the heredoc delimiter" >&2; exit 1; }
-        echo "        $(basename "$f")) cat << 'STEAMIFY_PATCH_EOF'"
-        cat "$f"
-        echo "STEAMIFY_PATCH_EOF"
-        echo "            ;;"
-    done
-    echo '        *) return 1 ;;'
-    echo '    esac'
-    echo "}"
-    echo
+    # patches/ and services/ embedded: replace lib/common.sh's patch_file
+    # and service_raw, which read them from the checkout.
+    embed() {
+        local fn="$1" dir="$2" f
+        echo "# ----- $dir/ -----"
+        echo "$fn() {"
+        echo '    case "$1" in'
+        for f in "$dir"/*; do
+            [[ "$f" == "$dir/README.md" ]] && continue
+            grep -q '^STEAMIFY_PATCH_EOF$' "$f" && { echo "bundle: $f contains the heredoc delimiter" >&2; exit 1; }
+            echo "        $(basename "$f")) cat << 'STEAMIFY_PATCH_EOF'"
+            cat "$f"
+            echo "STEAMIFY_PATCH_EOF"
+            echo "            ;;"
+        done
+        echo '        *) return 1 ;;'
+        echo '    esac'
+        echo "}"
+        echo
+    }
+    embed patch_file patches
+    embed service_raw services
     echo "# ----- steamify.sh -----"
     echo "main() {"
     # Everything after the source loop is the entry point's body.

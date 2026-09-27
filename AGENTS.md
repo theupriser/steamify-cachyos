@@ -19,6 +19,12 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   apply, never inline in the shell code. Read them with `patch_file
   <name>` (`lib/common.sh`, from the checkout); the bundle embeds every file
   in `patches/` and overrides `patch_file`. Add new ones to its README.
+- `services/` - the systemd units the scripts install (`.service`,
+  `.timer`, `.path`), never inline in the shell code. Read them with
+  `service_file <name> [KEY=value...]` (`lib/common.sh`), which fills in
+  `@KEY@` placeholders; the bundle embeds every file in `services/` too
+  (`service_raw`). Add new ones to its README. Small drop-ins for other
+  packages' units stay inline.
 - `ui/` - the app: `steamify-ui` (PySide6; runs `steamify.sh --backend`,
   `lib/backend.sh`) and `ui/qml/`: `Main.qml` (window, header, which screen
   shows), `AppState.qml` (all state and logic, input actions), one

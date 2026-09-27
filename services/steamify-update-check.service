@@ -1,0 +1,14 @@
+[Unit]
+Description=Steamify: check for a new release
+After=plasma-workspace.target
+# The tray icon goes with a logout.
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+# The short wait at login lets the tray come up first (in the script: an
+# ExecStartPre sleep runs into the start timeout).
+ExecStart=@NOTIFY_SCRIPT@ --delay 60
+
+[Install]
+WantedBy=plasma-workspace.target

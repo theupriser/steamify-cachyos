@@ -211,28 +211,9 @@ EOF
     # 7. systemd path watcher + service
     info "Installing systemd path watcher so session switches take effect immediately"
 
-    sudo tee /etc/systemd/system/sync-steamos-session.path > /dev/null << 'EOF'
-[Unit]
-Description=Watch for steamos session changes
+    service_file sync-steamos-session.path | sudo tee /etc/systemd/system/sync-steamos-session.path > /dev/null
 
-[Path]
-PathModified=/etc/plasmalogin.conf.d/zz-steamos-autologin.conf
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-    sudo tee /etc/systemd/system/sync-steamos-session.service > /dev/null << 'EOF'
-[Unit]
-Description=Sync steamos session selection into plasmalogin.conf
-# Session switches can come in bursts (switch + autologin reset); never
-# let systemd's start rate limit silently stop the bridge.
-StartLimitIntervalSec=0
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/sync-steamos-session.sh
-EOF
+    service_file sync-steamos-session.service | sudo tee /etc/systemd/system/sync-steamos-session.service > /dev/null
 
     sudo systemctl daemon-reload
     sudo systemctl enable --now sync-steamos-session.path

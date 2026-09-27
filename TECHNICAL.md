@@ -380,8 +380,9 @@ immediately, which can turn into a loop - see
 | `lib/fremont-poweroff.sh` | Steam Machine support: the power-off fix (DKMS module from `patches/`) |
 | `lib/update-notifier.sh` | Update notifications: the notifier from `patches/` and its user timer |
 | `lib/vram-booster.sh` | VRAM booster (`dmemcg-booster`, `plasma-foreground-booster`) |
+| `services/` | The systemd units the scripts install (`service_file`, `@KEY@` placeholders); see its README |
 | `patches/` | Module sources and patches the scripts build or apply (`patch_file`); see its README |
-| `.github/tools/bundle.sh` | Builds the single-file version (`dist/steamify.sh`), with `patches/` embedded |
+| `.github/tools/bundle.sh` | Builds the single-file version (`dist/steamify.sh`), with `patches/` and `services/` embedded |
 | `.github/workflows/bundle.yml` | Builds and checks it on every push; publishes it on `main` |
 
 The single-file version is generated: on every push to `main`, GitHub

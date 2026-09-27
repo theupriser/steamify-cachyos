@@ -6,7 +6,7 @@
 #   curl -fsSL https://github.com/theupriser/steamify-cachyos/releases/latest/download/steamify.sh | bash
 #   curl -fsSL https://github.com/theupriser/steamify-cachyos/releases/download/latest/steamify.sh | bash
 # Each release also has the app (v2): steamify-app.tar.gz (ui/, steamify.sh,
-# lib/, patches/, the icon) and its launcher, run with:
+# lib/, patches/, services/, the icon) and its launcher, run with:
 #   curl -fsSL https://github.com/theupriser/steamify-cachyos/releases/latest/download/steamify-app.sh | bash
 # A push to feat/v2-ui (the app, not released yet) updates the pre-release
 # v2-ui-preview instead, whose launcher gets that build:
@@ -36,7 +36,7 @@ jobs:
           .github/tools/bundle.sh dist/steamify.sh
           # The app: sources, not the single-file build (its backend mode runs
           # steamify.sh from its own folder).
-          tar -czf dist/steamify-app.tar.gz steamify.sh lib patches ui assets/steam-gaming-settings.svg LICENSE.md
+          tar -czf dist/steamify-app.tar.gz steamify.sh lib patches services ui assets/steam-gaming-settings.svg LICENSE.md
           cp ui/steamify-app.sh dist/steamify-app.sh
 
       - name: Check

@@ -39,34 +39,8 @@ notify_enable() {
     patch_file steamify-notifier.py | install_executable "$NOTIFY_SCRIPT" 755 ||
         { err "Couldn't write $NOTIFY_SCRIPT."; return 1; }
     mkdir -p "$NOTIFY_UNITS"
-    # PartOf the graphical session: the tray icon goes with a logout. The
-    # short wait at login lets the tray come up first (in the script: an
-    # ExecStartPre sleep runs into the start timeout).
-    cat > "$NOTIFY_UNITS/$NOTIFY_NAME.service" << EOF
-[Unit]
-Description=Steamify: check for a new release
-After=plasma-workspace.target
-PartOf=graphical-session.target
-
-[Service]
-Type=simple
-ExecStart=$NOTIFY_SCRIPT --delay 60
-
-[Install]
-WantedBy=plasma-workspace.target
-EOF
-    cat > "$NOTIFY_UNITS/$NOTIFY_NAME.timer" << EOF
-[Unit]
-Description=Steamify: check for a new release daily
-
-[Timer]
-OnCalendar=daily
-RandomizedDelaySec=1h
-Persistent=true
-
-[Install]
-WantedBy=timers.target
-EOF
+    service_file "$NOTIFY_NAME.service" NOTIFY_SCRIPT="$NOTIFY_SCRIPT" > "$NOTIFY_UNITS/$NOTIFY_NAME.service"
+    service_file "$NOTIFY_NAME.timer" > "$NOTIFY_UNITS/$NOTIFY_NAME.timer"
     systemctl --user daemon-reload
     systemctl --user enable "$NOTIFY_NAME.service" >/dev/null 2>&1 &&
         systemctl --user enable --now "$NOTIFY_NAME.timer" >/dev/null 2>&1 ||
