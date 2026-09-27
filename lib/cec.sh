@@ -34,11 +34,11 @@ cec_link_steamos_manager() {
     # called by Steam Machine support, which installs steamos-manager after
     # this item ran.
     pacman -Q steamos-manager >/dev/null 2>&1 || return 0
-    systemctl --user daemon-reload
-    systemctl --user enable steamos-manager-configure-cecd.service 2>/dev/null
-    systemctl --user start steamos-manager-configure-cecd.service 2>/dev/null
-    systemctl --user restart cecd.service 2>/dev/null
-    systemctl --user restart steamos-manager.service 2>/dev/null
+    user_systemctl daemon-reload
+    user_systemctl enable steamos-manager-configure-cecd.service 2>/dev/null
+    user_systemctl start steamos-manager-configure-cecd.service 2>/dev/null
+    user_systemctl restart cecd.service 2>/dev/null
+    user_systemctl restart steamos-manager.service 2>/dev/null
     return 0
 }
 
@@ -51,10 +51,10 @@ cec_status() { cec_installed && [[ -f "$CEC_STEAM_DROPIN" ]] && cec_driver_ok; }
 
 cec_reload_driver() {
     # cecd keeps /dev/cec0 open, so the old module can't be unloaded under it.
-    systemctl --user stop cecd.service 2>/dev/null
+    user_systemctl stop cecd.service 2>/dev/null
     sudo modprobe -r cros_ec_cec 2>/dev/null
     sudo modprobe cros_ec_cec 2>/dev/null
-    systemctl --user start cecd.service 2>/dev/null
+    user_systemctl start cecd.service 2>/dev/null
 }
 
 cec_driver_enable() {
@@ -154,10 +154,10 @@ cec_enable() {
         sudo tee "$CEC_STEAM_ENV" >/dev/null
     printf '%s\n' "# Written by Steamify: overrides STEAM_ENABLE_CEC=0 from the gaming mode script." \
         '[Service]' "EnvironmentFile=-$CEC_STEAM_ENV" | sudo tee "$CEC_STEAM_DROPIN" >/dev/null
-    systemctl --user daemon-reload
+    user_systemctl daemon-reload
     cec_link_steamos_manager
     if compgen -G "/dev/cec*" >/dev/null; then
-        systemctl --user restart cecd.service 2>/dev/null
+        user_systemctl restart cecd.service 2>/dev/null
         ok "HDMI-CEC on ($(cd /dev && echo cec*)); Steam shows its settings from the next gaming mode start."
         info "Turn on CEC on your TV too (e.g. Sony: BRAVIA Sync, Samsung: Anynet+, LG: SimpLink)."
     else
@@ -168,20 +168,20 @@ cec_enable() {
 
 cec_disable() {
     info "Removing HDMI-CEC..."
-    systemctl --user disable --now cecd.service cec-audio-control.socket cec-audio-control.service 2>/dev/null
-    systemctl --user disable steamos-manager-configure-cecd.service 2>/dev/null
+    user_systemctl disable --now cecd.service cec-audio-control.socket cec-audio-control.service 2>/dev/null
+    user_systemctl disable steamos-manager-configure-cecd.service 2>/dev/null
     sudo pacman -Rns --noconfirm "${CEC_PKGS[@]}" 2>/dev/null
     cec_driver_disable
     sudo rm -f "$CEC_ORDER_DROPIN" "$CEC_STEAM_DROPIN" "$CEC_STEAM_ENV"
     sudo rmdir "$(dirname "$CEC_ORDER_DROPIN")" "$(dirname "$CEC_STEAM_DROPIN")" "$(dirname "$CEC_STEAM_ENV")" 2>/dev/null
-    systemctl --user daemon-reload
+    user_systemctl daemon-reload
     if [[ -n "$(state_get cec installed_linuxconsole)" ]]; then
         sudo pacman -Rns --noconfirm linuxconsole 2>/dev/null
         state_clear cec
     fi
     sudo udevadm control --reload
-    systemctl --user is-active -q steamos-manager.service 2>/dev/null &&
-        systemctl --user restart steamos-manager.service
+    user_systemctl is-active -q steamos-manager.service 2>/dev/null &&
+        user_systemctl restart steamos-manager.service
     ok "HDMI-CEC removed."
 }
 
@@ -189,5 +189,5 @@ cec_overview() {
     # For the menu's kernel overview.
     local dev="none"
     compgen -G "/dev/cec*" >/dev/null && dev="$(cd /dev && echo cec*)"
-    echo "CEC devices: $dev  cecd: $(systemctl --user is-active cecd 2>/dev/null)"
+    echo "CEC devices: $dev  cecd: $(user_systemctl is-active cecd 2>/dev/null)"
 }

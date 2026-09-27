@@ -12,8 +12,8 @@ NOTIFY_NAME=steamify-update-check
 
 notify_status() {
     [[ -f "$NOTIFY_SCRIPT" ]] &&
-        systemctl --user is-enabled -q "$NOTIFY_NAME.timer" 2>/dev/null &&
-        systemctl --user is-enabled -q "$NOTIFY_NAME.service" 2>/dev/null
+        user_systemctl is-enabled -q "$NOTIFY_NAME.timer" 2>/dev/null &&
+        user_systemctl is-enabled -q "$NOTIFY_NAME.service" 2>/dev/null
 }
 
 notify_seen() {
@@ -40,19 +40,19 @@ notify_enable() {
     mkdir -p "$NOTIFY_UNITS"
     service_file "$NOTIFY_NAME.service" NOTIFY_SCRIPT="$NOTIFY_SCRIPT" > "$NOTIFY_UNITS/$NOTIFY_NAME.service"
     service_file "$NOTIFY_NAME.timer" > "$NOTIFY_UNITS/$NOTIFY_NAME.timer"
-    systemctl --user daemon-reload
-    systemctl --user enable "$NOTIFY_NAME.service" >/dev/null 2>&1 &&
-        systemctl --user enable --now "$NOTIFY_NAME.timer" >/dev/null 2>&1 ||
+    user_systemctl daemon-reload
+    user_systemctl enable "$NOTIFY_NAME.service" >/dev/null 2>&1 &&
+        user_systemctl enable --now "$NOTIFY_NAME.timer" >/dev/null 2>&1 ||
         { err "Enabling the update check failed."; return 1; }
     state_set notify seen "$VERSION"
     ok "Update notifications on: you'll get a notification when there's a new Steamify."
 }
 
 notify_disable() {
-    systemctl --user disable --now "$NOTIFY_NAME.timer" "$NOTIFY_NAME.service" >/dev/null 2>&1
+    user_systemctl disable --now "$NOTIFY_NAME.timer" "$NOTIFY_NAME.service" >/dev/null 2>&1
     rm -f "$NOTIFY_UNITS/$NOTIFY_NAME.service" "$NOTIFY_UNITS/$NOTIFY_NAME.timer" "$NOTIFY_SCRIPT"
     rmdir "$STEAMIFY_BIN" 2>/dev/null || true
-    systemctl --user daemon-reload
+    user_systemctl daemon-reload
     state_clear notify
     ok "Update notifications off."
 }

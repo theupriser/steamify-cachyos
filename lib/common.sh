@@ -44,6 +44,30 @@ require_root_helper() {
     fi
 }
 
+user_session() {
+    # A running user systemd and session bus. Not in the installer's chroot,
+    # where the ISO applies Steamify for a user who has never logged in.
+    [[ -S "${XDG_RUNTIME_DIR:-/nonexistent}/bus" ]]
+}
+
+user_systemctl() {
+    # systemctl --user, also without a session: then only the unit files
+    # change (enable/disable through --root); starting and stopping is left
+    # to the first login, which starts what's enabled anyway.
+    if user_session; then systemctl --user "$@"; return; fi
+    local a verb="" args=()
+    for a in "$@"; do
+        [[ "$a" == --now ]] && continue
+        [[ -z "$verb" && "$a" != -* ]] && verb="$a"
+        args+=("$a")
+    done
+    case "$verb" in
+        enable|disable|is-enabled|mask|unmask) systemctl --user --root=/ "${args[@]}" ;;
+        is-active) return 1 ;;
+        *) return 0 ;;
+    esac
+}
+
 plasma_applets() {
     # Print "containment:applet" for every applet of plugin $1 in the
     # user's Plasma layout, for kwriteconfig6 --group paths.

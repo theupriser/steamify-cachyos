@@ -54,9 +54,17 @@ theme_enable() {
         # Only remove it again on disable if we were the ones installing it.
         state_set theme installed_pkg 1
     fi
+    # Without a session (the ISO's installer), for a user who has never
+    # logged in: the layout still CachyOS's default from /etc/skel is
+    # removed (after the backup below), and Plasma builds its first layout
+    # from the look-and-feel package, as --resetLayout does below.
+    local offline=false layout=~/.config/plasma-org.kde.plasma.desktop-appletsrc
     if [[ -z "${WAYLAND_DISPLAY:-}${DISPLAY:-}" ]]; then
-        err "Run this from the Plasma desktop: applying the Vapor layout needs a running Plasma session."
-        return 1
+        if [[ -e "$layout" ]] && ! cmp -s "$layout" "/etc/skel/.config/${layout##*/}"; then
+            err "Run this from the Plasma desktop: applying the Vapor layout needs a running Plasma session."
+            return 1
+        fi
+        offline=true
     fi
 
     # Only the first time, so a re-apply doesn't overwrite the originals.
@@ -87,6 +95,12 @@ theme_enable() {
     kset theme kdeglobals General ColorScheme --delete
     plasma-apply-colorscheme Vapor >/dev/null 2>&1 || true
 
+    if [[ "$offline" == true ]]; then
+        rm -f ~/.config/plasma-org.kde.plasma.desktop-appletsrc ~/.config/plasmashellrc
+        extras_enable || warn "SteamOS desktop extras not installed (see above); the theme itself is on."
+        ok "Vapor theme set; Plasma lays out the Vapor desktop at the first login."
+        return 0
+    fi
     info "Applying the Vapor theme with its desktop and window layout..."
     # --resetLayout is "Desktop and window layout" in System Settings: the
     # SteamOS panel, launcher icon and wallpaper. It needs plasmashell up.

@@ -22,18 +22,18 @@ steam_enable() {
     rm -f "$HOME/.config/autostart/steam.desktop"
 
     # Reload user systemd context and activate the background loop
-    systemctl --user daemon-reload
-    systemctl --user enable --now steam-desktop-autostart.service
+    user_systemctl daemon-reload
+    user_systemctl enable --now steam-desktop-autostart.service
 
     ok "Steam UI parameters and keyboard autostart deployed successfully."
 }
 
 steam_disable() {
     info "Removing Steam desktop autostart..."
-    systemctl --user disable --now steam-desktop-autostart.service 2>/dev/null
+    user_systemctl disable --now steam-desktop-autostart.service 2>/dev/null
     rm -f "$HOME/.config/systemd/user/steam-desktop-autostart.service" \
         "$HOME/.config/environment.d/99-kde-virtual-keyboard.conf"
-    systemctl --user daemon-reload
+    user_systemctl daemon-reload
     ok "Steam desktop settings removed (takes full effect at next login)."
 }
 

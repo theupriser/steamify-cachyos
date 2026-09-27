@@ -269,6 +269,16 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   latter only starts with `kcgroupsrc [Foreground Booster] autostart=true`
   (set with `kset`). Disable removes only the packages it installed
   (`state_get vram installed_pkgs`).
+- Install-time mode (`steamify.sh --defaults`, 2.6.0): applies what the menu
+  would preselect, no menu or prompts (needs passwordless sudo). The Steam
+  Machine ISO ([steammachine-cachyos-live-iso](https://github.com/theupriser/steammachine-cachyos-live-iso))
+  runs it in the installer for a user who has never logged in: no session
+  bus, user systemd or plasmashell. So every `systemctl --user` goes through
+  `user_systemctl` (`lib/common.sh`; without a session only unit files change,
+  via `--root=/`), and the theme, when the layout is still `/etc/skel`'s,
+  removes it so Plasma builds Vapor's layout at the first login. What needs
+  that layout (single user's launcher) runs then, from a one-time autostart
+  (`lib/first-login.sh`, `--first-login`) that also opens the app.
 - `Relogin=true` means a gamescope that fails to start is relaunched in a
   tight loop; keep that in mind when changing session handling.
 

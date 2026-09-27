@@ -5,9 +5,13 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.6.0 - 2026-09-27
+
+- **feat: --defaults applies the default setup without the menu, also from an installer (no session): the base for a Steam Machine ISO**
+
 ## 2.5.2 - 2026-09-27
 
-- **docs: README screenshot at 2.5.2: everything on, nothing to update**
+- `0c96bed` **docs: README screenshot at 2.5.2: everything on, nothing to update**
 
 ## 2.5.1 - 2026-09-27
 

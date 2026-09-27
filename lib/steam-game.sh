@@ -72,8 +72,8 @@ steamgame_edit() {
     fi
     "$1"; local rc=$?
     if [[ "$was_running" == true ]]; then
-        if systemctl --user is-enabled -q steam-desktop-autostart.service 2>/dev/null; then
-            systemctl --user start steam-desktop-autostart.service
+        if user_systemctl is-enabled -q steam-desktop-autostart.service 2>/dev/null; then
+            user_systemctl start steam-desktop-autostart.service
         else
             systemd-run --user --collect -q steam -silent >/dev/null 2>&1
         fi
