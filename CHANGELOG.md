@@ -7,7 +7,8 @@ one per merged pull request.
 
 ## 2.5.1 - 2026-09-27
 
-- **feat: Add as non-Steam game: Steamify in the Steam library, under the shortcut; controller works when started from Steam**
+- **docs: README screenshot at 2.5.1 with Add as non-Steam game**
+- `e86ddcc` **feat: Add as non-Steam game: Steamify in the Steam library, under the shortcut; controller works when started from Steam**
 - `389bc33` **fix(ui): B never quits (Steam sends Esc for it), Ctrl+Q does; started from Steam, the hints show the Steam Controller's buttons**
 - `c6c1150` **fix(ui): Enter selects (a Steam Controller's A in Steam's desktop layout); Ctrl+Enter reviews and applies**
 - `98e2eff` **fix(ui): Started from Steam, the app runs without Steam's overlay (Qt aborted) and stays in the foreground, so Steam Input gives it the controller**
