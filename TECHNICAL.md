@@ -265,9 +265,12 @@ most of the VRAM (8 GB on the Steam Machine) can be pushed into system RAM
 by the desktop and other apps, and stutter. The kernel side is the `dmem`
 cgroup controller (7.2); amdgpu and Intel's xe register their VRAM with it,
 NVIDIA's driver doesn't: with an NVIDIA card the option is shown greyed
-out, with why (`WIZARD_VRAM_FAKE_NVIDIA=1` fakes that for tests). Otherwise
+out, with why, until its driver lists a region: then it's offered like any
+other (`WIZARD_VRAM_FAKE_NVIDIA=1` fakes the grey-out, `WIZARD_VRAM_CAPACITY=<file>`
+reads the regions from a copy, for tests). Otherwise
 the **VRAM booster** option is only shown when
-`/sys/fs/cgroup/dmem.capacity` lists a VRAM region of at least 2 GB (a
+`/sys/fs/cgroup/dmem.capacity` lists a VRAM region (`vram`, or `vidmem`
+as other drivers name it, numbered with several) of at least 2 GB (a
 dedicated GPU; an integrated one registers a small carve-out) or it's already on, and is
 ticked by default; new in 2.3.0, so setups with the SteamOS conversion on
 get it ticked. CachyOS packages the userspace side, which it installs:

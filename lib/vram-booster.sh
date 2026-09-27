@@ -4,7 +4,7 @@
 # are evicted first, so a game that needs most of it doesn't spill into
 # system RAM and stutter. The kernel side is the dmem cgroup controller
 # (7.2; amdgpu and xe register their VRAM, NVIDIA's driver doesn't), so it's
-# only offered when the kernel lists a VRAM region of at least 2 GB. CachyOS packages the userspace
+# only offered when the kernel lists a VRAM region (vram or vidmem) of at least 2 GB. CachyOS packages the userspace
 # side: dmemcg-booster (a system service that enables the controller and
 # sets the limits, plus a user service) and plasma-foreground-booster, which
 # tells it which window is in front on the desktop. The latter only starts
@@ -13,14 +13,20 @@
 
 VRAM_PKGS=(dmemcg-booster plasma-foreground-booster)
 VRAM_MIN_BYTES=$((2 * 1024 * 1024 * 1024))
+# The regions the kernel's dmem controller lists (a file under /sys/fs/cgroup;
+# a variable so tests can point it at a copy).
+VRAM_CAPACITY="${WIZARD_VRAM_CAPACITY:-/sys/fs/cgroup/dmem.capacity}"
 
 vram_supported() {
     # WIZARD_VRAM_FAKE_NVIDIA=1 (tests): as with an NVIDIA card.
     [[ -n "${WIZARD_VRAM_FAKE_NVIDIA:-}" ]] && return 1
     # Only for a GPU with its own VRAM: an integrated GPU registers a small
     # carve-out too, but mostly uses system RAM, so there's little to boost.
-    awk -v min="$VRAM_MIN_BYTES" '$1 ~ /\/vram$/ && $2 >= min { found = 1 } END { exit !found }' \
-        /sys/fs/cgroup/dmem.capacity 2>/dev/null
+    # By what the driver registers, not the brand: amdgpu and xe name the
+    # region "vram", other drivers "vidmem" (numbered with several), so an
+    # NVIDIA driver that registers its memory is offered right away.
+    awk -v min="$VRAM_MIN_BYTES" '$1 ~ /\/(vram|vidmem)[0-9]*$/ && $2 >= min { found = 1 } END { exit !found }' \
+        "$VRAM_CAPACITY" 2>/dev/null
 }
 
 vram_nvidia() {
@@ -33,7 +39,7 @@ vram_nvidia() {
     return 1
 }
 
-# Shown where it works, and greyed out with an NVIDIA card, whose driver
+# Shown where it works, and greyed out with an NVIDIA card whose driver
 # doesn't register its VRAM with the kernel (yet): so it's clear why it
 # can't be turned on. Hidden elsewhere (integrated graphics, older kernel).
 vram_available() { vram_supported || vram_status || vram_nvidia; }
