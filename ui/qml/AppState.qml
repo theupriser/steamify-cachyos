@@ -261,7 +261,11 @@ Item {
         else if (k === Qt.Key_Left) act("left");
         else if (k === Qt.Key_Right) act("right");
         else if (k === Qt.Key_Space) act("accept");
-        else if (k === Qt.Key_Return || k === Qt.Key_Enter) act(Input.type === "remote" || screen !== "menu" ? "accept" : "apply");
+        // Enter selects, like A on a controller: Steam's desktop layout sends
+        // Enter for a Steam Controller's A (and Space for Y). Ctrl+Enter
+        // goes straight to Review & apply.
+        else if ((k === Qt.Key_Return || k === Qt.Key_Enter) && (e.modifiers & Qt.ControlModifier)) act("apply");
+        else if (k === Qt.Key_Return || k === Qt.Key_Enter) act("accept");
         else if (k === Qt.Key_Escape || k === Qt.Key_Back || k === Qt.Key_Backspace) { if (!e.isAutoRepeat) act("back"); }
         else if (k === Qt.Key_R) act("reapply");
         else return;
