@@ -7,7 +7,8 @@ one per merged pull request.
 
 ## 2.4.0 - 2026-09-27
 
-- **docs: Screenshot of the app's menu in the README**
+- **docs: README screenshot shows every option**
+- `89337a7` **docs: Screenshot of the app's menu in the README**
 - `03a8b8c` **chore: Version 2.4.0**
 - `e699a3f` **refactor(ui): One QML file per screen; the HDMI boost's setup screens and backend commands removed**
 
