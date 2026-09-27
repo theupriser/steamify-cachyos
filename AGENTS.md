@@ -19,6 +19,13 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   apply, never inline in the shell code. Read them with `patch_file
   <name>` (`lib/common.sh`, from the checkout); the bundle embeds every file
   in `patches/` and overrides `patch_file`. Add new ones to its README.
+- `ui/` - the app: `steamify-ui` (PySide6; runs `steamify.sh --backend`,
+  `lib/backend.sh`) and `ui/qml/`: `Main.qml` (window, header, which screen
+  shows), `AppState.qml` (all state and logic, input actions), one
+  `*Screen.qml` per screen, small widgets (`Btn`, `Chip`, `Badge`, ...), and
+  the singletons `Theme` (colours, fonts), `Texts` (item texts) and `Input`
+  (controller/keyboard/remote and its button names), listed in `qmldir`.
+  Screens get the `AppState` as `app` and only show it or call its functions.
 - `lib/*.sh` - one file per responsibility, each defining functions only
   (no top-level side effects besides constants). See the table in
   `TECHNICAL.md`.
@@ -188,26 +195,10 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   The start script closes its window after a 10-second countdown on success
   and waits for Enter after an error; it uses `pipefail`, or a failed
   download would run an empty script and count as success.
-- HDMI refresh boost (`hdmi`, `lib/hdmi-refresh.sh`): a sub-option of
-  `machine` (like `kpin` and `bios`), only on Fremont with the pinned kernel
-  (stays visible while on); unticking `kpin` unticks it. It needs someone at
-  the screen. Terminal: every step needs a "y" within 15 s
-  (`WIZARD_HDMI_CONFIRM_SECONDS` for scripted tests). App: its own screen
-  (`hdmi-options`, `hdmi-try`, `hdmi-reset` backend commands, the EDID cached
-  in `$XDG_RUNTIME_DIR/steamify-hdmi`), then `apply --hdmi
-  <output>=<w>x<h>:<rates>`; without `--hdmi` the backend refuses it. debugfs is root-only
-  (glob it under sudo), and `edid_override` takes exactly `reset` with no
-  newline. Build the EDID from the DDC read, not from sysfs: a live override
-  replaces the kernel's copy. EDIDs are saved per display
-  (`steamify-<id>.bin`, id = EDID bytes 8-17, listed in
-  `/etc/steamify/hdmi-edid.conf`), never on the kernel command line (that
-  applied to any display on the port): `steamify-edid-hotplug` (boot unit +
-  udev drm hotplug rule) loads the connected display's file, else resets. It
-  records what's loaded in `/run/steamify-edid` before its own
-  `trigger_hotplug`, whose event runs it again. `hdmi_status` is on only
-  while the connected display is boosted; disable forgets only that display
-  (`kpin_disable` forgets all). The app manages the list (`hdmi-forget`,
-  `hdmiDisplays` in status). Pre-2.1.0 setups are moved by `hdmi_migrate`.
+- HDMI refresh boost (`hdmi`, `lib/hdmi-refresh.sh`): retired in 2.2.0
+  (it needed the pinned kernel); only removal is left (see the power-off
+  fix below). `hdmi_enable` refuses. debugfs is root-only (glob it under
+  sudo), and `edid_override` takes exactly `reset` with no newline.
 - Steam Machine CEC driver (`cec_driver_enable`, `lib/cec.sh`): mainline
   `cros_ec_cec` lacks Fremont, so HDMI-CEC builds Valve's copy (evlaV
   `linux-integration`, pinned commit + SHA-256) with DKMS for every kernel.

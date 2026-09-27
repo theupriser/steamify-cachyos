@@ -1,0 +1,36 @@
+// Colours and fonts (from the design).
+pragma Singleton
+import QtQuick
+
+QtObject {
+    readonly property color bg: "#0f1319"
+    readonly property color bar: "#141a22"
+    readonly property color line: "#232c38"
+    readonly property color card: "#161d27"
+    readonly property color cardSel: "#1f2a3a"
+    readonly property color text: "#e6ebf2"
+    readonly property color textHi: "#eef2f7"
+    readonly property color soft: "#c3ccd8"
+    readonly property color mute: "#97a3b4"
+    readonly property color faint: "#8b97a8"
+    readonly property color label: "#b8c3d1"
+    readonly property color accent: "#3ea6ff"
+    readonly property color ink: "#06121f"
+    readonly property color good: "#7fd1a8"
+    readonly property color goodBg: "#173226"
+    readonly property color warn: "#f2a33a"
+    readonly property color warnBg: "#2a2116"
+    readonly property color bad: "#ff9a8a"
+    readonly property color badBg: "#2a1c1c"
+    readonly property color info: "#7cc4ff"
+    readonly property color infoBg: "#1b2b40"
+    readonly property color note: "#1a2230"
+    readonly property color key: "#2a3444"
+    readonly property color button: "#232c38"
+    readonly property color danger: "#8a2c2c"
+    readonly property color dangerBg: "#1d1416"
+    readonly property color dangerLine: "#b33a3a"
+    readonly property string display: "Barlow Semi Condensed"
+    readonly property string body: "IBM Plex Sans"
+    readonly property string mono: "IBM Plex Mono"
+}

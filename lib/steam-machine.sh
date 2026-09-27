@@ -167,9 +167,9 @@ kpin_enable() {
 }
 
 kpin_disable() {
-    # Saved HDMI refresh boost EDIDs are for the pinned kernel only (newer
+    # Saved HDMI refresh boost EDIDs were for the pinned kernel only (newer
     # ones read the whole EDID), also those of displays not connected now.
-    [[ -n "$(hdmi_saved)" ]] && hdmi_forget all
+    hdmi_status && hdmi_forget_all
     remove_kernel_pin
 }
 
