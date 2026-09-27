@@ -4,8 +4,7 @@
 # booting up again. Recent kernels (7.2, and the 6.x, 7.0 and 7.1 updates
 # that got the change backported) keep the S4/S5 wake bit the firmware
 # leaves set on GPIO pin 18 ("pinctrl-amd: Don't clear S4 wake bits at
-# probe"), so the machine starts again right after powering off (the reason
-# for the old kernel pin). Valve's kernel clears it at probe on Fremont, in
+# probe"), so the machine starts again right after powering off. Valve's kernel clears it at probe on Fremont, in
 # a patch not meant for upstream, so CachyOS won't get it. A small module
 # (patches/steamify-fremont-poweroff.c) clears it right before power-off;
 # DKMS builds it for each installed kernel. On a kernel that clears it

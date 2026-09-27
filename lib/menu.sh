@@ -34,7 +34,7 @@ declare -A LABEL=(
     [cec]="HDMI-CEC: use Steam with the TV remote, TV on/off with the PC (experimental)"
     [machine]="Steam Machine support: LED bar driver, hardware settings in Steam"
     [poweroff]="Power-off fix: the Steam Machine stays off after shutting down"
-    [kpin]="Pin the kernel to $PINNED_KERNEL_VER (no longer needed: untick for CachyOS's current kernel)"
+    [kpin]="Pin the kernel to $PINNED_KERNEL_VER (untick for CachyOS's current kernel)"
     [hdmi]="HDMI refresh boost: highest refresh your HDMI display runs"
     [bios]="Update BIOS"
 )

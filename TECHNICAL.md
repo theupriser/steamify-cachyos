@@ -253,88 +253,6 @@ on the system itself; the version only decides about updates:
 
 Bump a component's number whenever what its `<id>_enable` sets up changes.
 
-## Kernel pin (Steam Machine)
-
-With CachyOS kernels newer than 7.1.6 a Steam Machine rebooted instead of
-shutting down; the power-off fix above handles that now. Since 2.2.0 the
-**Pin the kernel** sub-option is no longer offered. A pin that's still
-there is shown unticked, so a normal run (after the review) removes it and
-brings back CachyOS's current kernel; HDMI refresh boost, which needs the
-pinned kernel, is unticked with it. The pin installed `linux-cachyos` and
-`linux-cachyos-headers` 7.1.6-1 and added them to `IgnorePkg` in
-`/etc/pacman.conf`, so updates skipped them.
-
-The packages (and their signatures, which pacman checks) are kept in
-`/var/cache/steamify/kernel`, so re-applying needs no download. Missing
-files are taken from pacman's cache, else downloaded from this repo's
-`kernel-7.1.6-1` release, then `archive.cachyos.org`, then
-`mirror.cachyos.org` (which only has the current kernel). Every file must
-match the SHA-256 in the script and have a valid CachyOS signature; a bad
-one is deleted, so the next run downloads it again. Set `PINNED_KERNEL_URL`
-to a directory URL with the files to try another source first, or drop them
-into the kernel directory yourself.
-
-Unticking it removes the pin and runs `sudo pacman -Syu`, which brings the
-kernel back to CachyOS's current version; the files stay for next time.
-
-## HDMI refresh boost (Steam Machine)
-
-With the pinned kernel (7.1.6), HDMI displays often stay at 60 Hz. Two
-reasons:
-
-- Monitors list their fast modes in an extra EDID block, announced by the
-  HDMI Forum EEODB data block. 7.1.6 only reads the first extension block,
-  so it never sees them. Newer kernels do.
-- Their fastest modes need HDMI 2.1 (FRL). 7.1.6's amdgpu only does HDMI
-  2.0 (TMDS, at most 600 MHz), but a mode with the display's own shortest
-  blanking at a slightly lower rate often fits.
-
-The menu item (only on a Steam Machine with the pinned kernel, never
-ticked by default, run from the desktop in Konsole):
-
-1. Takes the desktop resolution from KDE (`kscreen-doctor -j`) and reads the
-   display's complete EDID over DDC (`i2ctransfer`, segment pointer 0x30).
-   A live EDID left by an earlier test is cleared first.
-2. Calculates the highest rate that fits: the display's TMDS limit (HDMI
-   Forum VSDB, capped at amdgpu's 600 MHz), its shortest blanking at that
-   resolution and its maximum refresh (range limits, VRR maximum). Steps:
-   that rate rounded down to ten, and the hundred below it as a safe option.
-   Rates the display already lists, or that aren't faster than what works
-   now, are left out.
-3. Builds the EDID: all of the display's blocks, the block count and EEODB
-   fixed, plus a DisplayID block with the steps.
-4. Loads it live (debugfs `edid_override`, `trigger_hotplug`) and switches
-   to each step, lowest first. Each one needs a "y" within 15 s
-   (`WIZARD_HDMI_CONFIRM_SECONDS` for tests); anything else switches back
-   and stops.
-5. Saves the confirmed steps for that display: the EDID as
-   `/usr/lib/firmware/edid/steamify-<id>.bin`, where `<id>` is the display's
-   manufacturer, model, serial and date (EDID bytes 8-17), and a line in
-   `/etc/steamify/hdmi-edid.conf` (id, name, mode, rates). Other saved
-   displays are kept.
-
-`steamify-edid.service` (at boot, before the login manager) and a udev rule
-(`90-steamify-edid.rules`, every drm hotplug) run
-`/usr/local/bin/steamify-edid-hotplug`. Per HDMI port it reads the connected
-display's ID over DDC (the real display, even while an override is loaded)
-and loads that display's saved EDID through debugfs, or resets the port to
-the display's own EDID when there is none, or no display. What's loaded per
-port is kept in `/run/steamify-edid`, so the hotplug the script triggers
-itself doesn't loop.
-
-The item is on when the connected display runs on its saved EDID; with
-another display it's off, and ticking it sets that one up. Turning it off
-removes the connected display's EDID; the unit and rule go with the last
-one. In the app the item is a **Set up…** button, and **Manage** once a
-display is saved: it lists every saved display, removes any of them, and
-sets up the connected display when it has none. Unpinning the kernel
-removes them all.
-
-Versions before 2.1.0 used `drm.edid_firmware=` on the kernel command line
-(and the initramfs), which applied to any display on that port; re-applying
-saves such a setup per display and removes the parameter. Untick it before removing the
-kernel pin: newer kernels read the EDID themselves and can do HDMI 2.1.
-
 ## BIOS updates (Steam Machine)
 
 The **Update BIOS** item is only shown on a Steam Machine and is never ticked
@@ -403,9 +321,8 @@ immediately, which can turn into a loop - see
 | `lib/wizard-shortcut.sh` | Steamify shortcut: desktop icon and launcher entry that run the newest release |
 | `lib/bios.sh` | Update BIOS (Steam Machine, opt-in): current/newest version, double confirmation, fwupd |
 | `lib/cec.sh` | HDMI-CEC: Valve's `cecd` and friends from its `holo` repository |
-| `lib/steam-machine.sh` | Steam Machine support: LED driver, LED access, steamos-manager; kernel pin |
+| `lib/steam-machine.sh` | Steam Machine support: LED driver, LED access, steamos-manager |
 | `lib/fremont-poweroff.sh` | Steam Machine support: the power-off fix (DKMS module from `patches/`) |
-| `lib/hdmi-refresh.sh` | HDMI refresh boost (Steam Machine, pinned kernel): EDID over DDC, calculated steps, live test, per-display EDID hotplug script |
 | `patches/` | Module sources and patches the scripts build or apply (`patch_file`); see its README |
 | `.github/tools/bundle.sh` | Builds the single-file version (`dist/steamify.sh`), with `patches/` embedded |
 | `.github/workflows/bundle.yml` | Builds and checks it on every push; publishes it on `main` |
