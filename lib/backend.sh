@@ -54,7 +54,11 @@ backend_status() {
         items+=",\"wanted\":$( [[ "${WANTED[$c]:-0}" == 1 ]] && echo true || echo false)"
         items+=",\"update\":$(feature_outdated "$c" && echo true || echo false)"
         items+=",\"new\":$(feature_new "$c" && echo true || echo false)"
-        items+=",\"selectable\":$(component_selectable "$c" && echo true || echo false)}"
+        items+=",\"selectable\":$(component_selectable "$c" && echo true || echo false)"
+        # Why it can't be turned on, for the app's explanation.
+        [[ "$c" == vram && -n "${VRAM_NVIDIA_CASE:-}" ]] &&
+            items+=",\"note\":$(json_str "$(vram_nvidia_note "$VRAM_NVIDIA_CASE")")"
+        items+="}"
     done
     local cec="" f
     for f in /dev/cec*; do [[ -e "$f" ]] && cec+="${cec:+ }$(basename "$f")"; done

@@ -48,8 +48,8 @@ QtObject {
     })
     // Replaces the explanation of an option that can't be turned on here.
     readonly property var unsupported: ({
-        vram: { body: "Not available with the NVIDIA driver you're using: it doesn't tell Linux how its video memory is used, so there's nothing to steer. NVIDIA's open kernel modules do, from driver 615 on (nvidia-open, CachyOS's default for RTX 20 series and newer); with those it's available here.",
-                changes: ["Nothing: needs NVIDIA's open kernel modules, driver 615 or newer"] }
+        // The body comes from the backend (item.note): it depends on the driver.
+        vram: { changes: ["Nothing until then: it can't steer video memory Linux doesn't know about"] }
     })
 
     // Per plan action: the review's chip [text, colour, background] and the
@@ -63,7 +63,8 @@ QtObject {
 
     function of(item) {
         var tx = items[item.id] || {};
-        return item.selectable === false && unsupported[item.id] ? Object.assign({}, tx, unsupported[item.id]) : tx;
+        if (item.selectable !== false || !unsupported[item.id]) return tx;
+        return Object.assign({}, tx, unsupported[item.id], item.note ? { body: item.note } : {});
     }
     function label(id, fallback) { return (items[id] || {}).label || fallback || id; }
 }

@@ -7,7 +7,8 @@ one per merged pull request.
 
 ## 2.5.0 - 2026-09-27
 
-- **docs: VRAM booster works with NVIDIA's open kernel modules (driver 615+); only the closed driver is greyed out**
+- **feat: VRAM booster with NVIDIA says what to do: update, switch to the open driver (chwd command), or not supported by the card**
+- `57995bc` **docs: VRAM booster works with NVIDIA's open kernel modules (driver 615+); only the closed driver is greyed out**
 - `d57e8d8` **docs: AGENTS.md and changelog for the vidmem detection**
 - `5a34633` **feat: VRAM booster also for drivers that name their region vidmem (or numbered), NVIDIA included once its driver registers it**
 - `479b70b` **feat: Everything in the home folder under steamify (state, scripts, icon), moved once from the old name**

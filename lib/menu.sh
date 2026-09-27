@@ -147,8 +147,11 @@ detect_components() {
     launcher_repair && WANTED[launcher]=1
     # Shows the current and newest BIOS version.
     bios_available && { bios_lookup_newest; LABEL[bios]="$(bios_label)"; }
-    # Greyed out with an NVIDIA card: say why.
-    component_available vram && ! vram_selectable && LABEL[vram]="VRAM booster: needs NVIDIA's open kernel modules (driver 615+)"
+    # Greyed out with an NVIDIA card: say why, and what to do.
+    if component_available vram && ! vram_selectable; then
+        VRAM_NVIDIA_CASE="$(vram_nvidia_case)"
+        LABEL[vram]="VRAM booster: $(vram_nvidia_hint "$VRAM_NVIDIA_CASE")"
+    fi
     # First run: preselect the full SteamOS experience (never an action).
     if [[ "$any" == false ]]; then
         for c in "${COMPONENTS[@]}"; do

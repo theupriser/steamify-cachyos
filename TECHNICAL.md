@@ -267,6 +267,12 @@ cgroup controller (7.2); amdgpu and Intel's xe register their VRAM with it
 (`drm/<pci>/vram`), NVIDIA's open kernel modules from driver 615 too
 (`nvidia/<pci>/vidmem`); `dmemcg-booster` protects every region it lists,
 whatever its name. NVIDIA's closed modules don't: with such a card the option is shown greyed
+out with what to do (`vram_nvidia_case`): open modules older than 615 ->
+update; the closed driver on a card the open one supports (not in chwd's
+legacy lists `/var/lib/chwd/ids/nvidia-{580,470,390}.ids`) -> the `chwd`
+commands to switch, never switched by Steamify itself (a failed switch
+means a black screen, and it can't be tested here); a legacy card or
+nouveau -> not supported. Shown greyed
 out, with why, until its driver lists a region: then it's offered like any
 other (`WIZARD_VRAM_FAKE_NVIDIA=1` fakes the grey-out, `WIZARD_VRAM_CAPACITY=<file>`
 reads the regions from a copy, for tests). Otherwise

@@ -18,7 +18,8 @@ VRAM_MIN_BYTES=$((2 * 1024 * 1024 * 1024))
 VRAM_CAPACITY="${WIZARD_VRAM_CAPACITY:-/sys/fs/cgroup/dmem.capacity}"
 
 vram_supported() {
-    # WIZARD_VRAM_FAKE_NVIDIA=1 (tests): as with an NVIDIA card.
+    # WIZARD_VRAM_FAKE_NVIDIA (tests): as with an NVIDIA card whose driver
+    # doesn't register its VRAM; see vram_nvidia_case.
     [[ -n "${WIZARD_VRAM_FAKE_NVIDIA:-}" ]] && return 1
     # Only for a GPU with its own VRAM: an integrated GPU registers a small
     # carve-out too, but mostly uses system RAM, so there's little to boost.
@@ -37,6 +38,58 @@ vram_nvidia() {
         [[ "$(cat "$d/vendor" 2>/dev/null)" == 0x10de && "$(cat "$d/class" 2>/dev/null)" == 0x03* ]] && return 0
     done
     return 1
+}
+
+# chwd's lists of NVIDIA cards that need a closed legacy branch (580xx,
+# 470xx, 390xx); every other NVIDIA card runs the open kernel modules.
+VRAM_CHWD_IDS=/var/lib/chwd/ids
+
+vram_nvidia_case() {
+    # Why an NVIDIA card's VRAM isn't registered, so the menu can say what to
+    # do: "update" (open modules older than 615), "switch <chwd profile>"
+    # (closed driver on a card the open one supports), "legacy" (card only
+    # runs a closed legacy branch), "nouveau" (no NVIDIA module).
+    # WIZARD_VRAM_FAKE_NVIDIA=1 fakes "switch nvidia-dkms-580xx", or name a case.
+    local fake="${WIZARD_VRAM_FAKE_NVIDIA:-}" license d id p
+    if [[ -n "$fake" ]]; then
+        [[ "$fake" == 1 ]] && fake="switch nvidia-dkms-580xx"
+        echo "$fake"; return
+    fi
+    license="$(modinfo -F license nvidia 2>/dev/null)"
+    case "$license" in
+        "Dual MIT/GPL") echo update; return ;;
+        "") echo nouveau; return ;;
+    esac
+    for d in /sys/bus/pci/devices/*; do
+        [[ "$(cat "$d/vendor" 2>/dev/null)" == 0x10de && "$(cat "$d/class" 2>/dev/null)" == 0x03* ]] || continue
+        id="$(cat "$d/device")"; id="${id#0x}"
+        grep -qwi "$id" "$VRAM_CHWD_IDS"/nvidia-*.ids 2>/dev/null && { echo legacy; return; }
+    done
+    for p in 580xx 470xx 390xx; do
+        pacman -Q "nvidia-$p-dkms" >/dev/null 2>&1 && { echo "switch nvidia-dkms-$p"; return; }
+    done
+    echo switch
+}
+
+vram_nvidia_hint() {
+    # vram_nvidia_hint <case>: the short reason (terminal menu, the app's row).
+    case "$1" in
+        update) echo "update NVIDIA's driver to 615 or newer (sudo pacman -Syu)" ;;
+        switch*) echo "needs NVIDIA's open driver, which your card supports" ;;
+        legacy) echo "your NVIDIA card's driver doesn't support it (older than RTX 20)" ;;
+        *) echo "the nouveau driver doesn't support it yet" ;;
+    esac
+}
+
+vram_nvidia_note() {
+    # vram_nvidia_note <case>: the full explanation, with what to do.
+    local profile="${1#switch}"; profile="${profile# }"
+    case "$1" in
+        update) echo "NVIDIA's open driver tells Linux how its video memory is used from version 615 on; yours is older ($(cat /sys/module/nvidia/version 2>/dev/null || echo unknown)). Update your system (sudo pacman -Syu), restart, and it's available here." ;;
+        switch*) echo "Your card also runs NVIDIA's open driver, the one CachyOS installs by default, and only that one tells Linux how its video memory is used. You're using NVIDIA's closed driver. Switch in a terminal with: ${profile:+sudo chwd -r $profile && }sudo chwd -i nvidia-open-dkms, then restart: it's available here after that. Steamify doesn't switch it for you: if something goes wrong, the screen stays black after the restart." ;;
+        legacy) echo "Your NVIDIA card is older than the RTX 20 series and only runs NVIDIA's closed driver, which doesn't tell Linux how its video memory is used. Newer NVIDIA cards (RTX 20 series and up), and AMD and Intel graphics cards, support it." ;;
+        *) echo "The open-source nouveau driver doesn't tell Linux how its video memory is used yet (a patch is on its way into the kernel). NVIDIA's own open driver does, from version 615 on (sudo chwd -a installs the right one)." ;;
+    esac
 }
 
 # Shown where it works, and greyed out with an NVIDIA card whose driver
