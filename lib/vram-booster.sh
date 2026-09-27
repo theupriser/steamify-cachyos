@@ -14,12 +14,30 @@
 VRAM_PKGS=(dmemcg-booster plasma-foreground-booster)
 VRAM_MIN_BYTES=$((2 * 1024 * 1024 * 1024))
 
-vram_available() {
+vram_supported() {
+    # WIZARD_VRAM_FAKE_NVIDIA=1 (tests): as with an NVIDIA card.
+    [[ -n "${WIZARD_VRAM_FAKE_NVIDIA:-}" ]] && return 1
     # Only for a GPU with its own VRAM: an integrated GPU registers a small
     # carve-out too, but mostly uses system RAM, so there's little to boost.
     awk -v min="$VRAM_MIN_BYTES" '$1 ~ /\/vram$/ && $2 >= min { found = 1 } END { exit !found }' \
-        /sys/fs/cgroup/dmem.capacity 2>/dev/null || vram_status
+        /sys/fs/cgroup/dmem.capacity 2>/dev/null
 }
+
+vram_nvidia() {
+    # An NVIDIA display controller (PCI vendor 10de, class 03xxxx).
+    local d
+    [[ -n "${WIZARD_VRAM_FAKE_NVIDIA:-}" ]] && return 0
+    for d in /sys/bus/pci/devices/*; do
+        [[ "$(cat "$d/vendor" 2>/dev/null)" == 0x10de && "$(cat "$d/class" 2>/dev/null)" == 0x03* ]] && return 0
+    done
+    return 1
+}
+
+# Shown where it works, and greyed out with an NVIDIA card, whose driver
+# doesn't register its VRAM with the kernel (yet): so it's clear why it
+# can't be turned on. Hidden elsewhere (integrated graphics, older kernel).
+vram_available() { vram_supported || vram_status || vram_nvidia; }
+vram_selectable() { vram_supported || vram_status; }
 
 vram_status() {
     pacman -Q "${VRAM_PKGS[@]}" >/dev/null 2>&1 &&

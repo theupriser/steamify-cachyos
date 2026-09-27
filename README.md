@@ -30,7 +30,8 @@ Steam Machine.
    command again. "Steamify Terminal" in the launcher opens the terminal menu.
 6. **VRAM booster** - on by default: the game you're playing keeps its video
    memory and background apps make room, like SteamOS 3.9. Shown for GPUs
-   whose driver supports it (AMD, Intel) on kernel 7.2 or newer
+   whose driver supports it (AMD, Intel) on kernel 7.2 or newer; greyed out
+   with an NVIDIA card until NVIDIA's driver supports it
    ([details](TECHNICAL.md#vram-booster)).
 7. **HDMI-CEC** (experimental; off by default, on by default on a Steam
    Machine) - use Steam with your TV's

@@ -45,6 +45,11 @@ ApplicationWindow {
     }
 
     // --- Texts per item (the backend's labels are the fallback) ---
+    // Replaces the explanation of an option that can't be turned on here.
+    readonly property var unsupported: ({
+        vram: { body: "Not available with your NVIDIA graphics card: NVIDIA's driver doesn't tell Linux how its video memory is used yet, so there's nothing to steer. It works with AMD and Intel graphics cards, and shows up here as soon as NVIDIA's driver supports it.",
+                changes: ["Nothing: can't be turned on with NVIDIA's driver"] }
+    })
     readonly property var texts: ({
         gaming: { label: "SteamOS conversion", hint: "Boot into gaming mode, Steam on the desktop",
                   body: "Boots straight into gaming mode. Switch to Desktop in Steam works, and Return to Gaming Mode on the desktop brings you back.",
@@ -244,6 +249,8 @@ ApplicationWindow {
 
     function toggle(id) {
         hdmiNote = "";
+        var cur = items.find(function (i) { return i.id === id; });
+        if (cur && cur.kind === "toggle" && cur.selectable === false) return;
         var w = Object.assign({}, want);
         w[id] = !w[id];
         if (id === "gaming" && !w.gaming) { w.single = false; }
@@ -629,18 +636,19 @@ ApplicationWindow {
                                     anchors.verticalCenter: parent.verticalCenter; spacing: 2
                                     x: row.modelData.parent ? 46 : 16
                                     width: controls.x - x - 16
-                                    opacity: row.modelData.kind === "action" && !(bios && bios.selectable) ? 0.6 : 1
+                                    opacity: (row.modelData.kind === "action" && !(bios && bios.selectable)) || (row.modelData.kind === "toggle" && row.modelData.selectable === false) ? 0.6 : 1
                                     // The name, with an Update badge when a newer version of it will be
                                     // applied, New for a default sub-option added since the last run.
                                     Row { width: parent.width; spacing: 10
                                         Text { text: label(row.modelData); color: t.textHi; font.family: t.body; font.pixelSize: 17; font.weight: Font.DemiBold; elide: Text.ElideRight
                                                width: Math.min(implicitWidth, parent.width - (upd.visible ? upd.width + parent.spacing : 0)) }
                                         Chip { id: upd; visible: !!row.modelData.update || !!row.modelData["new"]; text: row.modelData.update ? "Update" : "New"; fg: row.modelData.update ? t.warn : t.good; bgc: row.modelData.update ? t.warnBg : t.goodBg; height: 20; anchors.verticalCenter: parent.verticalCenter } }
-                                    Text { text: row.modelData.id === "bios" ? biosHint() : ((row.modelData.id === "hdmi" && hdmiRowHint()) || (texts[row.modelData.id] && texts[row.modelData.id].hint) || row.modelData.hint); color: t.mute; font.family: t.body; font.pixelSize: 13; elide: Text.ElideRight; width: parent.width }
+                                    Text { text: row.modelData.id === "bios" ? biosHint() : row.modelData.selectable === false ? row.modelData.hint : ((row.modelData.id === "hdmi" && hdmiRowHint()) || (texts[row.modelData.id] && texts[row.modelData.id].hint) || row.modelData.hint); color: t.mute; font.family: t.body; font.pixelSize: 13; elide: Text.ElideRight; width: parent.width }
                                 }
                                 // Right: every control ends on the same edge
                                 Item {
                                     id: controls
+                                    opacity: row.modelData.kind === "toggle" && row.modelData.selectable === false ? 0.4 : 1
                                     anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter
                                     width: 180; height: 32
                                     // choice
@@ -682,7 +690,7 @@ ApplicationWindow {
                         id: detail
                         width: parent.width; height: parent.height - sys.height - 16; radius: 16; color: t.card
                         readonly property var it: sel < rows.length ? rows[sel] : null
-                        readonly property var tx: it ? (texts[it.id] || {}) : {}
+                        readonly property var tx: it ? (it.selectable === false && unsupported[it.id] ? Object.assign({}, texts[it.id], unsupported[it.id]) : (texts[it.id] || {})) : {}
                         // Long texts scroll instead of running out of the card;
                         // each item starts at the top.
                         onItChanged: detailFlick.contentY = 0

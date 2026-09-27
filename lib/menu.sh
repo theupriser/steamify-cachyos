@@ -109,7 +109,7 @@ feature_new() {
     # conversion as its parent): never turned on or off.
     local p="${PARENT[$1]:-gaming}"
     [[ "$1" != gaming && "${CURRENT[$p]:-0}" == 1 && "${CURRENT[$1]:-0}" == 0 ]] &&
-        ! is_action "$1" && [[ " ${NO_PRESELECT[*]} " != *" $1 "* ]] &&
+        ! is_action "$1" && component_selectable "$1" && [[ " ${NO_PRESELECT[*]} " != *" $1 "* ]] &&
         [[ -z "$(state_get features "$1")" ]]
 }
 
@@ -117,6 +117,7 @@ component_selectable() {
     # Greyed out and not tickable when it has nothing to do.
     case "$1" in
         bios) bios_selectable ;;
+        vram) vram_selectable ;;
     esac
 }
 
@@ -145,10 +146,12 @@ detect_components() {
     launcher_repair && WANTED[launcher]=1
     # Shows the current and newest BIOS version.
     bios_available && { bios_lookup_newest; LABEL[bios]="$(bios_label)"; }
+    # Greyed out with an NVIDIA card: say why.
+    component_available vram && ! vram_selectable && LABEL[vram]="VRAM booster: not supported by NVIDIA's driver yet"
     # First run: preselect the full SteamOS experience (never an action).
     if [[ "$any" == false ]]; then
         for c in "${COMPONENTS[@]}"; do
-            component_available "$c" && ! is_action "$c" &&
+            component_available "$c" && component_selectable "$c" && ! is_action "$c" &&
                 [[ " ${NO_PRESELECT[*]} " != *" $c "* ]] && WANTED[$c]=1
         done
         machine_available && WANTED[cec]=1
