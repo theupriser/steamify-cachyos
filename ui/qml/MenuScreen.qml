@@ -59,7 +59,10 @@ Item {
         Row {
             anchors.left: parent.left; anchors.leftMargin: 40; anchors.verticalCenter: parent.verticalCenter; spacing: 28
             Repeater {
+                // Quit only has a key on a keyboard (Ctrl+Q), and re-apply has
+                // none through Steam's layout; a controller quits through Steam.
                 model: [[screen.g.toggle, "Toggle"], [screen.g.choose, "Choose"], [screen.g.reapply, "Re-apply what's on"], [screen.g.quit, "Quit"]]
+                           .filter(function (h) { return h[0] !== ""; })
                 Row { required property var modelData; spacing: 8
                     Glyph { k: parent.modelData[0]; anchors.verticalCenter: parent.verticalCenter }
                     Text { text: parent.modelData[1]; color: Theme.label; font.family: Theme.body; font.pixelSize: 14; anchors.verticalCenter: parent.verticalCenter } }

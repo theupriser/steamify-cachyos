@@ -47,7 +47,7 @@ Rectangle {
             Text { visible: app.wrongPassword; text: "That password didn't work. Try again."; color: Theme.bad; font.family: Theme.body; font.pixelSize: 14 }
             Rectangle { width: parent.width; height: 46; radius: 12; color: Theme.note
                 Text { anchors.verticalCenter: parent.verticalCenter; x: 14; color: Theme.soft; font.family: Theme.body; font.pixelSize: 14
-                       text: ({ controller: "Press Steam + X for the on-screen keyboard.", keyboard: "Type your password and press Enter.", remote: "Select the field for the on-screen keyboard." })[Input.type] } }
+                       text: ({ controller: "Press Steam + X for the on-screen keyboard.", keyboard: "Type your password and press Enter.", steam: "Press X for Steam's on-screen keyboard, type your password and press A.", remote: "Select the field for the on-screen keyboard." })[Input.type] } }
             Item { width: parent.width; height: 48
                 Btn { k: Input.g.back; text: "Back"; onClicked: app.act("back") }
                 Btn { anchors.right: parent.right; k: Input.g.ok; text: "Apply"; primary: true; onClicked: screen.submit() } }

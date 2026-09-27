@@ -215,7 +215,9 @@ Item {
                 boot = a === "left" ? "gamescope" : "desktop";
             else if (a === "apply") goReview(false);
             else if (a === "reapply") goReview(true);
-            else if (a === "back") Qt.quit();
+            // B/Esc/Back don't quit: Steam's desktop layout sends Esc for a
+            // Steam Controller's B, which should only ever go back.
+            else if (a === "quit") Qt.quit();
         } else if (screen === "review") {
             if (a === "accept" || a === "apply") onApplyPressed();
             else if (a === "back") { reapply = false; screen = "menu"; }
@@ -254,7 +256,7 @@ Item {
         if (screen === "bios2" && Input.type !== "keyboard" && (e.key === Qt.Key_Return || e.key === Qt.Key_Enter)) {
             if (!e.isAutoRepeat) act("hold"); e.accepted = true; return;
         }
-        if (!fromRemote) Input.type = "keyboard";
+        if (!fromRemote) Input.type = Input.fromSteam ? "steam" : "keyboard";
         var k = e.key;
         if (k === Qt.Key_Up) act("up");
         else if (k === Qt.Key_Down) act("down");
@@ -268,6 +270,7 @@ Item {
         else if (k === Qt.Key_Return || k === Qt.Key_Enter) act("accept");
         else if (k === Qt.Key_Escape || k === Qt.Key_Back || k === Qt.Key_Backspace) { if (!e.isAutoRepeat) act("back"); }
         else if (k === Qt.Key_R) act("reapply");
+        else if (k === Qt.Key_Q && (e.modifiers & Qt.ControlModifier)) act("quit");
         else return;
         e.accepted = true;
     }

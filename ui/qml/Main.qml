@@ -12,6 +12,8 @@ ApplicationWindow {
     required property var gamepad
     required property bool fullscreen
     required property string iconUrl
+    required property bool fromSteam
+    Component.onCompleted: Input.fromSteam = fromSteam
 
     width: 1280; height: 720
     minimumWidth: 960; minimumHeight: 540
