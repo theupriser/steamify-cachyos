@@ -1,5 +1,7 @@
 # Steamify CachyOS
 
+![The Steamify app's menu on a Steam Machine](assets/screenshot-menu.png)
+
 Turn a CachyOS desktop PC into a SteamOS-style console: it boots straight
 into Steam's Big Picture (gamescope), and you can switch to the KDE Plasma
 desktop and back whenever you like - just like on a Steam Deck or Valve's

@@ -5,9 +5,15 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.4.1 - 2026-09-27
+
+- **chore: Version 2.4.1**
+- `6f598d1` **docs: README screenshot shows every option**
+- `9bbe5fa` **docs: Screenshot of the app's menu in the README**
+
 ## 2.4.0 - 2026-09-27
 
-- **chore: Version 2.4.0**
+- `03a8b8c` **chore: Version 2.4.0**
 - `e699a3f` **refactor(ui): One QML file per screen; the HDMI boost's setup screens and backend commands removed**
 
 ## 2.3.0 - 2026-09-27
