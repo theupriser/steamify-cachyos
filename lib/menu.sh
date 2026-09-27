@@ -108,9 +108,11 @@ detect_components() {
         component_available "$c" || continue
         { feature_outdated "$c" || feature_new "$c"; } && WANTED[$c]=1
     done
-    # The kernel pin is no longer needed (the power-off fix): drop it, and
-    # HDMI refresh boost, which needs it, on a normal run.
-    if component_available kpin; then WANTED[kpin]=0; WANTED[hdmi]=0; fi
+    # The kernel pin is no longer needed (the power-off fix), and HDMI
+    # refresh boost needed the pin: whatever is left of either is unticked,
+    # so a normal run removes it.
+    component_available kpin && WANTED[kpin]=0
+    component_available hdmi && WANTED[hdmi]=0
     # The terminal-only Steamify shortcut from before 2.0.1: tick it, so a
     # normal run replaces it with the app.
     launcher_repair && WANTED[launcher]=1

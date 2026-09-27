@@ -222,8 +222,11 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `steamify-fremont-poweroff` (`patches/steamify-fremont-poweroff.c`) clears
   it in a power-off-prepare handler, built for each kernel. It made the kernel pin
   unnecessary: `kpin` is only available while on (`kpin_available`), and
-  `detect_components` unticks it (and `hdmi`, which needs the pinned
-  kernel), so a normal run removes an existing pin. CachyOS's
+  `detect_components` unticks it, so a normal run removes an existing pin.
+  `hdmi` (it needed the pin) is retired the same way: `hdmi_status` is on
+  while anything of it is left (saved displays, hotplug unit, EDID files,
+  old kernel parameter), `hdmi_available` only then, it's always unticked,
+  and `hdmi_disable` removes all of it. CachyOS's
   `linux-cachyos` is clang-built, `-bore` GCC-built: let DKMS pick the
   compiler, never pass `LLVM=1`. Test shutdown on the real machine for every
   new major kernel.

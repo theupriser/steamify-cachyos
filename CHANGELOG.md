@@ -19,8 +19,10 @@ one per merged pull request.
     rebooted.
   - The kernel pin is no longer offered. An existing pin is shown unticked,
     so the next run removes it and brings back CachyOS's current kernel;
-    HDMI refresh boost, which needs the pinned kernel, goes with it (newer
-    kernels do HDMI 2.1 themselves).
+    HDMI refresh boost, which needs the pinned kernel, is retired too
+    (newer kernels do HDMI 2.1 themselves): whatever is left of it (saved
+    displays, also ones not connected, its hotplug script, the old kernel
+    parameter) is unticked and removed by the next run, pin or no pin.
   - Feature versions: each component records the version of what it set
     up; when a release changes a component, installs with an older version
     are ticked and updated by a normal run ("update" in the plan and the
