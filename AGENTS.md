@@ -215,11 +215,12 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   registered first, which never happens since amdgpu loads from the
   initramfs. Without it `/dev/cec0` exists but stays at `f.f.f.f`.
 - Power-off fix (`poweroff`, `lib/fremont-poweroff.sh`, a default sub-option
-  of `machine`): kernels >= 7.2 keep the firmware's S4/S5 wake bit on GPIO
+  of `machine`): recent kernels (7.2 and the 6.x/7.0/7.1 updates with the
+  backport) keep the firmware's S4/S5 wake bit on GPIO
   pin 18, so the Steam Machine boots again right after powering off
   (Valve's kernel clears it at probe, not for upstream). The DKMS module
   `steamify-fremont-poweroff` (`patches/steamify-fremont-poweroff.c`) clears
-  it in a power-off-prepare handler, for every kernel. It made the kernel pin
+  it in a power-off-prepare handler, built for each kernel. It made the kernel pin
   unnecessary: `kpin` is only available while on (`kpin_available`), and
   `detect_components` unticks it (and `hdmi`, which needs the pinned
   kernel), so a normal run removes an existing pin. CachyOS's

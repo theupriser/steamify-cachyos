@@ -210,9 +210,11 @@ wizard installed it).
 
 ## Power-off fix (Steam Machine)
 
-With kernels 7.2 and newer a Steam Machine starts again right after
-powering off. Linux 7.2 stopped clearing the S4/S5 wake bits at probe
-(`pinctrl-amd: Don't clear S4 wake bits at probe`), and the firmware leaves
+With recent kernels a Steam Machine starts again right after powering off:
+the newer 6.x, 7.0 and 7.1 updates and 7.2 (and probably every kernel after
+it). Linux stopped clearing the S4/S5 wake bits at probe
+(`pinctrl-amd: Don't clear S4 wake bits at probe`, in 7.2 and backported to
+stable kernels), and the firmware leaves
 that bit set on GPIO pin 18 (`_SB.PCI0.GPP6`). Valve's own kernel
 (`linux-neptune-72`) clears it at probe on Fremont, in a patch marked not
 for upstream ("until the firmware is fixed"), so CachyOS and mainline won't

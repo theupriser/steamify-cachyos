@@ -2,9 +2,9 @@
 /*
  * Steam Machine (Fremont): power off instead of booting up again.
  *
- * Since Linux 7.2 ("pinctrl-amd: Don't clear S4 wake bits at probe") the
- * S4/S5 wake bit the firmware leaves set on GPIO pin 18 (_SB.PCI0.GPP6)
- * stays set, and the machine starts again right after powering off.
+ * Since "pinctrl-amd: Don't clear S4 wake bits at probe" (Linux 7.2, also
+ * backported to 6.x, 7.0 and 7.1 updates) the S4/S5 wake bit the firmware
+ * leaves set on GPIO pin 18 (_SB.PCI0.GPP6) stays set, and the machine starts again right after powering off.
  * Valve's kernel clears that bit at probe on Fremont (not for upstream);
  * this does the same right before power-off, for kernels without it.
  */

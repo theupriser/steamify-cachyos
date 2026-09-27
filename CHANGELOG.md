@@ -8,11 +8,12 @@ one per merged pull request.
 ## 2.2.0 - 2026-09-27
 
 - **feat: Power-off fix for the Steam Machine; the kernel pin is optional**
-  - With kernels 7.2 and newer the Steam Machine started again right after
-    shutting down: Linux 7.2 keeps the wake bit the firmware sets on GPIO
+  - With recent kernels (newer 6.x, 7.0 and 7.1 updates, 7.2 and probably
+    later ones) the Steam Machine started again right after shutting down:
+    they keep the wake bit the firmware sets on GPIO
     pin 18, which Valve's own kernel clears in a patch that won't reach
     CachyOS. Steam Machine support now builds a small module with DKMS for
-    every kernel that clears it right before power-off: the new **Power-off
+    each installed kernel that clears it right before power-off: the new **Power-off
     fix** sub-option, ticked along with Steam Machine support (opt-out).
     Tested with CachyOS 7.2.8: stays off, and without the module it
     rebooted.

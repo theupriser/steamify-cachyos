@@ -1,13 +1,15 @@
 #!/bin/bash
 # "Power-off fix" menu item (poweroff), a sub-option of Steam Machine support
 # ticked along with it (opt-out): the Steam Machine powers off instead of
-# booting up again, on every kernel. Since Linux 7.2 ("pinctrl-amd: Don't
-# clear S4 wake bits at probe") the S4/S5 wake bit the firmware leaves set
-# on GPIO pin 18 stays set, and the machine starts again right after
-# powering off (the reason for the kernel pin). Valve's kernel clears it at
-# probe on Fremont, in a patch not meant for upstream, so CachyOS won't get
-# it. A small module (patches/steamify-fremont-poweroff.c) clears it right
-# before power-off; DKMS builds it for every kernel. On kernels that clear it themselves it does nothing.
+# booting up again. Recent kernels (7.2, and the 6.x, 7.0 and 7.1 updates
+# that got the change backported) keep the S4/S5 wake bit the firmware
+# leaves set on GPIO pin 18 ("pinctrl-amd: Don't clear S4 wake bits at
+# probe"), so the machine starts again right after powering off (the reason
+# for the old kernel pin). Valve's kernel clears it at probe on Fremont, in
+# a patch not meant for upstream, so CachyOS won't get it. A small module
+# (patches/steamify-fremont-poweroff.c) clears it right before power-off;
+# DKMS builds it for each installed kernel. On a kernel that clears it
+# itself it does nothing.
 # Sourced by steamify.sh; not meant to be run on its own.
 
 POWEROFF_DKMS_NAME=steamify-fremont-poweroff
@@ -65,5 +67,5 @@ poweroff_enable() {
 }
 poweroff_disable() {
     poweroff_fix_disable
-    ok "Power-off fix removed; with kernels 7.2 and newer the Steam Machine may start again after shutting down."
+    ok "Power-off fix removed; with recent kernels the Steam Machine may start again after shutting down."
 }
