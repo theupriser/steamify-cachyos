@@ -250,8 +250,10 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   this version (`skipped`). Desktop only (exits without `plasmashell`).
 - VRAM booster (`vram`, `lib/vram-booster.sh`, top-level, ticked by
   default, 2.3.0; only available when `/sys/fs/cgroup/dmem.capacity` lists a
-  VRAM region of at least 2 GB; greyed out with an NVIDIA card,
-  `vram_selectable`, faked with `WIZARD_VRAM_FAKE_NVIDIA=1`): CachyOS's `dmemcg-booster` (system + user service) and
+  `vram`/`vidmem` region (numbered too) of at least 2 GB, whatever the brand;
+  greyed out with an NVIDIA card whose driver lists none, `vram_selectable`,
+  faked with `WIZARD_VRAM_FAKE_NVIDIA=1`; `WIZARD_VRAM_CAPACITY=<file>` reads
+  the regions from a copy): CachyOS's `dmemcg-booster` (system + user service) and
   `plasma-foreground-booster`, like SteamOS 3.9's VRAM management. The
   latter only starts with `kcgroupsrc [Foreground Booster] autostart=true`
   (set with `kset`). Disable removes only the packages it installed

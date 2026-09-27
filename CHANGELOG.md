@@ -7,7 +7,9 @@ one per merged pull request.
 
 ## 2.5.0 - 2026-09-27
 
-- **feat: Everything in the home folder under steamify (state, scripts, icon), moved once from the old name**
+- **docs: AGENTS.md and changelog for the vidmem detection**
+- `5a34633` **feat: VRAM booster also for drivers that name their region vidmem (or numbered), NVIDIA included once its driver registers it**
+- `479b70b` **feat: Everything in the home folder under steamify (state, scripts, icon), moved once from the old name**
 - `2e0881b` **fix: fill takes values literally; the notifier path is quoted in its unit**
 - `cce31e1` **refactor: DKMS confs in patches/; an existing leds-valve DKMS override is kept and restored**
 - `bd4fa3a` **refactor: The session sync and kernel headers scripts in patches/**
