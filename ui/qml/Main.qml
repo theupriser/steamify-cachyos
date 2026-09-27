@@ -858,8 +858,15 @@ ApplicationWindow {
                                 border.width: parent.parent.st === "wait" || parent.parent.st === "run" ? 2 : 0; border.color: parent.parent.st === "run" ? t.accent : "#343f50"
                                 Text { anchors.centerIn: parent; text: parent.parent.parent.st === "ok" ? "✓" : (parent.parent.parent.st === "fail" ? "!" : ""); color: parent.parent.parent.st === "ok" ? t.good : t.bad; font.pixelSize: 13; font.weight: Font.Bold }
                                 RotationAnimator on rotation { running: parent.parent.parent.st === "run"; from: 0; to: 360; duration: 1000; loops: Animation.Infinite } }
-                            Text { text: (({ on: "Turn on ", off: "Turn off ", again: "Re-apply ", update: "Update ", desktop: "Boot into ", gaming: "Boot into ", check: "Download and check the ", flash: "Hand to fwupd: the " })[parent.parent.modelData.action] || "") + ((texts[parent.parent.modelData.id] || {}).label || parent.parent.modelData.id)
-                                   color: parent.parent.st === "wait" ? t.faint : t.textHi; font.family: t.body; font.pixelSize: 16; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter; width: 380; elide: Text.ElideRight }
+                            // The step; an update shows the name with an Update badge, like the menu.
+                            Item { width: 380; height: parent.height
+                                readonly property var step: parent.parent.modelData
+                                readonly property bool update: step.action === "update"
+                                Row { anchors.verticalCenter: parent.verticalCenter; width: parent.width; spacing: 10
+                                    Text { text: (({ on: "Turn on ", off: "Turn off ", again: "Re-apply ", desktop: "Boot into ", gaming: "Boot into ", check: "Download and check the ", flash: "Hand to fwupd: the " })[parent.parent.step.action] || "") + ((texts[parent.parent.step.id] || {}).label || parent.parent.step.id)
+                                           color: parent.parent.parent.parent.st === "wait" ? t.faint : t.textHi; font.family: t.body; font.pixelSize: 16; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter; elide: Text.ElideRight
+                                           width: Math.min(implicitWidth, parent.width - (stepUpd.visible ? stepUpd.width + parent.spacing : 0)) }
+                                    Chip { id: stepUpd; visible: parent.parent.update; text: "Update"; fg: t.warn; bgc: t.warnBg; height: 20; anchors.verticalCenter: parent.verticalCenter } } }
                             Text { text: ({ wait: "Waiting", run: "Working…", ok: "Done", fail: "Problem" })[parent.parent.st]; color: parent.parent.st === "ok" ? t.good : (parent.parent.st === "fail" ? t.bad : "#b8c3d1"); font.family: t.body; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
                         }
                     }
