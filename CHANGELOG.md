@@ -7,30 +7,46 @@ one per merged pull request.
 
 ## 2.2.0 - 2026-09-27
 
-- **feat: Power-off fix for the Steam Machine; the kernel pin is optional**
+- **docs: Changelog entries per commit for 2.2.0**
+- `32795bd` **feat(ui): Update badge on the progress screen**
+- `3c8ca65` **fix(ui): Never write the sudo password to a file; Update label on the progress screen**
+  - The app gave `sudo` the password through a short-lived file; the helper
+    now reads it from a named pipe the app feeds from memory each time sudo
+    asks. The progress screen showed "undefined" for an update.
+- `11a91ef` **feat: Update badge on components that get a newer version**
+  - The menu (terminal and app) shows "(update)" / an Update badge after
+    the name of a component a normal run will update.
+- `163f790` **feat: Feature versions are Steamify versions; Steam Machine support is 2.2.0**
+  - Each component records the Steamify version of what it set up; when a
+    release changes a component, installs with an older version are ticked
+    and updated by a normal run ("update" in the plan and the app's
+    review). A setup from before counts as 2.1.0, so Steam Machine support
+    (2.2.0) is updated on machines set up with 2.1.0. New default
+    sub-options (like the power-off fix) are ticked where their parent is on.
+- `e121b06` **fix: Remove whatever is left of HDMI refresh boost, pin or no pin**
+  - HDMI refresh boost needed the pinned kernel and is retired (newer
+    kernels do HDMI 2.1 themselves): whatever is left of it (saved
+    displays, also ones not connected, its hotplug script, the old kernel
+    parameter) is unticked and removed by the next run.
+- `19ca966` **docs: Drop the kernel pin and HDMI refresh boost descriptions**
+- `56fb908` **docs: Power-off fix texts cover every affected kernel, not just 7.2**
+- `6df19eb` **feat: Power-off fix as its own sub-option, drop the kernel pin, feature versions**
+  - The power-off fix is a sub-option of Steam Machine support, ticked
+    along with it (opt-out). The kernel pin is no longer offered: an
+    existing pin is shown unticked, so the next run removes it and brings
+    back CachyOS's current kernel.
+- `7694c97` **feat: Power-off fix for the Steam Machine; the kernel pin is optional**
   - With recent kernels (newer 6.x, 7.0 and 7.1 updates, 7.2 and probably
     later ones) the Steam Machine started again right after shutting down:
-    they keep the wake bit the firmware sets on GPIO
-    pin 18, which Valve's own kernel clears in a patch that won't reach
-    CachyOS. Steam Machine support now builds a small module with DKMS for
-    each installed kernel that clears it right before power-off: the new **Power-off
-    fix** sub-option, ticked along with Steam Machine support (opt-out).
-    Tested with CachyOS 7.2.8: stays off, and without the module it
-    rebooted.
-  - The kernel pin is no longer offered. An existing pin is shown unticked,
-    so the next run removes it and brings back CachyOS's current kernel;
-    HDMI refresh boost, which needs the pinned kernel, is retired too
-    (newer kernels do HDMI 2.1 themselves): whatever is left of it (saved
-    displays, also ones not connected, its hotplug script, the old kernel
-    parameter) is unticked and removed by the next run, pin or no pin.
-  - Feature versions: each component records the version of what it set
-    up; when a release changes a component, installs with an older version
-    are ticked and updated by a normal run ("update" in the plan and the
-    app), and new default sub-options (like the power-off fix) are ticked
-    where their parent is on.
+    they keep the wake bit the firmware sets on GPIO pin 18, which Valve's
+    own kernel clears in a patch that won't reach CachyOS. A small module,
+    built with DKMS for each installed kernel, clears it right before
+    power-off. Tested with CachyOS 7.2.8: stays off, and without the module
+    it rebooted.
   - Module sources and patches live in `patches/` instead of inside the
-    shell code; the single-file build embeds them. The Steam Machine CEC
-    driver change is now `patches/cros-ec-cec-single-port.patch`.
+    shell code; the single-file build and the app package include them. The
+    Steam Machine CEC driver change is now
+    `patches/cros-ec-cec-single-port.patch`.
 
 ## 2.1.0 - 2026-09-26
 
