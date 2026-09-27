@@ -295,22 +295,7 @@ install_headers_boot_check() {
     # So check at every boot and install missing headers, which triggers
     # that hook and builds the driver for the new kernel.
     sudo mkdir -p "$(dirname "$HEADERS_SCRIPT")"
-    sudo tee "$HEADERS_SCRIPT" > /dev/null << 'EOF'
-#!/bin/bash
-# Installed by cachyos-gamescope-boot: install missing -headers for every
-# installed kernel, so DKMS builds leds-valve for it.
-set -u
-missing=()
-for k in $(pacman -Qqo /usr/lib/modules/*/pkgbase 2>/dev/null | sort -u); do
-    pacman -Q "${k}-headers" >/dev/null 2>&1 && continue
-    pacman -Si "${k}-headers" >/dev/null 2>&1 && missing+=("${k}-headers")
-done
-[[ ${#missing[@]} -eq 0 ]] && exit 0
-# Another pacman is running (e.g. an update): try again next boot.
-[[ -e /var/lib/pacman/db.lck ]] && { echo "pacman is busy, skipping"; exit 0; }
-echo "Installing missing kernel headers: ${missing[*]}"
-exec pacman -S --needed --noconfirm "${missing[@]}"
-EOF
+    patch_file ensure-kernel-headers.sh | sudo tee "$HEADERS_SCRIPT" > /dev/null
     sudo chmod 755 "$HEADERS_SCRIPT"
     service_file ensure-kernel-headers.service HEADERS_SCRIPT="$HEADERS_SCRIPT" | sudo tee "$HEADERS_UNIT" > /dev/null
     sudo systemctl daemon-reload
