@@ -279,6 +279,9 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   removes it so Plasma builds Vapor's layout at the first login. What needs
   that layout (single user's launcher) runs then, from a one-time autostart
   (`lib/first-login.sh`, `--first-login`) that also opens the app.
+  `--skip <id>,...` and `--boot gamescope|desktop` (2.7.0, `defaults_options`
+  in `lib/menu.sh`) change the preselection through `toggle_component`, so the
+  menu's dependencies hold; the ISO's installer pages pass them.
 - `Relogin=true` means a gamescope that fails to start is relaunched in a
   tight loop; keep that in mind when changing session handling.
 

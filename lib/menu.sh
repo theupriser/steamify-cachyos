@@ -179,6 +179,36 @@ detect_components() {
     fi
 }
 
+defaults_options() {
+    # defaults_options [--skip <id>[,<id>...]] [--boot gamescope|desktop]:
+    # changes --defaults' preselection like unticking items in the menu
+    # (the Steam Machine ISO's installer pages pass them). Returns 1 on an
+    # unknown option or id.
+    local c ids
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --skip)
+                IFS=, read -ra ids <<< "${2:-}"
+                for c in "${ids[@]}"; do
+                    [[ -n "${LABEL[$c]:-}" ]] || { err "Unknown item: $c"; return 1; }
+                    # Unticking through the menu's rules: e.g. skipping the
+                    # conversion also skips single user mode.
+                    [[ "${WANTED[$c]:-0}" == 1 ]] && toggle_component "$c"
+                done
+                shift 2 ;;
+            --boot)
+                case "${2:-}" in
+                    gamescope) [[ "${WANTED[boot]:-0}" == 1 ]] && toggle_component boot ;;
+                    desktop) [[ "${WANTED[boot]:-0}" == 0 && "${WANTED[gaming]:-0}" == 1 ]] && toggle_component boot ;;
+                    *) err "--boot takes gamescope or desktop"; return 1 ;;
+                esac
+                shift 2 ;;
+            *) err "Unknown option: $1"; return 1 ;;
+        esac
+    done
+    return 0
+}
+
 toggle_component() {
     local c="$1"
     component_selectable "$c" || return 1

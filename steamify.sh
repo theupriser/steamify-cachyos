@@ -15,7 +15,7 @@
 set -uo pipefail
 
 # Release version, see CHANGELOG.md.
-VERSION=2.6.0
+VERSION=2.7.0
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -28,7 +28,8 @@ require_root_helper
 
 BACKEND=false
 [[ "${1:-}" == --backend ]] && BACKEND=true
-# --defaults: apply what the menu would preselect, without the menu or any
+# --defaults [--skip <id>,...] [--boot gamescope|desktop]: apply what the
+# menu would preselect (minus the skipped items), without the menu or any
 # prompt (the Steam Machine ISO's first login runs this; sudo must not ask).
 DEFAULTS=false
 [[ "${1:-}" == --defaults ]] && DEFAULTS=true
@@ -128,6 +129,7 @@ if [[ "$DEFAULTS" == true ]]; then
     REAPPLY=false
     sudo -n true 2>/dev/null || { err "--defaults needs sudo without a password."; exit 1; }
     detect_components
+    defaults_options "${@:2}" || exit 1
     plan_changes
     apply_changes
     # Run by the installer: the rest waits for the first desktop login.
