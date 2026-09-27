@@ -67,10 +67,13 @@ ApplicationWindow {
                body: "Use Steam with your TV remote, and the TV turns on and off with the PC. Turn on CEC on the TV too (Sony: BRAVIA Sync, Samsung: Anynet+, LG: SimpLink).",
                changes: ["Valve's cecd and cec-audio-control", "HDMI CEC section in Steam's Display settings", "Volume buttons for the TV in the Quick Access menu"] },
         machine: { label: "Steam Machine support", hint: "LED bar, fan and performance settings in Steam",
-                   body: "The front LED bar works, Steam's hardware settings work, the power button puts it to sleep like a console, and shutting down really turns it off on every kernel.",
-                   changes: ["leds-valve driver for every kernel (DKMS)", "steamos-manager for Steam's settings", "Console-like power handling", "Power-off fix: stays off after shutting down (DKMS)"] },
-        kpin: { label: "Pin the kernel", hint: "Optional: stay on an older kernel",
-                body: "Keeps the Steam Machine on CachyOS kernel 7.1.6. Not needed for shutting down any more (Steam Machine support fixes that on every kernel); HDMI refresh boost needs it, since newer kernels do HDMI 2.1 themselves.",
+                   body: "The front LED bar works, Steam's hardware settings work, and the power button puts it to sleep like a console.",
+                   changes: ["leds-valve driver for every kernel (DKMS)", "steamos-manager for Steam's settings", "Console-like power handling"] },
+        poweroff: { label: "Power-off fix", hint: "Stays off after shutting down, on every kernel",
+                    body: "With kernels 7.2 and newer the Steam Machine starts again right after shutting down: the firmware leaves a wake bit set that newer kernels keep. Valve's own kernel clears it; this small module does the same right before power-off, for every CachyOS kernel.",
+                    changes: ["steamify-fremont-poweroff module for every kernel (DKMS)", "Only on a Steam Machine, only touches that one wake bit", "Off: kernels 7.2 and newer may start it again after shutting down"] },
+        kpin: { label: "Pin the kernel", hint: "No longer needed: untick for the current kernel",
+                body: "Keeps the Steam Machine on CachyOS kernel 7.1.6, which older versions of Steamify needed to shut down properly. Steam Machine support now fixes that on every kernel. Untick it to go back to CachyOS's current kernel (HDMI refresh boost goes with it: newer kernels read the display's fast modes and do HDMI 2.1 themselves).",
                 changes: ["linux-cachyos from Steamify's release (signature checked)", "Kept in /var/cache/steamify/kernel", "Added to IgnorePkg"] },
         hdmi: { label: "HDMI refresh boost", hint: "Higher refresh rates over HDMI",
                 body: "The pinned kernel keeps many HDMI displays at 60 Hz. Turning this on shows which refresh rates your display can run at the desktop resolution; you pick them, and each one is tried for 15 seconds so you can check the picture before it's installed.",
@@ -247,6 +250,8 @@ ApplicationWindow {
         if (id === "hdmi" && !hdmiChoice && hdmiSaved.length) { openHdmiList(); return; }
         if (id === "hdmi" && w.hdmi && !nowOn("hdmi") && !hdmiChoice) { startHdmi(); return; }
         if (id === "hdmi" && !w.hdmi) hdmiChoice = "";
+        if (id === "machine") w.poweroff = w.machine;
+        if (id === "poweroff" && w.poweroff) w.machine = true;
         if (id === "machine" && !w.machine) w.kpin = false;
         if (id === "kpin" && w.kpin) w.machine = true;
         if (id === "hdmi" && w.hdmi) { w.machine = true; w.kpin = true; }
@@ -261,7 +266,7 @@ ApplicationWindow {
             if (it.parent && !want[it.parent]) { if (it.on) p.push({ id: it.id, action: "off" }); continue; }
             if (want[it.id] && !it.on) p.push({ id: it.id, action: "on" });
             else if (!want[it.id] && it.on) p.push({ id: it.id, action: "off" });
-            else if (want[it.id] && reapply) p.push({ id: it.id, action: "again" });
+            else if (want[it.id] && (reapply || it.update)) p.push({ id: it.id, action: reapply ? "again" : "update" });
         }
         var bootNow = nowOn("boot") ? "desktop" : "gamescope";
         if (want.gaming && boot !== bootNow) p.push({ id: "boot", action: boot === "desktop" ? "desktop" : "gaming" });
@@ -748,7 +753,7 @@ ApplicationWindow {
                     model: plan
                     ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
                     delegate: Rectangle { required property var modelData; width: 740; height: 56; radius: 12; color: t.card
-                        readonly property var st: ({ on: ["Turn on", t.good, t.goodBg], off: ["Turn off", t.bad, t.badBg], again: ["Re-apply", "#7cc4ff", "#1b2b40"],
+                        readonly property var st: ({ on: ["Turn on", t.good, t.goodBg], off: ["Turn off", t.bad, t.badBg], again: ["Re-apply", "#7cc4ff", "#1b2b40"], update: ["Update", t.warn, t.warnBg],
                                                      desktop: ["Desktop", "#7cc4ff", "#1b2b40"], gaming: ["Gaming", "#7cc4ff", "#1b2b40"],
                                                      check: ["Check", t.warn, t.warnBg], flash: ["Flash", t.bad, t.badBg] })[modelData.action] || ["", t.text, t.card]
                         Row { anchors.fill: parent; anchors.leftMargin: 18; spacing: 14
@@ -761,10 +766,10 @@ ApplicationWindow {
                     Text { anchors.verticalCenter: parent.verticalCenter; x: 18; text: "Your password is asked once. Changes to how the PC starts need a restart."; color: t.soft; font.family: t.body; font.pixelSize: 14 } }
             }
             Rectangle {
-                x: parent.width - 468; y: 32; width: 428; height: 210; radius: 16; color: t.card
+                x: parent.width - 468; y: 32; width: 428; height: 250; radius: 16; color: t.card
                 Column { anchors.fill: parent; anchors.margins: 24; spacing: 12
                     Text { text: "SUMMARY"; color: t.faint; font.family: t.body; font.pixelSize: 12; font.weight: Font.DemiBold; font.letterSpacing: 0.8 }
-                    Repeater { model: [["Turn on", "on"], ["Re-apply", "again"], ["Turn off", "off"]]
+                    Repeater { model: [["Turn on", "on"], ["Update", "update"], ["Re-apply", "again"], ["Turn off", "off"]]
                         Row { required property var modelData; width: 380
                             Text { text: parent.modelData[0]; color: t.soft; font.family: t.body; font.pixelSize: 15; width: 300 }
                             Text { text: plan.filter(function (p) { return p.action === parent.modelData[1]; }).length; color: t.text; font.family: t.mono; font.pixelSize: 15; width: 80; horizontalAlignment: Text.AlignRight } } }

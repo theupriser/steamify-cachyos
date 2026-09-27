@@ -139,6 +139,7 @@ while true; do
     for c in "${TO_ENABLE[@]}"; do
         if [[ "$c" == boot ]]; then echo "  - boot into: desktop (from the next boot)"
         elif is_action "$c"; then echo "  - run:      ${LABEL[$c]%%:*} at your own risk (checks, then asks twice more)"
+        elif feature_outdated "$c"; then echo "  - update:   ${LABEL[$c]} (changed in this version)"
         elif [[ "${CURRENT[$c]}" == 1 ]]; then echo "  - re-apply: ${LABEL[$c]}"; else echo "  - turn on:  ${LABEL[$c]}"; fi
     done
     ask_yn "Go ahead?" y || { info "Nothing changed."; continue; }

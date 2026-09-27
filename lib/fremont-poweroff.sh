@@ -1,5 +1,6 @@
 #!/bin/bash
-# Part of "Steam Machine support": the Steam Machine powers off instead of
+# "Power-off fix" menu item (poweroff), a sub-option of Steam Machine support
+# ticked along with it (opt-out): the Steam Machine powers off instead of
 # booting up again, on every kernel. Since Linux 7.2 ("pinctrl-amd: Don't
 # clear S4 wake bits at probe") the S4/S5 wake bit the firmware leaves set
 # on GPIO pin 18 stays set, and the machine starts again right after
@@ -54,4 +55,15 @@ poweroff_fix_disable() {
     [[ -d "$POWEROFF_DKMS_SRC" ]] || return 0
     sudo dkms remove "$POWEROFF_DKMS_NAME/$POWEROFF_DKMS_VER" --all >/dev/null 2>&1
     sudo rm -rf "$POWEROFF_DKMS_SRC"
+}
+
+poweroff_status() { poweroff_fix_installed; }
+poweroff_enable() {
+    info "Installing the power-off fix (the machine stays off after shutting down)..."
+    poweroff_fix_enable || { err "Installing the power-off fix failed."; return 1; }
+    ok "Power-off fix on: the Steam Machine stays off after shutting down."
+}
+poweroff_disable() {
+    poweroff_fix_disable
+    ok "Power-off fix removed; with kernels 7.2 and newer the Steam Machine may start again after shutting down."
 }

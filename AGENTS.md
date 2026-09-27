@@ -29,6 +29,12 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `<id>_available` is checked via `component_available` (e.g. `machine`
   only on Fremont). Turn-on order is `COMPONENTS` order, turn-off reverse;
   `gaming` must stay first. Dependencies live in `toggle_component`.
+- **Feature versions.** Bump `FEATURE_VERSION[<id>]` (`lib/menu.sh`) whenever
+  what `<id>_enable` sets up changes: installs recorded with an older number
+  are ticked and re-applied ("update" in the plan and the app). New default
+  sub-options are ticked for installs whose parent is on (`feature_new`).
+  Status still comes from the system; don't add ad-hoc `<id>_repair` checks
+  for new changes.
 - **Reversibility.** Every per-user KDE setting a component changes goes
   through `kset <component> <file> <group|group> <key> <value>`
   (`lib/state.sh`), which records the old value once; `<id>_disable` calls
@@ -208,16 +214,18 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   kernel only pairs that with a named lookup ("Port C") when the CEC driver
   registered first, which never happens since amdgpu loads from the
   initramfs. Without it `/dev/cec0` exists but stays at `f.f.f.f`.
-- Power-off fix (`lib/fremont-poweroff.sh`, part of `machine`): kernels
-  >= 7.2 keep the firmware's S4/S5 wake bit on GPIO pin 18, so the Steam
-  Machine boots again right after powering off (Valve's kernel clears it at
-  probe, not for upstream). The DKMS module `steamify-fremont-poweroff`
-  (`patches/steamify-fremont-poweroff.c`) clears it in a power-off-prepare
-  handler, for every kernel. It made the kernel pin optional (`kpin` is in
-  `NO_PRESELECT`, no longer ticked with `machine`). `machine_repair` ticks
-  `machine` for setups without it. CachyOS's `linux-cachyos` is clang-built,
-  `-bore` GCC-built: let DKMS pick the compiler, never pass `LLVM=1`. Test
-  shutdown on the real machine for every new major kernel.
+- Power-off fix (`poweroff`, `lib/fremont-poweroff.sh`, a default sub-option
+  of `machine`): kernels >= 7.2 keep the firmware's S4/S5 wake bit on GPIO
+  pin 18, so the Steam Machine boots again right after powering off
+  (Valve's kernel clears it at probe, not for upstream). The DKMS module
+  `steamify-fremont-poweroff` (`patches/steamify-fremont-poweroff.c`) clears
+  it in a power-off-prepare handler, for every kernel. It made the kernel pin
+  unnecessary: `kpin` is only available while on (`kpin_available`), and
+  `detect_components` unticks it (and `hdmi`, which needs the pinned
+  kernel), so a normal run removes an existing pin. CachyOS's
+  `linux-cachyos` is clang-built, `-bore` GCC-built: let DKMS pick the
+  compiler, never pass `LLVM=1`. Test shutdown on the real machine for every
+  new major kernel.
 - `Relogin=true` means a gamescope that fails to start is relaunched in a
   tight loop; keep that in mind when changing session handling.
 

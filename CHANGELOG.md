@@ -12,12 +12,19 @@ one per merged pull request.
     shutting down: Linux 7.2 keeps the wake bit the firmware sets on GPIO
     pin 18, which Valve's own kernel clears in a patch that won't reach
     CachyOS. Steam Machine support now builds a small module with DKMS for
-    every kernel that clears it right before power-off. Tested with
-    CachyOS 7.2.8: stays off, and without the module it rebooted.
-  - The kernel pin is no longer ticked with Steam Machine support or on a
-    first run; it stays available (HDMI refresh boost needs it). An
-    existing pin is kept. Steam Machine support from before 2.2.0 is
-    ticked in the menu to add the fix.
+    every kernel that clears it right before power-off: the new **Power-off
+    fix** sub-option, ticked along with Steam Machine support (opt-out).
+    Tested with CachyOS 7.2.8: stays off, and without the module it
+    rebooted.
+  - The kernel pin is no longer offered. An existing pin is shown unticked,
+    so the next run removes it and brings back CachyOS's current kernel;
+    HDMI refresh boost, which needs the pinned kernel, goes with it (newer
+    kernels do HDMI 2.1 themselves).
+  - Feature versions: each component records the version of what it set
+    up; when a release changes a component, installs with an older version
+    are ticked and updated by a normal run ("update" in the plan and the
+    app), and new default sub-options (like the power-off fix) are ticked
+    where their parent is on.
   - Module sources and patches live in `patches/` instead of inside the
     shell code; the single-file build embeds them. The Steam Machine CEC
     driver change is now `patches/cros-ec-cec-single-port.patch`.

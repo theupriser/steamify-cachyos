@@ -218,7 +218,8 @@ that bit set on GPIO pin 18 (`_SB.PCI0.GPP6`). Valve's own kernel
 for upstream ("until the firmware is fixed"), so CachyOS and mainline won't
 get it.
 
-Steam Machine support builds a small module with DKMS for every installed
+The **Power-off fix** sub-option of Steam Machine support (ticked along with
+it, can be unticked) builds a small module with DKMS for every installed
 kernel, `steamify-fremont-poweroff` (source in
 [`patches/steamify-fremont-poweroff.c`](patches/steamify-fremont-poweroff.c)).
 It only loads on Fremont (DMI board name) and touches one register: right
@@ -229,17 +230,37 @@ that already clears it, it does nothing. It logs the pin's state at load:
 Tested on a Steam Machine with `linux-cachyos-bore` 7.2.8: it stayed off
 three times in a row, and rebooted right away with the module unloaded.
 
-Steam Machine support set up before 2.2.0 has no power-off fix; the menu
-ticks it, so a normal run adds it.
+Where Steam Machine support was set up before 2.2.0, the menu ticks the
+power-off fix as a new default sub-option (see feature versions below), so a
+normal run adds it.
+
+## Feature versions (updates)
+
+Each component has a feature version (`FEATURE_VERSION` in `lib/menu.sh`,
+1 when not listed). After a component is turned on successfully, the version
+is recorded in `~/.local/state/cachyos-gamescope-boot/features.state`
+(turning it off records `off`). Whether a component is on is always checked
+on the system itself; the version only decides about updates:
+
+- **On, recorded version older** than the current one: ticked and
+  re-applied by a normal run; the plan (and the app's review) says
+  "update". A setup from before versions were recorded counts as 1.
+- **A new default sub-option** (not in `NO_PRESELECT`) whose parent is on
+  and that was never turned on or off: ticked, so a normal run adds it.
+  Turning it off once records `off`, so it isn't ticked again.
+
+Bump a component's number whenever what its `<id>_enable` sets up changes.
 
 ## Kernel pin (Steam Machine)
 
 With CachyOS kernels newer than 7.1.6 a Steam Machine rebooted instead of
-shutting down; the power-off fix above handles that now, so the pin is
-optional. The **Pin the kernel** sub-option (off by default; HDMI refresh
-boost needs it) installs `linux-cachyos` and `linux-cachyos-headers`
-7.1.6-1 and adds them to `IgnorePkg` in `/etc/pacman.conf`, so updates skip
-them. DKMS builds the LED driver for it; restart to boot it.
+shutting down; the power-off fix above handles that now. Since 2.2.0 the
+**Pin the kernel** sub-option is no longer offered. A pin that's still
+there is shown unticked, so a normal run (after the review) removes it and
+brings back CachyOS's current kernel; HDMI refresh boost, which needs the
+pinned kernel, is unticked with it. The pin installed `linux-cachyos` and
+`linux-cachyos-headers` 7.1.6-1 and added them to `IgnorePkg` in
+`/etc/pacman.conf`, so updates skipped them.
 
 The packages (and their signatures, which pacman checks) are kept in
 `/var/cache/steamify/kernel`, so re-applying needs no download. Missing

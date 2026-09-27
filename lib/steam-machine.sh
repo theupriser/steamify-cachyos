@@ -1,7 +1,7 @@
 #!/bin/bash
 # "Steam Machine support" menu item, only on Valve Fremont hardware: the
-# front LED bar driver, LED access for Steam, steamos-manager, and the
-# power-off fix (lib/fremont-poweroff.sh).
+# front LED bar driver, LED access for Steam and steamos-manager. Its
+# sub-option "Power-off fix" is lib/fremont-poweroff.sh.
 # Sourced by steamify.sh; not meant to be run on its own.
 
 detect_valve_fremont() {
@@ -149,7 +149,9 @@ remove_kernel_pin() {
     RESTART_FOR_LOGIN=true
 }
 
-# "Pin the kernel" menu item, a sub-option of Steam Machine support.
+# "Pin the kernel" menu item, a sub-option of Steam Machine support. The
+# power-off fix made it unnecessary: only shown while on, to remove it.
+kpin_available() { detect_valve_fremont && kpin_status; }
 kpin_status() {
     pinned_kernel_installed && grep -Eq '^IgnorePkg\s*=.*\slinux-cachyos(\s|$)' /etc/pacman.conf
 }
@@ -371,13 +373,7 @@ kernel_overview() {
 machine_available() { detect_valve_fremont; }
 
 machine_status() {
-    pacman -Qi leds-valve-dkms-git >/dev/null 2>&1 && pacman -Qi steamos-manager >/dev/null 2>&1 &&
-        poweroff_fix_installed
-}
-# Set up before 2.2.0: no power-off fix yet; the menu ticks it to add it.
-machine_repair() {
-    pacman -Qi leds-valve-dkms-git >/dev/null 2>&1 && pacman -Qi steamos-manager >/dev/null 2>&1 &&
-        ! poweroff_fix_installed
+    pacman -Qi leds-valve-dkms-git >/dev/null 2>&1 && pacman -Qi steamos-manager >/dev/null 2>&1
 }
 
 machine_enable() {
@@ -389,8 +385,6 @@ machine_enable() {
     ensure_aur_helper || { warn "Couldn't set up an AUR helper automatically. Install yay or paru, then run the wizard again."; return 1; }
     install_valve_led_driver || { warn "LED driver setup ran into a problem - see errors above."; return 1; }
     install_headers_boot_check
-    info "Installing the power-off fix (the machine stays off after shutting down)..."
-    poweroff_fix_enable || { err "Installing the power-off fix failed."; return 1; }
 
     # The LED files are root-only. Steam runs as the user; let it write them
     # in case it drives the bar directly (Valve's own privileged-write helper
@@ -434,7 +428,6 @@ machine_disable() {
     sudo udevadm control --reload
     sudo modprobe -r leds-valve 2>/dev/null
     sudo pacman -Rns --noconfirm leds-valve-dkms-git 2>/dev/null
-    poweroff_fix_disable
     krevert machine
     reload_powerdevil
     sudo systemctl disable ensure-kernel-headers.service 2>/dev/null

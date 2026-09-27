@@ -62,6 +62,7 @@ backend_status() {
         items+=",\"kind\":\"$kind\",\"parent\":$(json_str "$parent")"
         items+=",\"on\":$( [[ "$now" == 1 ]] && echo true || echo false)"
         items+=",\"wanted\":$( [[ "${WANTED[$c]:-0}" == 1 ]] && echo true || echo false)"
+        items+=",\"update\":$(feature_outdated "$c" && echo true || echo false)"
         items+=",\"selectable\":$(component_selectable "$c" && echo true || echo false)}"
     done
     local cec="" f
@@ -160,6 +161,8 @@ backend_apply() {
     # The same rules as the menu's toggles.
     [[ "${WANTED[single]:-0}" == 1 ]] && WANTED[gaming]=1
     [[ "${WANTED[gaming]:-0}" == 0 ]] && { WANTED[single]=0; WANTED[boot]=0; }
+    [[ "${WANTED[poweroff]:-0}" == 1 ]] && WANTED[machine]=1
+    [[ "${WANTED[machine]:-0}" == 0 ]] && WANTED[poweroff]=0
     [[ "${WANTED[kpin]:-0}" == 1 ]] && WANTED[machine]=1
     [[ "${WANTED[machine]:-0}" == 0 ]] && WANTED[kpin]=0
     [[ "${WANTED[hdmi]:-0}" == 1 ]] && { WANTED[machine]=1; WANTED[kpin]=1; }
@@ -179,8 +182,12 @@ backend_apply() {
     LOGIN_MANAGER=plasmalogin
     [[ "${WANTED[single]}" == 1 ]] && LOGIN_MANAGER=sddm
     local -a failed=()
-    for c in "${TO_DISABLE[@]}"; do backend_run_component "$c" disable || failed+=("$c"); done
-    for c in "${TO_ENABLE[@]}"; do backend_run_component "$c" enable || failed+=("$c"); done
+    for c in "${TO_DISABLE[@]}"; do
+        if backend_run_component "$c" disable; then feature_record "$c" disable; else failed+=("$c"); fi
+    done
+    for c in "${TO_ENABLE[@]}"; do
+        if backend_run_component "$c" enable; then is_action "$c" || feature_record "$c" enable; else failed+=("$c"); fi
+    done
     [[ " ${TO_DISABLE[*]} ${TO_ENABLE[*]} " =~ \ (gaming|single|boot|kpin)\  ]] && RESTART_FOR_LOGIN=true
     backend_event finished "\"failed\":$(json_list "${failed[@]}"),\"restart\":$(restart_needed && echo true || echo false)"
 }
