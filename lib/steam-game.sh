@@ -62,8 +62,12 @@ steamgame_edit() {
         steamgame_steam_busy && return 1
         was_running=true
         info "Closing Steam for a moment (it only reads its games list at startup)..."
-        steam -shutdown >/dev/null 2>&1
-        for ((i = 0; i < 60; i++)); do pgrep -x steam >/dev/null || break; sleep 1; done
+        # A Steam that's still starting ignores the request: ask again.
+        for ((i = 0; i < 90; i++)); do
+            ((i % 15 == 0)) && steam -shutdown >/dev/null 2>&1
+            pgrep -x steam >/dev/null || break
+            sleep 1
+        done
         pgrep -x steam >/dev/null && { err "Steam didn't close; nothing changed."; return 1; }
     fi
     "$1"; local rc=$?
