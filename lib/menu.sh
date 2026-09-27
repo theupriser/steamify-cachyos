@@ -17,12 +17,18 @@ declare -A PARENT=([boot]=gaming [poweroff]=machine [kpin]=machine [hdmi]=machin
 # which has CEC like on SteamOS. HDMI refresh boost needs someone at the
 # screen to confirm each step.
 NO_PRESELECT=(boot cec kpin hdmi)
-# Feature versions: bump a component's number whenever what its enable sets
-# up changes. Each successful run records the number (state "features"); a
-# component that's on with an older number is ticked and re-applied by a
-# normal run, and the app shows it as an update. Unlisted = 1, and so is a
-# setup from before these were recorded.
-declare -A FEATURE_VERSION=()
+# Feature versions: the Steamify version in which what a component's enable
+# sets up last changed; set it to the new VERSION whenever you change one.
+# Each successful run records it (state "features"); a component that's on
+# with an older one is ticked and re-applied by a normal run, and the app
+# shows it as an update. A setup from before these were recorded counts as
+# FEATURE_BASELINE.
+FEATURE_BASELINE=2.1.0
+declare -A FEATURE_VERSION=(
+    [gaming]=2.1.0 [boot]=2.1.0 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.1.0
+    [launcher]=2.1.0 [cec]=2.1.0 [machine]=2.2.0 [poweroff]=2.2.0
+    [kpin]=2.1.0 [hdmi]=2.1.0
+)
 
 declare -A LABEL=(
     [gaming]="SteamOS conversion: boot into gaming mode, Steam on the desktop"
@@ -66,16 +72,19 @@ menu_visible() {
 
 feature_record() {
     # feature_record <component> <enable|disable>: after a successful run.
-    if [[ "$2" == enable ]]; then state_set features "$1" "${FEATURE_VERSION[$1]:-1}"
+    if [[ "$2" == enable ]]; then state_set features "$1" "${FEATURE_VERSION[$1]:-$FEATURE_BASELINE}"
     else state_set features "$1" off; fi
 }
 
 feature_outdated() {
-    # On, but set up by an older version of that feature.
-    local have
+    # On, but set up by an older version of that feature (compared as
+    # versions: 2.10.0 is newer than 2.9.0).
+    local have want
     [[ "${CURRENT[$1]:-0}" == 1 ]] || return 1
-    have="$(state_get features "$1" 1)"
-    [[ "$have" =~ ^[0-9]+$ ]] && (( have < ${FEATURE_VERSION[$1]:-1} ))
+    have="$(state_get features "$1" "$FEATURE_BASELINE")"
+    [[ "$have" == off ]] && have="$FEATURE_BASELINE"
+    want="${FEATURE_VERSION[$1]:-$FEATURE_BASELINE}"
+    [[ "$have" != "$want" && "$(printf '%s\n' "$have" "$want" | sort -V | head -n 1)" == "$have" ]]
 }
 
 feature_new() {

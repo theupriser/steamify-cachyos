@@ -238,20 +238,24 @@ normal run adds it.
 
 ## Feature versions (updates)
 
-Each component has a feature version (`FEATURE_VERSION` in `lib/menu.sh`,
-1 when not listed). After a component is turned on successfully, the version
-is recorded in `~/.local/state/cachyos-gamescope-boot/features.state`
+Each component has a feature version (`FEATURE_VERSION` in `lib/menu.sh`):
+the Steamify version in which what it sets up last changed (2.1.0 for
+everything that hasn't changed since). After a component is turned on
+successfully, that version is recorded in `~/.local/state/cachyos-gamescope-boot/features.state`
 (turning it off records `off`). Whether a component is on is always checked
 on the system itself; the version only decides about updates:
 
 - **On, recorded version older** than the current one: ticked and
   re-applied by a normal run; the plan (and the app's review) says
-  "update". A setup from before versions were recorded counts as 1.
+  "update". A setup from before versions were recorded counts as 2.1.0,
+  so on a machine set up with 2.1.0, Steam Machine support (2.2.0) is
+  updated.
 - **A new default sub-option** (not in `NO_PRESELECT`) whose parent is on
   and that was never turned on or off: ticked, so a normal run adds it.
   Turning it off once records `off`, so it isn't ticked again.
 
-Bump a component's number whenever what its `<id>_enable` sets up changes.
+Set a component's entry to the new `VERSION` whenever what its
+`<id>_enable` sets up changes.
 
 ## BIOS updates (Steam Machine)
 

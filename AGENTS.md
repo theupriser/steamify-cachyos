@@ -29,8 +29,9 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `<id>_available` is checked via `component_available` (e.g. `machine`
   only on Fremont). Turn-on order is `COMPONENTS` order, turn-off reverse;
   `gaming` must stay first. Dependencies live in `toggle_component`.
-- **Feature versions.** Bump `FEATURE_VERSION[<id>]` (`lib/menu.sh`) whenever
-  what `<id>_enable` sets up changes: installs recorded with an older number
+- **Feature versions.** Set `FEATURE_VERSION[<id>]` (`lib/menu.sh`) to the new
+  `VERSION` whenever what `<id>_enable` sets up changes (a new component gets
+  one too): installs recorded with an older version
   are ticked and re-applied ("update" in the plan and the app). New default
   sub-options are ticked for installs whose parent is on (`feature_new`).
   Status still comes from the system; don't add ad-hoc `<id>_repair` checks
