@@ -18,6 +18,10 @@ Item {
     property var steps: ({})                 // id -> "wait"|"run"|"ok"|"fail"
     property var failed: []
     property bool restartNeeded: false
+    // Review & apply only when something would change; "Re-apply what's on"
+    // is for when nothing did.
+    readonly property bool canApply: computePlan().length > 0
+    onCanApplyChanged: if (!canApply && sel === rows.length) sel = Math.max(0, rows.length - 1)
     property string runError: ""
     property bool wrongPassword: false
     property bool typing: false              // a text field has the keys
@@ -93,7 +97,10 @@ Item {
         if (want.gaming && boot !== bootNow) p.push({ id: "boot", action: boot === "desktop" ? "desktop" : "gaming" });
         return p;
     }
-    function goReview(again) { reapply = again; plan = computePlan(); screen = "review"; }
+    function goReview(again) {
+        if (!again && !canApply) return;
+        reapply = again; plan = computePlan(); screen = "review";
+    }
     function wantedIds() {
         var ids = [];
         for (var i = 0; i < items.length; i++)
@@ -195,7 +202,8 @@ Item {
         if (screen === "menu") {
             if (biosChecking) return;
             if (a === "up") sel = Math.max(0, sel - 1);
-            else if (a === "down") sel = Math.min(rows.length, sel + 1);
+            // The greyed-out Apply button can't be selected.
+            else if (a === "down") sel = Math.min(canApply ? rows.length : rows.length - 1, sel + 1);
             else if (a === "accept") {
                 if (sel === rows.length) { goReview(false); return; }
                 var r = rows[sel];

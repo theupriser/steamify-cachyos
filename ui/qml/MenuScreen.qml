@@ -70,7 +70,8 @@ Item {
             Text { readonly property int n: app.computePlan().length
                    text: n === 0 ? "Everything is the way you want it" : n + (n === 1 ? " change" : " changes")
                    color: Theme.faint; font.family: Theme.body; font.pixelSize: 14; anchors.verticalCenter: parent.verticalCenter }
-            Btn { k: screen.g.apply; text: "Review & apply"; primary: true; focusRing: app.sel === app.rows.length; height: 44; onClicked: app.goReview(false) }
+            Btn { k: screen.g.apply; text: "Review & apply"; primary: true; enabled: app.canApply
+                  focusRing: app.sel === app.rows.length; height: 44; onClicked: app.goReview(false) }
         }
     }
 }
