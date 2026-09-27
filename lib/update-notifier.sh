@@ -19,8 +19,11 @@ notify_status() {
 
 notify_seen() {
     # Every run records its version: the notifier compares the newest
-    # release with it, so opening Steamify ends a reminder.
-    notify_status && state_set notify seen "$VERSION"
+    # release with it, so opening Steamify ends a reminder. Also whether it
+    # was the app or the terminal menu: the notification opens the same.
+    notify_status || return 0
+    state_set notify seen "$VERSION"
+    if [[ "$BACKEND" == true ]]; then state_set notify frontend app; else state_set notify frontend terminal; fi
 }
 
 notify_enable() {

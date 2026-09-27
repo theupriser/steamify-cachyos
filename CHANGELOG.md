@@ -7,7 +7,8 @@ one per merged pull request.
 
 ## 2.5.0 - 2026-09-27
 
-- **feat: Update notifications: a notification and tray icon when there's a new Steamify**
+- **fix: Open Steamify from the notification starts the app (own scope), the same way it was last used (app or terminal)**
+- `cf73229` **feat: Update notifications: a notification and tray icon when there's a new Steamify**
 
 ## 2.4.1 - 2026-09-27
 

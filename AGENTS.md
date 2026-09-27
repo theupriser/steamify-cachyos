@@ -227,7 +227,7 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   ticked by default, 2.5.0): a user timer (daily, and the service is wanted
   by `plasma-workspace.target`) runs `patches/steamify-notifier.py`, which
   compares GitHub's newest release with the `seen` version every run records
-  (`notify_seen` in the entry point, only while it's on). It must never
+  (`notify_seen` in the entry point, only while it's on, with `frontend`: app or terminal, which Open Steamify starts again, in a `systemd-run --scope` since the check's own unit is stopped when it exits). It must never
   update anything itself: notification + tray icon, Open Steamify / Skip
   this version (`skipped`). Desktop only (exits without `plasmashell`).
 - VRAM booster (`vram`, `lib/vram-booster.sh`, top-level, ticked by

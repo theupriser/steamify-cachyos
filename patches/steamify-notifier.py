@@ -20,7 +20,8 @@ STATE_DIR = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.expanduser(
 STATE = os.path.join(STATE_DIR, "notify.state")
 DATA = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
 RUN_APP = os.path.join(DATA, "cachyos-gamescope-boot", "run-app")
-APP_URL = f"https://github.com/{REPO}/releases/latest/download/steamify-app.sh"
+RUN_TERMINAL = os.path.join(DATA, "cachyos-gamescope-boot", "run-wizard")
+RELEASE = f"https://github.com/{REPO}/releases/latest/download"
 
 
 def version(v):
@@ -85,10 +86,21 @@ def main():
     icon = QIcon.fromTheme("cachyos-gamescope-boot-wizard", QIcon.fromTheme("steam"))
 
     def open_app():
-        # The app records its version as seen, which ends the reminder.
-        cmd = [RUN_APP] if os.access(RUN_APP, os.X_OK) else \
-              ["bash", "-c", f"set -o pipefail; curl -fsSL --max-time 30 {APP_URL} | bash"]
-        subprocess.Popen(cmd, start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # The way Steamify was last used (the app or the terminal menu), the
+        # newest release either way; it records its version as seen, which
+        # ends the reminder. In its own unit: this one's processes are
+        # stopped when the check exits.
+        if state("frontend") == "terminal":
+            cmd = ["konsole", "-e", RUN_TERMINAL] if os.access(RUN_TERMINAL, os.X_OK) else \
+                  ["konsole", "-e", "bash", "-c",
+                   f"set -o pipefail; curl -fsSL --max-time 30 {RELEASE}/steamify.sh | bash; read -rp 'Press Enter to close. ' _"]
+        else:
+            cmd = [RUN_APP] if os.access(RUN_APP, os.X_OK) else \
+                  ["bash", "-c", f"set -o pipefail; curl -fsSL --max-time 30 {RELEASE}/steamify-app.sh | bash"]
+        # A scope lives as long as anything in it: the start script puts the
+        # app in the background and exits.
+        subprocess.Popen(["systemd-run", "--user", "--scope", "--collect", "--quiet", *cmd],
+                         start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         app.quit()
 
     def skip():
