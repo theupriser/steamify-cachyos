@@ -63,6 +63,7 @@ backend_status() {
         items+=",\"on\":$( [[ "$now" == 1 ]] && echo true || echo false)"
         items+=",\"wanted\":$( [[ "${WANTED[$c]:-0}" == 1 ]] && echo true || echo false)"
         items+=",\"update\":$(feature_outdated "$c" && echo true || echo false)"
+        items+=",\"new\":$(feature_new "$c" && echo true || echo false)"
         items+=",\"selectable\":$(component_selectable "$c" && echo true || echo false)}"
     done
     local cec="" f

@@ -33,7 +33,8 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `VERSION` whenever what `<id>_enable` sets up changes (a new component gets
   one too): installs recorded with an older version
   are ticked and re-applied ("update" in the plan and the app). New default
-  sub-options are ticked for installs whose parent is on (`feature_new`).
+  sub-options are ticked for installs whose parent is on (`feature_new`,
+  shown as "new").
   Status still comes from the system; don't add ad-hoc `<id>_repair` checks
   for new changes.
 - **Reversibility.** Every per-user KDE setting a component changes goes

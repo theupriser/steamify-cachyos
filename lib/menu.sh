@@ -90,11 +90,14 @@ feature_outdated() {
 
 menu_label() {
     # The label, with "(update)" after the name when a newer version of it
-    # will be applied.
-    local l="${LABEL[$1]}"
-    if feature_outdated "$1"; then
-        if [[ "$l" == *:* ]]; then l="${l%%:*} ${c_yellow}(update)${c_reset}:${l#*:}"
-        else l+=" ${c_yellow}(update)${c_reset}"; fi
+    # will be applied, "(new)" for a default sub-option added since the
+    # last run.
+    local l="${LABEL[$1]}" b=""
+    if feature_outdated "$1"; then b="${c_yellow}(update)${c_reset}"
+    elif feature_new "$1"; then b="${c_green}(new)${c_reset}"; fi
+    if [[ -n "$b" ]]; then
+        if [[ "$l" == *:* ]]; then l="${l%%:*} $b:${l#*:}"
+        else l+=" $b"; fi
     fi
     printf '%s' "$l"
 }
