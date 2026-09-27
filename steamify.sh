@@ -43,6 +43,7 @@ fi
 # Everything per-user (autologin user, Steam, theme, shortcut) is for the
 # user running the script.
 TARGET_USER="$(id -un)"
+migrate_layout
 notify_seen
 
 restart_needed() { [[ -n "${BIOS_NEEDS_RESTART:-}" || "$RESTART_FOR_LOGIN" == true ]]; }

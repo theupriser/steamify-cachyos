@@ -32,6 +32,12 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   the singletons `Theme` (colours, fonts), `Texts` (item texts) and `Input`
   (controller/keyboard/remote and its button names), listed in `qmldir`.
   Screens get the `AppState` as `app` and only show it or call its functions.
+- **Paths.** Everything in the home folder lives under `steamify`:
+  `$STATE_DIR` (`~/.local/state/steamify`), `$STEAMIFY_DATA`/`$STEAMIFY_BIN`
+  (`~/.local/share/steamify/{app,bin}`), `lib/state.sh`. Never add files
+  under the old name `cachyos-gamescope-boot`; `migrate_layout` moves those
+  of older versions (symlinks keep older releases working). Keep the
+  `.bak-gamescope-wizard` backup suffix: existing backups are found by it.
 - `lib/*.sh` - one file per responsibility, each defining functions only
   (no top-level side effects besides constants). See the table in
   `TECHNICAL.md`.

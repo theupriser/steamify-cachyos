@@ -14,7 +14,7 @@ and turns on what you ticked. To be able to undo:
   off.
 - **KDE settings** in your home directory are recorded with their previous
   value the first time the wizard changes them, in an undo journal under
-  `~/.local/state/cachyos-gamescope-boot/`. Turning the component off writes
+  `~/.local/state/steamify/`. Turning the component off writes
   the old values back (or removes keys that didn't exist before). Setups
   made by older versions of the script, without a journal, fall back to
   KDE's defaults.
@@ -240,7 +240,7 @@ normal run adds it.
 
 The **Update notifications** option (new in 2.5.0, ticked by default)
 installs `patches/steamify-notifier.py` as
-`~/.local/share/cachyos-gamescope-boot/steamify-notifier` with two user
+`~/.local/share/steamify/bin/steamify-notifier` with two user
 units in `~/.config/systemd/user`: `steamify-update-check.timer` (daily,
 `Persistent=`) and `steamify-update-check.service` (also wanted by
 `plasma-workspace.target`, so it checks a minute after each desktop login).
@@ -290,7 +290,7 @@ worth it if the booster itself turns out to cause stutter.
 Each component has a feature version (`FEATURE_VERSION` in `lib/menu.sh`):
 the Steamify version in which what it sets up last changed (2.1.0 for
 everything that hasn't changed since). After a component is turned on
-successfully, that version is recorded in `~/.local/state/cachyos-gamescope-boot/features.state`
+successfully, that version is recorded in `~/.local/state/steamify/features.state`
 (turning it off records `off`). Whether a component is on is always checked
 on the system itself; the version only decides about updates:
 
@@ -343,6 +343,31 @@ the screen can stay black for several minutes.
 To walk through it without flashing anything, run the wizard with
 `WIZARD_BIOS_DRY_RUN=1`: it downloads and checks the package and shows both
 warnings, skips fwupd's device check, and only prints the install command.
+
+## Where Steamify keeps its files
+
+In the home folder, everything is under `steamify`:
+
+| Where | What |
+|---|---|
+| `~/.local/state/steamify/` | State (`*.state`), undo journals (`*.journal`), the saved panel layout (`theme-layout/`) |
+| `~/.local/share/steamify/app/` | The app (`steamify-app.sh` downloads it here) |
+| `~/.local/share/steamify/bin/` | The shortcut's start scripts (`run-app`, `run-wizard`) and `steamify-notifier` |
+| `~/.local/share/icons/hicolor/scalable/apps/steamify.svg` | The shortcut's icon |
+| `~/.local/share/applications/steamify-*.desktop` | The launcher entries |
+| `~/.config/systemd/user/` | `steamify-update-check.*`, `steam-desktop-autostart.service` |
+
+System-wide: `/usr/local/lib/steamify/` (kernel headers script),
+`/usr/src/steamify-*` (DKMS modules), `/var/cache/steamify/kernel` (the old
+kernel pin's packages), and `*.bak-gamescope-wizard` backups next to the
+system files that were edited (that name stays: it's how they're found again).
+
+Before 2.5.0 the home folder paths used the project's old name
+(`cachyos-gamescope-boot`). `migrate_layout` (`lib/state.sh`) moves them at
+every start of a newer version, once, and leaves symlinks under the old names
+so an older release still finds the same state; it fixes the paths in the
+launcher entries and the update check's unit, and merges when both exist.
+The headers script moves when Steam Machine support is set up again.
 
 ## Manual session control
 

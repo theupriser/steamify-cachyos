@@ -16,11 +16,11 @@ import urllib.request
 
 REPO = "theupriser/steamify-cachyos"
 STATE_DIR = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state"),
-                         "cachyos-gamescope-boot")
+                         "steamify")
 STATE = os.path.join(STATE_DIR, "notify.state")
 DATA = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
-RUN_APP = os.path.join(DATA, "cachyos-gamescope-boot", "run-app")
-RUN_TERMINAL = os.path.join(DATA, "cachyos-gamescope-boot", "run-wizard")
+RUN_APP = os.path.join(DATA, "steamify", "bin", "run-app")
+RUN_TERMINAL = os.path.join(DATA, "steamify", "bin", "run-wizard")
 RELEASE = f"https://github.com/{REPO}/releases/latest/download"
 
 
@@ -83,7 +83,7 @@ def main():
     app.setApplicationName("Steamify")
     app.setDesktopFileName("steamify-ui")
     app.setQuitOnLastWindowClosed(False)
-    icon = QIcon.fromTheme("cachyos-gamescope-boot-wizard", QIcon.fromTheme("steam"))
+    icon = QIcon.fromTheme("steamify", QIcon.fromTheme("steam"))
 
     def open_app():
         # The way Steamify was last used (the app or the terminal menu), the
@@ -126,7 +126,7 @@ def main():
     relay.picked.connect(lambda a: open_app() if a == "open" else skip() if a == "skip" else None)
 
     def notify():
-        r = subprocess.run(["notify-send", "--app-name=Steamify", "--icon=cachyos-gamescope-boot-wizard",
+        r = subprocess.run(["notify-send", "--app-name=Steamify", "--icon=steamify",
                             "-A", "open=Open Steamify", "-A", "skip=Skip this version",
                             f"Steamify {new} is available",
                             "Open Steamify to see what's new and choose what to update."],

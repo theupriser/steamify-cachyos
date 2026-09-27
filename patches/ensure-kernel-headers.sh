@@ -1,5 +1,5 @@
 #!/bin/bash
-# Installed by cachyos-gamescope-boot: install missing -headers for every
+# Installed by Steamify: install missing -headers for every
 # installed kernel, so DKMS builds leds-valve for it.
 set -u
 missing=()

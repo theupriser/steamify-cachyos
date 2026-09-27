@@ -6,8 +6,7 @@
 # then; it never updates anything itself (patches/steamify-notifier.py).
 # Sourced by steamify.sh; not meant to be run on its own.
 
-NOTIFY_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/cachyos-gamescope-boot"
-NOTIFY_SCRIPT="$NOTIFY_DIR/steamify-notifier"
+NOTIFY_SCRIPT="$STEAMIFY_BIN/steamify-notifier"
 NOTIFY_UNITS="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
 NOTIFY_NAME=steamify-update-check
 
@@ -52,7 +51,7 @@ notify_enable() {
 notify_disable() {
     systemctl --user disable --now "$NOTIFY_NAME.timer" "$NOTIFY_NAME.service" >/dev/null 2>&1
     rm -f "$NOTIFY_UNITS/$NOTIFY_NAME.service" "$NOTIFY_UNITS/$NOTIFY_NAME.timer" "$NOTIFY_SCRIPT"
-    rmdir "$NOTIFY_DIR" 2>/dev/null || true
+    rmdir "$STEAMIFY_BIN" 2>/dev/null || true
     systemctl --user daemon-reload
     state_clear notify
     ok "Update notifications off."

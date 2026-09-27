@@ -311,7 +311,9 @@ led_dkms_override_remove() {
         sudo rm -f "$LED_DKMS_OVERRIDE"
     fi
 }
-HEADERS_SCRIPT="/usr/local/lib/cachyos-gamescope-boot/ensure-kernel-headers"
+HEADERS_SCRIPT="/usr/local/lib/steamify/ensure-kernel-headers"
+# Before 2.5.0; removed when it's set up again or turned off.
+HEADERS_SCRIPT_OLD="/usr/local/lib/cachyos-gamescope-boot/ensure-kernel-headers"
 HEADERS_UNIT="/etc/systemd/system/ensure-kernel-headers.service"
 
 install_headers_boot_check() {
@@ -323,6 +325,7 @@ install_headers_boot_check() {
     sudo mkdir -p "$(dirname "$HEADERS_SCRIPT")"
     patch_file ensure-kernel-headers.sh | sudo tee "$HEADERS_SCRIPT" > /dev/null
     sudo chmod 755 "$HEADERS_SCRIPT"
+    sudo rm -rf "$(dirname "$HEADERS_SCRIPT_OLD")"
     service_file ensure-kernel-headers.service HEADERS_SCRIPT="$HEADERS_SCRIPT" | sudo tee "$HEADERS_UNIT" > /dev/null
     sudo systemctl daemon-reload
     sudo systemctl enable ensure-kernel-headers.service
@@ -432,7 +435,7 @@ machine_disable() {
     sudo systemctl disable ensure-kernel-headers.service 2>/dev/null
     led_dkms_override_remove
     sudo rm -f "$HEADERS_UNIT" "$HEADERS_SCRIPT"
-    sudo rmdir "$(dirname "$HEADERS_SCRIPT")" 2>/dev/null
+    sudo rm -rf "$(dirname "$HEADERS_SCRIPT")" "$(dirname "$HEADERS_SCRIPT_OLD")"
     sudo systemctl daemon-reload
     ok "Steam Machine support removed (the AUR helper, if installed, is kept)."
 }

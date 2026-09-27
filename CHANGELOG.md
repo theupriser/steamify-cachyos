@@ -7,7 +7,8 @@ one per merged pull request.
 
 ## 2.5.0 - 2026-09-27
 
-- **fix: fill takes values literally; the notifier path is quoted in its unit**
+- **feat: Everything in the home folder under steamify (state, scripts, icon), moved once from the old name**
+- `2e0881b` **fix: fill takes values literally; the notifier path is quoted in its unit**
 - `cce31e1` **refactor: DKMS confs in patches/; an existing leds-valve DKMS override is kept and restored**
 - `bd4fa3a` **refactor: The session sync and kernel headers scripts in patches/**
 - `8ffa0f2` **refactor: systemd units in services/, read with service_file like patches/**
