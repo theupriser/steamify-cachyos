@@ -627,7 +627,11 @@ ApplicationWindow {
                                     x: row.modelData.parent ? 46 : 16
                                     width: controls.x - x - 16
                                     opacity: row.modelData.kind === "action" && !(bios && bios.selectable) ? 0.6 : 1
-                                    Text { text: label(row.modelData); color: t.textHi; font.family: t.body; font.pixelSize: 17; font.weight: Font.DemiBold; elide: Text.ElideRight; width: parent.width }
+                                    // The name, with an Update badge when a newer version of it will be applied.
+                                    Row { width: parent.width; spacing: 10
+                                        Text { text: label(row.modelData); color: t.textHi; font.family: t.body; font.pixelSize: 17; font.weight: Font.DemiBold; elide: Text.ElideRight
+                                               width: Math.min(implicitWidth, parent.width - (upd.visible ? upd.width + parent.spacing : 0)) }
+                                        Chip { id: upd; visible: !!row.modelData.update; text: "Update"; fg: t.warn; bgc: t.warnBg; height: 20; anchors.verticalCenter: parent.verticalCenter } }
                                     Text { text: row.modelData.id === "bios" ? biosHint() : ((row.modelData.id === "hdmi" && hdmiRowHint()) || (texts[row.modelData.id] && texts[row.modelData.id].hint) || row.modelData.hint); color: t.mute; font.family: t.body; font.pixelSize: 13; elide: Text.ElideRight; width: parent.width }
                                 }
                                 // Right: every control ends on the same edge

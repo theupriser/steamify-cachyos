@@ -87,6 +87,17 @@ feature_outdated() {
     [[ "$have" != "$want" && "$(printf '%s\n' "$have" "$want" | sort -V | head -n 1)" == "$have" ]]
 }
 
+menu_label() {
+    # The label, with "(update)" after the name when a newer version of it
+    # will be applied.
+    local l="${LABEL[$1]}"
+    if feature_outdated "$1"; then
+        if [[ "$l" == *:* ]]; then l="${l%%:*} ${c_yellow}(update)${c_reset}:${l#*:}"
+        else l+=" ${c_yellow}(update)${c_reset}"; fi
+    fi
+    printf '%s' "$l"
+}
+
 feature_new() {
     # A default sub-option added after its parent was set up (e.g. the
     # power-off fix under Steam Machine support): never turned on or off.
@@ -183,9 +194,9 @@ show_menu() {
             local tree=""; [[ -n "${PARENT[$c]:-}" ]] && tree="  └ "
             printf "  %b%-3s %-6s %-6s %s%s (not available)%b\n" "$c_dim" "$i" "$now" "$want" "$tree" "${LABEL[$c]}" "$c_reset"
         elif [[ -n "${PARENT[$c]:-}" ]]; then
-            printf "  %-3s %b %-6s   └ %s\n" "$i" "$now" "$want" "${LABEL[$c]}"
+            printf "  %-3s %b %-6s   └ %b\n" "$i" "$now" "$want" "$(menu_label "$c")"
         else
-            printf "  %-3s %b %-6s %s\n" "$i" "$now" "$want" "${LABEL[$c]}"
+            printf "  %-3s %b %-6s %b\n" "$i" "$now" "$want" "$(menu_label "$c")"
         fi
     done
     echo
