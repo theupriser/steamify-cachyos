@@ -15,11 +15,11 @@
 set -uo pipefail
 
 # Release version, see CHANGELOG.md.
-VERSION=2.2.0
+VERSION=2.3.0
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-for lib in common state packages login-manager single-user steam-desktop steam-machine fremont-poweroff hdmi-refresh cec boot-session vapor-theme steamos-extras bios desktop-shortcut wizard-shortcut menu backend; do
+for lib in common state packages login-manager single-user steam-desktop steam-machine fremont-poweroff vram-booster hdmi-refresh cec boot-session vapor-theme steamos-extras bios desktop-shortcut wizard-shortcut menu backend; do
     # shellcheck source=/dev/null
     source "$SCRIPT_DIR/lib/$lib.sh"
 done
@@ -140,7 +140,9 @@ while true; do
         if [[ "$c" == boot ]]; then echo "  - boot into: desktop (from the next boot)"
         elif is_action "$c"; then echo "  - run:      ${LABEL[$c]%%:*} at your own risk (checks, then asks twice more)"
         elif feature_outdated "$c"; then echo "  - update:   ${LABEL[$c]} (changed in this version)"
-        elif [[ "${CURRENT[$c]}" == 1 ]]; then echo "  - re-apply: ${LABEL[$c]}"; else echo "  - turn on:  ${LABEL[$c]}"; fi
+        elif [[ "${CURRENT[$c]}" == 1 ]]; then echo "  - re-apply: ${LABEL[$c]}"
+        elif feature_new "$c"; then echo "  - turn on:  ${LABEL[$c]} (new in this version)"
+        else echo "  - turn on:  ${LABEL[$c]}"; fi
     done
     ask_yn "Go ahead?" y || { info "Nothing changed."; continue; }
 

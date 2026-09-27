@@ -45,6 +45,11 @@ ApplicationWindow {
     }
 
     // --- Texts per item (the backend's labels are the fallback) ---
+    // Replaces the explanation of an option that can't be turned on here.
+    readonly property var unsupported: ({
+        vram: { body: "Not available with your NVIDIA graphics card: NVIDIA's driver doesn't tell Linux how its video memory is used yet, so there's nothing to steer. It works with AMD and Intel graphics cards, and shows up here as soon as NVIDIA's driver supports it.",
+                changes: ["Nothing: can't be turned on with NVIDIA's driver"] }
+    })
     readonly property var texts: ({
         gaming: { label: "SteamOS conversion", hint: "Boot into gaming mode, Steam on the desktop",
                   body: "Boots straight into gaming mode. Switch to Desktop in Steam works, and Return to Gaming Mode on the desktop brings you back.",
@@ -72,6 +77,9 @@ ApplicationWindow {
         poweroff: { label: "Power-off fix", hint: "Stays off after shutting down",
                     body: "With recent kernels the Steam Machine starts again right after shutting down: the firmware leaves a wake bit set, and newer kernels (7.2, and updates of 6.x, 7.0 and 7.1) no longer clear it. Valve's own kernel clears it; this small module does the same right before power-off.",
                     changes: ["steamify-fremont-poweroff module for each installed kernel (DKMS)", "Only on a Steam Machine, only touches that one wake bit", "Off: recent kernels may start it again after shutting down"] },
+        vram: { label: "VRAM booster", hint: "The game in front keeps its VRAM",
+                body: "Like SteamOS 3.9: the game you're playing keeps its video memory, and background apps are moved out first. Without it a game that needs most of the video memory can spill into system RAM and stutter. Shown for GPUs whose driver supports it (AMD, Intel) on kernel 7.2 or newer.",
+                changes: ["dmemcg-booster (system and user service)", "plasma-foreground-booster, which tells it which window is in front", "Off: removed again, unless you had installed them yourself"] },
         kpin: { label: "Pin the kernel", hint: "Untick for CachyOS's current kernel",
                 body: "Keeps the Steam Machine on CachyOS kernel 7.1.6. Untick it to go back to CachyOS's current kernel; HDMI refresh boost goes with it.",
                 changes: ["linux-cachyos from Steamify's release (signature checked)", "Kept in /var/cache/steamify/kernel", "Added to IgnorePkg"] },
@@ -241,6 +249,8 @@ ApplicationWindow {
 
     function toggle(id) {
         hdmiNote = "";
+        var cur = items.find(function (i) { return i.id === id; });
+        if (cur && cur.kind === "toggle" && cur.selectable === false) return;
         var w = Object.assign({}, want);
         w[id] = !w[id];
         if (id === "gaming" && !w.gaming) { w.single = false; }
@@ -264,7 +274,7 @@ ApplicationWindow {
             var it = items[i];
             if (it.kind !== "toggle") continue;
             if (it.parent && !want[it.parent]) { if (it.on) p.push({ id: it.id, action: "off" }); continue; }
-            if (want[it.id] && !it.on) p.push({ id: it.id, action: "on" });
+            if (want[it.id] && !it.on) p.push({ id: it.id, action: "on", isNew: !!it["new"] });
             else if (!want[it.id] && it.on) p.push({ id: it.id, action: "off" });
             else if (want[it.id] && (reapply || it.update)) p.push({ id: it.id, action: reapply ? "again" : "update" });
         }
@@ -626,17 +636,19 @@ ApplicationWindow {
                                     anchors.verticalCenter: parent.verticalCenter; spacing: 2
                                     x: row.modelData.parent ? 46 : 16
                                     width: controls.x - x - 16
-                                    opacity: row.modelData.kind === "action" && !(bios && bios.selectable) ? 0.6 : 1
-                                    // The name, with an Update badge when a newer version of it will be applied.
+                                    opacity: (row.modelData.kind === "action" && !(bios && bios.selectable)) || (row.modelData.kind === "toggle" && row.modelData.selectable === false) ? 0.6 : 1
+                                    // The name, with an Update badge when a newer version of it will be
+                                    // applied, New for a default sub-option added since the last run.
                                     Row { width: parent.width; spacing: 10
                                         Text { text: label(row.modelData); color: t.textHi; font.family: t.body; font.pixelSize: 17; font.weight: Font.DemiBold; elide: Text.ElideRight
                                                width: Math.min(implicitWidth, parent.width - (upd.visible ? upd.width + parent.spacing : 0)) }
-                                        Chip { id: upd; visible: !!row.modelData.update; text: "Update"; fg: t.warn; bgc: t.warnBg; height: 20; anchors.verticalCenter: parent.verticalCenter } }
-                                    Text { text: row.modelData.id === "bios" ? biosHint() : ((row.modelData.id === "hdmi" && hdmiRowHint()) || (texts[row.modelData.id] && texts[row.modelData.id].hint) || row.modelData.hint); color: t.mute; font.family: t.body; font.pixelSize: 13; elide: Text.ElideRight; width: parent.width }
+                                        Chip { id: upd; visible: !!row.modelData.update || !!row.modelData["new"]; text: row.modelData.update ? "Update" : "New"; fg: row.modelData.update ? t.warn : t.good; bgc: row.modelData.update ? t.warnBg : t.goodBg; height: 20; anchors.verticalCenter: parent.verticalCenter } }
+                                    Text { text: row.modelData.id === "bios" ? biosHint() : row.modelData.selectable === false ? row.modelData.hint : ((row.modelData.id === "hdmi" && hdmiRowHint()) || (texts[row.modelData.id] && texts[row.modelData.id].hint) || row.modelData.hint); color: t.mute; font.family: t.body; font.pixelSize: 13; elide: Text.ElideRight; width: parent.width }
                                 }
                                 // Right: every control ends on the same edge
                                 Item {
                                     id: controls
+                                    opacity: row.modelData.kind === "toggle" && row.modelData.selectable === false ? 0.4 : 1
                                     anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter
                                     width: 180; height: 32
                                     // choice
@@ -678,7 +690,7 @@ ApplicationWindow {
                         id: detail
                         width: parent.width; height: parent.height - sys.height - 16; radius: 16; color: t.card
                         readonly property var it: sel < rows.length ? rows[sel] : null
-                        readonly property var tx: it ? (texts[it.id] || {}) : {}
+                        readonly property var tx: it ? (it.selectable === false && unsupported[it.id] ? Object.assign({}, texts[it.id], unsupported[it.id]) : (texts[it.id] || {})) : {}
                         // Long texts scroll instead of running out of the card;
                         // each item starts at the top.
                         onItChanged: detailFlick.contentY = 0
@@ -763,6 +775,7 @@ ApplicationWindow {
                         Row { anchors.fill: parent; anchors.leftMargin: 18; spacing: 14
                             Chip { text: parent.parent.st[0]; fg: parent.parent.st[1]; bgc: parent.parent.st[2]; width: 84; anchors.verticalCenter: parent.verticalCenter }
                             Text { text: (texts[parent.parent.modelData.id] || {}).label || parent.parent.modelData.id; color: t.textHi; font.family: t.body; font.pixelSize: 17; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter }
+                            Chip { visible: !!parent.parent.modelData.isNew; text: "New"; fg: t.good; bgc: t.goodBg; height: 20; anchors.verticalCenter: parent.verticalCenter }
                         }
                     }
                 }
@@ -858,7 +871,7 @@ ApplicationWindow {
                                 border.width: parent.parent.st === "wait" || parent.parent.st === "run" ? 2 : 0; border.color: parent.parent.st === "run" ? t.accent : "#343f50"
                                 Text { anchors.centerIn: parent; text: parent.parent.parent.st === "ok" ? "✓" : (parent.parent.parent.st === "fail" ? "!" : ""); color: parent.parent.parent.st === "ok" ? t.good : t.bad; font.pixelSize: 13; font.weight: Font.Bold }
                                 RotationAnimator on rotation { running: parent.parent.parent.st === "run"; from: 0; to: 360; duration: 1000; loops: Animation.Infinite } }
-                            // The step; an update shows the name with an Update badge, like the menu.
+                            // The step; an update or new sub-option shows its badge, like the menu.
                             Item { width: 380; height: parent.height
                                 readonly property var step: parent.parent.modelData
                                 readonly property bool update: step.action === "update"
@@ -866,7 +879,7 @@ ApplicationWindow {
                                     Text { text: (({ on: "Turn on ", off: "Turn off ", again: "Re-apply ", desktop: "Boot into ", gaming: "Boot into ", check: "Download and check the ", flash: "Hand to fwupd: the " })[parent.parent.step.action] || "") + ((texts[parent.parent.step.id] || {}).label || parent.parent.step.id)
                                            color: parent.parent.parent.parent.st === "wait" ? t.faint : t.textHi; font.family: t.body; font.pixelSize: 16; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter; elide: Text.ElideRight
                                            width: Math.min(implicitWidth, parent.width - (stepUpd.visible ? stepUpd.width + parent.spacing : 0)) }
-                                    Chip { id: stepUpd; visible: parent.parent.update; text: "Update"; fg: t.warn; bgc: t.warnBg; height: 20; anchors.verticalCenter: parent.verticalCenter } } }
+                                    Chip { id: stepUpd; visible: parent.parent.update || !!parent.parent.step.isNew; text: parent.parent.update ? "Update" : "New"; fg: parent.parent.update ? t.warn : t.good; bgc: parent.parent.update ? t.warnBg : t.goodBg; height: 20; anchors.verticalCenter: parent.verticalCenter } } }
                             Text { text: ({ wait: "Waiting", run: "Working…", ok: "Done", fail: "Problem" })[parent.parent.st]; color: parent.parent.st === "ok" ? t.good : (parent.parent.st === "fail" ? t.bad : "#b8c3d1"); font.family: t.body; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
                         }
                     }

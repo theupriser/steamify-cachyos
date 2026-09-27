@@ -5,7 +5,7 @@
 
 # Menu order. Components are turned on in this order and off in reverse;
 # gaming must come first (single user builds on it).
-COMPONENTS=(gaming boot theme glyphs single launcher cec machine poweroff kpin hdmi bios)
+COMPONENTS=(gaming boot theme glyphs single launcher vram cec machine poweroff kpin hdmi bios)
 # One-off actions rather than on/off components: never preselected, never
 # re-applied, not listed as on or off.
 ACTIONS=(bios)
@@ -26,7 +26,7 @@ NO_PRESELECT=(boot cec kpin hdmi)
 FEATURE_BASELINE=2.1.0
 declare -A FEATURE_VERSION=(
     [gaming]=2.1.0 [boot]=2.1.0 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.1.0
-    [launcher]=2.1.0 [cec]=2.1.0 [machine]=2.2.0 [poweroff]=2.2.0
+    [launcher]=2.1.0 [cec]=2.1.0 [machine]=2.2.0 [poweroff]=2.2.0 [vram]=2.3.0
     [kpin]=2.1.0 [hdmi]=2.1.0
 )
 
@@ -37,6 +37,7 @@ declare -A LABEL=(
     [glyphs]="Install Steam Deck/Machine icons: Deck button icons in gaming mode"
     [single]="Single user mode: no password, lock screen or log out (SDDM)"
     [launcher]="Steamify shortcut: the app on the desktop, Steamify Terminal in the launcher"
+    [vram]="VRAM booster: the game in front keeps its VRAM, background apps make room"
     [cec]="HDMI-CEC: use Steam with the TV remote, TV on/off with the PC (experimental)"
     [machine]="Steam Machine support: LED bar driver, hardware settings in Steam"
     [poweroff]="Power-off fix: the Steam Machine stays off after shutting down"
@@ -49,6 +50,7 @@ declare -A CURRENT WANTED
 component_available() {
     case "$1" in
         machine|poweroff) machine_available ;;
+        vram) vram_available ;;
         kpin) kpin_available ;;
         hdmi) hdmi_available ;;
         bios) bios_available ;;
@@ -89,20 +91,25 @@ feature_outdated() {
 
 menu_label() {
     # The label, with "(update)" after the name when a newer version of it
-    # will be applied.
-    local l="${LABEL[$1]}"
-    if feature_outdated "$1"; then
-        if [[ "$l" == *:* ]]; then l="${l%%:*} ${c_yellow}(update)${c_reset}:${l#*:}"
-        else l+=" ${c_yellow}(update)${c_reset}"; fi
+    # will be applied, "(new)" for a default sub-option added since the
+    # last run.
+    local l="${LABEL[$1]}" b=""
+    if feature_outdated "$1"; then b="${c_yellow}(update)${c_reset}"
+    elif feature_new "$1"; then b="${c_green}(new)${c_reset}"; fi
+    if [[ -n "$b" ]]; then
+        if [[ "$l" == *:* ]]; then l="${l%%:*} $b:${l#*:}"
+        else l+=" $b"; fi
     fi
     printf '%s' "$l"
 }
 
 feature_new() {
-    # A default sub-option added after its parent was set up (e.g. the
-    # power-off fix under Steam Machine support): never turned on or off.
-    [[ -n "${PARENT[$1]:-}" && "${CURRENT[${PARENT[$1]}]:-0}" == 1 && "${CURRENT[$1]:-0}" == 0 ]] &&
-        ! is_action "$1" && [[ " ${NO_PRESELECT[*]} " != *" $1 "* ]] &&
+    # A default option added after its parent was set up (e.g. the power-off
+    # fix under Steam Machine support; a top-level one counts the SteamOS
+    # conversion as its parent): never turned on or off.
+    local p="${PARENT[$1]:-gaming}"
+    [[ "$1" != gaming && "${CURRENT[$p]:-0}" == 1 && "${CURRENT[$1]:-0}" == 0 ]] &&
+        ! is_action "$1" && component_selectable "$1" && [[ " ${NO_PRESELECT[*]} " != *" $1 "* ]] &&
         [[ -z "$(state_get features "$1")" ]]
 }
 
@@ -110,6 +117,7 @@ component_selectable() {
     # Greyed out and not tickable when it has nothing to do.
     case "$1" in
         bios) bios_selectable ;;
+        vram) vram_selectable ;;
     esac
 }
 
@@ -138,10 +146,12 @@ detect_components() {
     launcher_repair && WANTED[launcher]=1
     # Shows the current and newest BIOS version.
     bios_available && { bios_lookup_newest; LABEL[bios]="$(bios_label)"; }
+    # Greyed out with an NVIDIA card: say why.
+    component_available vram && ! vram_selectable && LABEL[vram]="VRAM booster: not supported by NVIDIA's driver yet"
     # First run: preselect the full SteamOS experience (never an action).
     if [[ "$any" == false ]]; then
         for c in "${COMPONENTS[@]}"; do
-            component_available "$c" && ! is_action "$c" &&
+            component_available "$c" && component_selectable "$c" && ! is_action "$c" &&
                 [[ " ${NO_PRESELECT[*]} " != *" $c "* ]] && WANTED[$c]=1
         done
         machine_available && WANTED[cec]=1

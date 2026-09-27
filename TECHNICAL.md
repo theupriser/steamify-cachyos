@@ -236,6 +236,34 @@ Where Steam Machine support was set up before 2.2.0, the menu ticks the
 power-off fix as a new default sub-option (see feature versions below), so a
 normal run adds it.
 
+## VRAM booster
+
+SteamOS 3.9 manages the dGPU's VRAM per cgroup: the game in front is
+protected, background apps are evicted first. Without it a game that needs
+most of the VRAM (8 GB on the Steam Machine) can be pushed into system RAM
+by the desktop and other apps, and stutter. The kernel side is the `dmem`
+cgroup controller (7.2); amdgpu and Intel's xe register their VRAM with it,
+NVIDIA's driver doesn't: with an NVIDIA card the option is shown greyed
+out, with why (`WIZARD_VRAM_FAKE_NVIDIA=1` fakes that for tests). Otherwise
+the **VRAM booster** option is only shown when
+`/sys/fs/cgroup/dmem.capacity` lists a VRAM region of at least 2 GB (a
+dedicated GPU; an integrated one registers a small carve-out) or it's already on, and is
+ticked by default; new in 2.3.0, so setups with the SteamOS conversion on
+get it ticked. CachyOS packages the userspace side, which it installs:
+
+- `dmemcg-booster`: `dmemcg-booster-system.service` enables the `dmem`
+  controller and sets `dmem.low` for the cgroup in front;
+  `dmemcg-booster-user.service` runs in the user session.
+- `plasma-foreground-booster`: tells it which window is in front on the
+  desktop. It only starts with `autostart=true` under `[Foreground Booster]`
+  in `kcgroupsrc`, which the wizard sets (and reverts).
+
+Check it with `cat /sys/fs/cgroup/cgroup.subtree_control` (lists `dmem`) and
+the `dmem.low` of the slices under `user@<uid>.service`. Turning it off
+disables the services and removes the packages the wizard installed.
+Not added: a fixed `dmem.max` cap for `app.slice` (as some guides do); only
+worth it if the booster itself turns out to cause stutter.
+
 ## Feature versions (updates)
 
 Each component has a feature version (`FEATURE_VERSION` in `lib/menu.sh`):
@@ -250,9 +278,11 @@ on the system itself; the version only decides about updates:
   "update". A setup from before versions were recorded counts as 2.1.0,
   so on a machine set up with 2.1.0, Steam Machine support (2.2.0) is
   updated.
-- **A new default sub-option** (not in `NO_PRESELECT`) whose parent is on
-  and that was never turned on or off: ticked, so a normal run adds it.
-  Turning it off once records `off`, so it isn't ticked again.
+- **A new default option** (not in `NO_PRESELECT`) whose parent is on (for
+  a top-level one: the SteamOS conversion) and that was never turned on or
+  off: ticked, so a normal run adds it. Turning it off once records `off`,
+  so it isn't ticked again. The menu and the app show it with a **New**
+  badge, and the plan says "new in this version".
 
 Set a component's entry to the new `VERSION` whenever what its
 `<id>_enable` sets up changes.
@@ -327,6 +357,7 @@ immediately, which can turn into a loop - see
 | `lib/cec.sh` | HDMI-CEC: Valve's `cecd` and friends from its `holo` repository |
 | `lib/steam-machine.sh` | Steam Machine support: LED driver, LED access, steamos-manager |
 | `lib/fremont-poweroff.sh` | Steam Machine support: the power-off fix (DKMS module from `patches/`) |
+| `lib/vram-booster.sh` | VRAM booster (`dmemcg-booster`, `plasma-foreground-booster`) |
 | `patches/` | Module sources and patches the scripts build or apply (`patch_file`); see its README |
 | `.github/tools/bundle.sh` | Builds the single-file version (`dist/steamify.sh`), with `patches/` embedded |
 | `.github/workflows/bundle.yml` | Builds and checks it on every push; publishes it on `main` |
