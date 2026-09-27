@@ -263,8 +263,10 @@ SteamOS 3.9 manages the dGPU's VRAM per cgroup: the game in front is
 protected, background apps are evicted first. Without it a game that needs
 most of the VRAM (8 GB on the Steam Machine) can be pushed into system RAM
 by the desktop and other apps, and stutter. The kernel side is the `dmem`
-cgroup controller (7.2); amdgpu and Intel's xe register their VRAM with it,
-NVIDIA's driver doesn't: with an NVIDIA card the option is shown greyed
+cgroup controller (7.2); amdgpu and Intel's xe register their VRAM with it
+(`drm/<pci>/vram`), NVIDIA's open kernel modules from driver 615 too
+(`nvidia/<pci>/vidmem`); `dmemcg-booster` protects every region it lists,
+whatever its name. NVIDIA's closed modules don't: with such a card the option is shown greyed
 out, with why, until its driver lists a region: then it's offered like any
 other (`WIZARD_VRAM_FAKE_NVIDIA=1` fakes the grey-out, `WIZARD_VRAM_CAPACITY=<file>`
 reads the regions from a copy, for tests). Otherwise
