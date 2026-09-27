@@ -236,6 +236,29 @@ Where Steam Machine support was set up before 2.2.0, the menu ticks the
 power-off fix as a new default sub-option (see feature versions below), so a
 normal run adds it.
 
+## VRAM booster (Steam Machine)
+
+SteamOS 3.9 manages the dGPU's VRAM per cgroup: the game in front is
+protected, background apps are evicted first. Without it a game that needs
+most of the Steam Machine's 8 GB can be pushed into system RAM by the
+desktop and other apps, and stutter. The kernel side is the `dmem` cgroup
+controller (7.2); CachyOS packages the userspace side, which the **VRAM
+booster** sub-option of Steam Machine support installs (ticked along with
+it, can be unticked; new in 2.3.0, so existing setups get it ticked):
+
+- `dmemcg-booster`: `dmemcg-booster-system.service` enables the `dmem`
+  controller and sets `dmem.low` for the cgroup in front;
+  `dmemcg-booster-user.service` runs in the user session.
+- `plasma-foreground-booster`: tells it which window is in front on the
+  desktop. It only starts with `autostart=true` under `[Foreground Booster]`
+  in `kcgroupsrc`, which the wizard sets (and reverts).
+
+Check it with `cat /sys/fs/cgroup/cgroup.subtree_control` (lists `dmem`) and
+the `dmem.low` of the slices under `user@<uid>.service`. Turning it off
+disables the services and removes the packages the wizard installed.
+Not added: a fixed `dmem.max` cap for `app.slice` (as some guides do); only
+worth it if the booster itself turns out to cause stutter.
+
 ## Feature versions (updates)
 
 Each component has a feature version (`FEATURE_VERSION` in `lib/menu.sh`):
@@ -327,6 +350,7 @@ immediately, which can turn into a loop - see
 | `lib/cec.sh` | HDMI-CEC: Valve's `cecd` and friends from its `holo` repository |
 | `lib/steam-machine.sh` | Steam Machine support: LED driver, LED access, steamos-manager |
 | `lib/fremont-poweroff.sh` | Steam Machine support: the power-off fix (DKMS module from `patches/`) |
+| `lib/vram-booster.sh` | Steam Machine support: the VRAM booster (`dmemcg-booster`, `plasma-foreground-booster`) |
 | `patches/` | Module sources and patches the scripts build or apply (`patch_file`); see its README |
 | `.github/tools/bundle.sh` | Builds the single-file version (`dist/steamify.sh`), with `patches/` embedded |
 | `.github/workflows/bundle.yml` | Builds and checks it on every push; publishes it on `main` |

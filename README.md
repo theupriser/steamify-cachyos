@@ -48,6 +48,9 @@ What Steamify can do on a Valve Steam Machine:
   - **Power-off fix** - on by default: shutting down really turns the Steam
     Machine off, also with the newest CachyOS kernel
     ([details](TECHNICAL.md#power-off-fix-steam-machine)).
+  - **VRAM booster** - on by default: the game you're playing keeps its
+    video memory and background apps make room, like SteamOS 3.9
+    ([details](TECHNICAL.md#vram-booster-steam-machine)).
   - **Update BIOS** - installs Valve's newest Steam Machine BIOS. Never ticked
     by default, at your own risk, and only after two warnings
     ([details](TECHNICAL.md#bios-updates-steam-machine)).

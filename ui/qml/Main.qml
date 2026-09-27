@@ -72,6 +72,9 @@ ApplicationWindow {
         poweroff: { label: "Power-off fix", hint: "Stays off after shutting down",
                     body: "With recent kernels the Steam Machine starts again right after shutting down: the firmware leaves a wake bit set, and newer kernels (7.2, and updates of 6.x, 7.0 and 7.1) no longer clear it. Valve's own kernel clears it; this small module does the same right before power-off.",
                     changes: ["steamify-fremont-poweroff module for each installed kernel (DKMS)", "Only on a Steam Machine, only touches that one wake bit", "Off: recent kernels may start it again after shutting down"] },
+        vram: { label: "VRAM booster", hint: "The game in front keeps its VRAM",
+                body: "Like SteamOS 3.9: the game you're playing keeps its video memory, and background apps are moved out first. Without it a game that needs most of the 8 GB can spill into system RAM and stutter.",
+                changes: ["dmemcg-booster (system and user service)", "plasma-foreground-booster, which tells it which window is in front", "Off: removed again, unless you had installed them yourself"] },
         kpin: { label: "Pin the kernel", hint: "Untick for CachyOS's current kernel",
                 body: "Keeps the Steam Machine on CachyOS kernel 7.1.6. Untick it to go back to CachyOS's current kernel; HDMI refresh boost goes with it.",
                 changes: ["linux-cachyos from Steamify's release (signature checked)", "Kept in /var/cache/steamify/kernel", "Added to IgnorePkg"] },
@@ -250,8 +253,9 @@ ApplicationWindow {
         if (id === "hdmi" && !hdmiChoice && hdmiSaved.length) { openHdmiList(); return; }
         if (id === "hdmi" && w.hdmi && !nowOn("hdmi") && !hdmiChoice) { startHdmi(); return; }
         if (id === "hdmi" && !w.hdmi) hdmiChoice = "";
-        if (id === "machine") w.poweroff = w.machine;
+        if (id === "machine") { w.poweroff = w.machine; w.vram = w.machine; }
         if (id === "poweroff" && w.poweroff) w.machine = true;
+        if (id === "vram" && w.vram) w.machine = true;
         if (id === "machine" && !w.machine) w.kpin = false;
         if (id === "kpin" && w.kpin) w.machine = true;
         if (id === "hdmi" && w.hdmi) { w.machine = true; w.kpin = true; }

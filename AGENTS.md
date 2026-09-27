@@ -231,6 +231,12 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `linux-cachyos` is clang-built, `-bore` GCC-built: let DKMS pick the
   compiler, never pass `LLVM=1`. Test shutdown on the real machine for every
   new major kernel.
+- VRAM booster (`vram`, `lib/vram-booster.sh`, a default sub-option of
+  `machine`, 2.3.0): CachyOS's `dmemcg-booster` (system + user service) and
+  `plasma-foreground-booster`, like SteamOS 3.9's VRAM management. The
+  latter only starts with `kcgroupsrc [Foreground Booster] autostart=true`
+  (set with `kset`). Disable removes only the packages it installed
+  (`state_get vram installed_pkgs`).
 - `Relogin=true` means a gamescope that fails to start is relaunched in a
   tight loop; keep that in mind when changing session handling.
 

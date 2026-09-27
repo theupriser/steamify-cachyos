@@ -5,12 +5,12 @@
 
 # Menu order. Components are turned on in this order and off in reverse;
 # gaming must come first (single user builds on it).
-COMPONENTS=(gaming boot theme glyphs single launcher cec machine poweroff kpin hdmi bios)
+COMPONENTS=(gaming boot theme glyphs single launcher cec machine poweroff vram kpin hdmi bios)
 # One-off actions rather than on/off components: never preselected, never
 # re-applied, not listed as on or off.
 ACTIONS=(bios)
 # Sub-options, shown indented under their parent and only while it's ticked.
-declare -A PARENT=([boot]=gaming [poweroff]=machine [kpin]=machine [hdmi]=machine [bios]=machine)
+declare -A PARENT=([boot]=gaming [poweroff]=machine [vram]=machine [kpin]=machine [hdmi]=machine [bios]=machine)
 # Never preselected on a first run: booting into the desktop is a choice,
 # gamescope is the default; HDMI-CEC is opt-in (it can wake the machine or
 # upset other devices on the TV, even on SteamOS), except on a Steam Machine,
@@ -26,7 +26,7 @@ NO_PRESELECT=(boot cec kpin hdmi)
 FEATURE_BASELINE=2.1.0
 declare -A FEATURE_VERSION=(
     [gaming]=2.1.0 [boot]=2.1.0 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.1.0
-    [launcher]=2.1.0 [cec]=2.1.0 [machine]=2.2.0 [poweroff]=2.2.0
+    [launcher]=2.1.0 [cec]=2.1.0 [machine]=2.2.0 [poweroff]=2.2.0 [vram]=2.3.0
     [kpin]=2.1.0 [hdmi]=2.1.0
 )
 
@@ -40,6 +40,7 @@ declare -A LABEL=(
     [cec]="HDMI-CEC: use Steam with the TV remote, TV on/off with the PC (experimental)"
     [machine]="Steam Machine support: LED bar driver, hardware settings in Steam"
     [poweroff]="Power-off fix: the Steam Machine stays off after shutting down"
+    [vram]="VRAM booster: the game in front keeps its VRAM, background apps make room"
     [kpin]="Pin the kernel to $PINNED_KERNEL_VER (untick for CachyOS's current kernel)"
     [hdmi]="HDMI refresh boost: highest refresh your HDMI display runs"
     [bios]="Update BIOS"
@@ -48,7 +49,7 @@ declare -A CURRENT WANTED
 
 component_available() {
     case "$1" in
-        machine|poweroff) machine_available ;;
+        machine|poweroff|vram) machine_available ;;
         kpin) kpin_available ;;
         hdmi) hdmi_available ;;
         bios) bios_available ;;
@@ -157,9 +158,11 @@ toggle_component() {
     if [[ "$c" == gaming && "${WANTED[gaming]}" == 0 ]]; then WANTED[single]=0; WANTED[boot]=0; fi
     # Where to boot to is part of the conversion, too.
     if [[ "$c" == boot && "${WANTED[boot]}" == 1 ]]; then WANTED[gaming]=1; fi
-    # The power-off fix is opt-out: ticked along with Steam Machine support.
-    if [[ "$c" == machine ]]; then WANTED[poweroff]=${WANTED[machine]}; fi
+    # The power-off fix and VRAM booster are opt-out: ticked along with
+    # Steam Machine support.
+    if [[ "$c" == machine ]]; then WANTED[poweroff]=${WANTED[machine]}; WANTED[vram]=${WANTED[machine]}; fi
     if [[ "$c" == poweroff && "${WANTED[poweroff]}" == 1 ]]; then WANTED[machine]=1; fi
+    if [[ "$c" == vram && "${WANTED[vram]}" == 1 ]]; then WANTED[machine]=1; fi
     if [[ "$c" == machine && "${WANTED[machine]}" == 0 ]]; then WANTED[kpin]=0; fi
     if [[ "$c" == kpin && "${WANTED[kpin]}" == 1 ]]; then WANTED[machine]=1; fi
     # HDMI refresh boost and the BIOS update sit under Steam Machine support;

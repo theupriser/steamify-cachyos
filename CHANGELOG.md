@@ -5,9 +5,13 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.3.0 - 2026-09-27
+
+- **feat: VRAM booster for the Steam Machine**
+
 ## 2.2.0 - 2026-09-27
 
-- **docs: Changelog entries per commit for 2.2.0**
+- `ef585c0` **docs: Changelog entries per commit for 2.2.0**
 - `32795bd` **feat(ui): Update badge on the progress screen**
 - `3c8ca65` **fix(ui): Never write the sudo password to a file; Update label on the progress screen**
   - The app gave `sudo` the password through a short-lived file; the helper
