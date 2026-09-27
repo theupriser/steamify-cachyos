@@ -37,8 +37,10 @@ Steam Machine.
 7. **VRAM booster** - on by default: the game you're playing keeps its video
    memory and background apps make room, like SteamOS 3.9. Shown for GPUs
    whose driver supports it (AMD, Intel, NVIDIA with its open kernel modules
-   from driver 615) on kernel 7.2 or newer; greyed out with NVIDIA's closed
-   driver
+   from driver 615) on kernel 7.2 or newer. With NVIDIA's closed driver it's
+   greyed out and says what to do: switch to the open driver when your card
+   supports it (RTX 20 series and newer; Steamify shows the command, it
+   doesn't switch drivers itself)
    ([details](TECHNICAL.md#vram-booster)).
 8. **HDMI-CEC** (experimental; off by default, on by default on a Steam
    Machine) - use Steam with your TV's

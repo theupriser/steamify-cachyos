@@ -7,7 +7,8 @@ one per merged pull request.
 
 ## 2.5.0 - 2026-09-27
 
-- **fix: An option left unticked stays off: it came back ticked as "new" on the next run (since 2.3.0)**
+- **docs: README: what the VRAM booster says with NVIDIA's closed driver; shorter unsupported text in the app**
+- `32c33e4` **fix: An option left unticked stays off: it came back ticked as "new" on the next run (since 2.3.0)**
 - `2dd0f3a` **feat: VRAM booster with NVIDIA says what to do: update, switch to the open driver (chwd command), or not supported by the card**
 - `57995bc` **docs: VRAM booster works with NVIDIA's open kernel modules (driver 615+); only the closed driver is greyed out**
 - `d57e8d8` **docs: AGENTS.md and changelog for the vidmem detection**
