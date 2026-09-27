@@ -71,4 +71,9 @@ EOF
 command -v update-desktop-database >/dev/null && update-desktop-database "$APPS" 2>/dev/null || true
 
 say "Starting Steamify..."
+# Started from Steam: stay in the foreground, or Steam counts the game as
+# ended right away and stops giving it the controller.
+if [[ -n "${SteamGameId:-}" ]]; then
+    exec "$DEST/ui/steamify-ui" < /dev/null
+fi
 setsid "$DEST/ui/steamify-ui" >/dev/null 2>&1 < /dev/null &
