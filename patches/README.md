@@ -11,5 +11,6 @@ read and reviewed on their own. `lib/*.sh` reads them with `patch_file
 | `ensure-kernel-headers.sh` | `lib/steam-machine.sh` (Steam Machine support) | Run at boot: installs missing headers for every installed kernel |
 | `leds-valve-dkms.conf` | `lib/steam-machine.sh` (Steam Machine support) | `/etc/dkms` override: build the LED driver for DKMS's target kernel; appended to someone's own override, which is backed up and restored |
 | `steamify-fremont-poweroff.dkms.conf`, `steamify-cros-ec-cec.dkms.conf` | `lib/fremont-poweroff.sh`, `lib/cec.sh` | The DKMS modules' `dkms.conf` (`fill NAME=... VERSION=...`) |
+| `steam-shortcuts.py` | `lib/steam-game.sh` (Add as non-Steam game) | Reads and writes Steam's binary `shortcuts.vdf` (find, add or update, remove) |
 | `steamify-notifier.py` | `lib/update-notifier.sh` (Update notifications) | The daily check: notification and tray icon when there's a new release |
 | `cros-ec-cec-single-port.patch` | `lib/cec.sh` (HDMI-CEC) | Makes Valve's Steam Machine CEC driver find amdgpu's HDMI port |

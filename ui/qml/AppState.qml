@@ -81,6 +81,8 @@ Item {
         if (id === "poweroff" && w.poweroff) w.machine = true;
         if (id === "machine" && !w.machine) w.kpin = false;
         if (id === "kpin" && w.kpin) w.machine = true;
+        if (id === "launcher" && items.some(function (i) { return i.id === "steamgame"; })) w.steamgame = w.launcher;
+        if (id === "steamgame" && w.steamgame) w.launcher = true;
         want = w;
     }
     function computePlan() {

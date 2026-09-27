@@ -243,6 +243,15 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `linux-cachyos` is clang-built, `-bore` GCC-built: let DKMS pick the
   compiler, never pass `LLVM=1`. Test shutdown on the real machine for every
   new major kernel.
+- Add as non-Steam game (`steamgame`, `lib/steam-game.sh`, sub-option of
+  `launcher`, ticked along with it, 2.5.1): edits Steam's `shortcuts.vdf`
+  with `patches/steam-shortcuts.py` only while Steam is closed (Steam
+  rewrites it on exit), then starts Steam again. Never close Steam in gaming
+  mode or when `SteamGameId` is set (the run is a Steam game). An existing
+  entry for the start script is updated, not doubled; removal takes every
+  entry for it. Controller input through Steam's desktop layout arrives as
+  keys: Enter must select (A), Esc must never quit (B); the app re-execs
+  without Steam's overlay preload.
 - Update notifications (`notify`, `lib/update-notifier.sh`, top-level,
   ticked by default, 2.5.0): a user timer (daily, and the service is wanted
   by `plasma-workspace.target`) runs `patches/steamify-notifier.py`, which

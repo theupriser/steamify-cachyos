@@ -15,11 +15,11 @@
 set -uo pipefail
 
 # Release version, see CHANGELOG.md.
-VERSION=2.5.0
+VERSION=2.5.1
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-for lib in common state packages login-manager single-user steam-desktop steam-machine fremont-poweroff vram-booster hdmi-refresh cec boot-session vapor-theme steamos-extras bios desktop-shortcut wizard-shortcut update-notifier menu backend; do
+for lib in common state packages login-manager single-user steam-desktop steam-machine fremont-poweroff vram-booster hdmi-refresh cec boot-session vapor-theme steamos-extras bios desktop-shortcut wizard-shortcut steam-game update-notifier menu backend; do
     # shellcheck source=/dev/null
     source "$SCRIPT_DIR/lib/$lib.sh"
 done
