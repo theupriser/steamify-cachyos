@@ -7,7 +7,8 @@ one per merged pull request.
 
 ## 2.5.0 - 2026-09-27
 
-- **refactor: The session sync and kernel headers scripts in patches/**
+- **refactor: DKMS confs in patches/; an existing leds-valve DKMS override is kept and restored**
+- `bd4fa3a` **refactor: The session sync and kernel headers scripts in patches/**
 - `8ffa0f2` **refactor: systemd units in services/, read with service_file like patches/**
 - `8a2601d` **docs: README screenshot at 2.5.0 with Update notifications; AGENTS.md: retake it when rows change**
 - `572417b` **fix: Open Steamify from the notification starts the app (own scope), the same way it was last used (app or terminal)**

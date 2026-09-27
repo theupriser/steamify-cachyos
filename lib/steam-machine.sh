@@ -224,9 +224,11 @@ install_valve_led_driver() {
     # a clang-built tree). DKMS reads this override after the package's
     # dkms.conf; written before the install so its own build works too.
     # On a fresh system dkms isn't installed yet, so /etc/dkms doesn't exist.
+    # Someone's own override is backed up and kept, with ours after it: it's
+    # sourced as bash, so our MAKE[0] wins.
     sudo mkdir -p "$(dirname "$LED_DKMS_OVERRIDE")"
-    if ! printf '%s\n' "# Written by cachyos-gamescope-boot: build for DKMS's target kernel." \
-        'MAKE[0]="make KVERSION=${kernelver}"' | sudo tee "$LED_DKMS_OVERRIDE" >/dev/null; then
+    if ! led_dkms_override | sudo tee "$LED_DKMS_OVERRIDE.new" >/dev/null ||
+        ! sudo mv -f "$LED_DKMS_OVERRIDE.new" "$LED_DKMS_OVERRIDE"; then
         err "Couldn't write $LED_DKMS_OVERRIDE; without it the LED driver only builds for the running kernel."
         return 1
     fi
@@ -285,6 +287,30 @@ install_valve_led_driver() {
 
 LED_UDEV_RULE="/etc/udev/rules.d/70-valve-leds-user.rules"
 LED_DKMS_OVERRIDE="/etc/dkms/leds-valve-dkms.conf"
+
+led_dkms_override() {
+    # The override to write: an existing one's own lines (backed up the first
+    # time), without ours from an earlier run, then ours. Before 2.5.0 the
+    # file was ours alone, with a different comment.
+    local ours
+    ours="$(patch_file leds-valve-dkms.conf)"
+    if [[ -f "$LED_DKMS_OVERRIDE" ]]; then
+        grep -qxF -f <(echo "$ours") "$LED_DKMS_OVERRIDE" ||
+            grep -q '^# Written by cachyos-gamescope-boot' "$LED_DKMS_OVERRIDE" ||
+            backup_file "$LED_DKMS_OVERRIDE" >&2
+        grep -vxF -f <(echo "$ours") "$LED_DKMS_OVERRIDE" | grep -v '^# Written by cachyos-gamescope-boot'
+    fi
+    echo "$ours"
+}
+
+led_dkms_override_remove() {
+    # Puts someone's own override back, or removes ours.
+    if [[ -f "$LED_DKMS_OVERRIDE.bak-gamescope-wizard" ]]; then
+        sudo mv -f "$LED_DKMS_OVERRIDE.bak-gamescope-wizard" "$LED_DKMS_OVERRIDE"
+    else
+        sudo rm -f "$LED_DKMS_OVERRIDE"
+    fi
+}
 HEADERS_SCRIPT="/usr/local/lib/cachyos-gamescope-boot/ensure-kernel-headers"
 HEADERS_UNIT="/etc/systemd/system/ensure-kernel-headers.service"
 
@@ -404,7 +430,8 @@ machine_disable() {
     krevert machine
     reload_powerdevil
     sudo systemctl disable ensure-kernel-headers.service 2>/dev/null
-    sudo rm -f "$LED_DKMS_OVERRIDE" "$HEADERS_UNIT" "$HEADERS_SCRIPT"
+    led_dkms_override_remove
+    sudo rm -f "$HEADERS_UNIT" "$HEADERS_SCRIPT"
     sudo rmdir "$(dirname "$HEADERS_SCRIPT")" 2>/dev/null
     sudo systemctl daemon-reload
     ok "Steam Machine support removed (the AUR helper, if installed, is kept)."

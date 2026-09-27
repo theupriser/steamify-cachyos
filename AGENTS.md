@@ -154,7 +154,9 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `restart_plasmashell_if_stopped` (`lib/common.sh`).
 - LED driver: `leds-valve-dkms-git`'s Makefile builds against `uname -r`,
   not DKMS's target kernel: `/etc/dkms/leds-valve-dkms.conf` sets
-  `MAKE[0]="make KVERSION=${kernelver}"` (written before the AUR install).
+  `MAKE[0]="make KVERSION=${kernelver}"` (written before the AUR install;
+  someone's own override there is backed up, kept with ours appended, and
+  restored on disable).
   Without it, other kernels build against the running kernel's tree and
   fail (CachyOS kernels are clang-built; DKMS adds `LLVM=1` only for the
   target's tree). Headers for every installed kernel are installed first,

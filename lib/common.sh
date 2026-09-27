@@ -9,16 +9,17 @@ ok()    { echo -e "${c_green}[OK]${c_reset} $*"; }
 # patch_file <name>: a file from patches/ (module sources, patches). The
 # single-file build replaces this with one that has them embedded.
 patch_file() { cat "$SCRIPT_DIR/patches/$1"; }
-# service_file <name> [KEY=value...]: a systemd unit from services/, with
-# each @KEY@ replaced by its value. The single-file build replaces
-# service_raw like patch_file.
+# service_file <name> [KEY=value...]: a systemd unit from services/, filled
+# in. The single-file build replaces service_raw like patch_file.
 service_raw() { cat "$SCRIPT_DIR/services/$1"; }
-service_file() {
-    local name="$1" kv
+service_file() { local name="$1"; shift; service_raw "$name" | fill "$@"; }
+# fill [KEY=value...]: stdin with each @KEY@ replaced by its value (paths,
+# names; no "|" in them).
+fill() {
+    local kv
     local -a subst=(-e '')
-    shift
     for kv in "$@"; do subst+=(-e "s|@${kv%%=*}@|${kv#*=}|g"); done
-    service_raw "$name" | sed "${subst[@]}"
+    sed "${subst[@]}"
 }
 warn()  { echo -e "${c_yellow}[WARN]${c_reset} $*"; }
 err()   { echo -e "${c_red}[ERROR] $*${c_reset}" >&2; }

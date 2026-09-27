@@ -76,10 +76,7 @@ cec_driver_enable() {
     patch_file cros-ec-cec-single-port.patch | patch -s -d "$tmp" -p1 ||
         { rm -rf "$tmp"; err "Patching Valve's CEC driver failed."; return 1; }
     echo 'obj-m += cros-ec-cec.o' >"$tmp/Makefile"
-    printf '%s\n' "# Written by Steamify: Valve's cros_ec_cec, which knows the Steam Machine." \
-        "PACKAGE_NAME=\"$CEC_DKMS_NAME\"" "PACKAGE_VERSION=\"$CEC_DKMS_VER\"" \
-        'BUILT_MODULE_NAME[0]="cros-ec-cec"' 'DEST_MODULE_LOCATION[0]="/updates/dkms"' \
-        'AUTOINSTALL="yes"' >"$tmp/dkms.conf"
+    patch_file "$CEC_DKMS_NAME.dkms.conf" | fill NAME="$CEC_DKMS_NAME" VERSION="$CEC_DKMS_VER" >"$tmp/dkms.conf"
     sudo dkms remove "$CEC_DKMS_NAME/$CEC_DKMS_VER" --all >/dev/null 2>&1
     sudo rm -rf "$CEC_DKMS_SRC"
     sudo install -d "$CEC_DKMS_SRC" && sudo install -m644 "$tmp"/{cros-ec-cec.c,Makefile,dkms.conf} "$CEC_DKMS_SRC/"
