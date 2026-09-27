@@ -13,12 +13,15 @@ patch_file() { cat "$SCRIPT_DIR/patches/$1"; }
 # in. The single-file build replaces service_raw like patch_file.
 service_raw() { cat "$SCRIPT_DIR/services/$1"; }
 service_file() { local name="$1"; shift; service_raw "$name" | fill "$@"; }
-# fill [KEY=value...]: stdin with each @KEY@ replaced by its value (paths,
-# names; no "|" in them).
+# fill [KEY=value...]: stdin with each @KEY@ replaced by its value, taken
+# literally (a home folder may contain sed's "&", "\" or "|").
 fill() {
-    local kv
+    local kv v
     local -a subst=(-e '')
-    for kv in "$@"; do subst+=(-e "s|@${kv%%=*}@|${kv#*=}|g"); done
+    for kv in "$@"; do
+        v="${kv#*=}"; v="${v//\\/\\\\}"; v="${v//&/\\&}"; v="${v//|/\\|}"
+        subst+=(-e "s|@${kv%%=*}@|$v|g")
+    done
     sed "${subst[@]}"
 }
 warn()  { echo -e "${c_yellow}[WARN]${c_reset} $*"; }

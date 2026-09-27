@@ -8,7 +8,8 @@ PartOf=graphical-session.target
 Type=simple
 # The short wait at login lets the tray come up first (in the script: an
 # ExecStartPre sleep runs into the start timeout).
-ExecStart=@NOTIFY_SCRIPT@ --delay 60
+# Quoted: the path is in the home folder, which may contain a space.
+ExecStart="@NOTIFY_SCRIPT@" --delay 60
 
 [Install]
 WantedBy=plasma-workspace.target
