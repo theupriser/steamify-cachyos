@@ -160,6 +160,7 @@ backend_apply() {
     plan_changes
     backend_event plan "\"disable\":$(json_list "${TO_DISABLE[@]}"),\"enable\":$(json_list "${TO_ENABLE[@]}")"
     if [[ ${#TO_DISABLE[@]} -eq 0 && ${#TO_ENABLE[@]} -eq 0 ]]; then
+        feature_record_unticked
         backend_event finished '"failed":[],"restart":false,"nothing":true'
         return 0
     fi
@@ -175,6 +176,7 @@ backend_apply() {
     for c in "${TO_ENABLE[@]}"; do
         if backend_run_component "$c" enable; then is_action "$c" || feature_record "$c" enable; else failed+=("$c"); fi
     done
+    feature_record_unticked
     [[ " ${TO_DISABLE[*]} ${TO_ENABLE[*]} " =~ \ (gaming|single|boot|kpin)\  ]] && RESTART_FOR_LOGIN=true
     backend_event finished "\"failed\":$(json_list "${failed[@]}"),\"restart\":$(restart_needed && echo true || echo false)"
 }

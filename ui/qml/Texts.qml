@@ -49,7 +49,7 @@ QtObject {
     // Replaces the explanation of an option that can't be turned on here.
     readonly property var unsupported: ({
         // The body comes from the backend (item.note): it depends on the driver.
-        vram: { changes: ["Nothing until then: it can't steer video memory Linux doesn't know about"] }
+        vram: { changes: ["Nothing until then"] }
     })
 
     // Per plan action: the review's chip [text, colour, background] and the

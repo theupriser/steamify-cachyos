@@ -127,6 +127,7 @@ while true; do
     plan_changes
 
     if [[ ${#TO_DISABLE[@]} -eq 0 && ${#TO_ENABLE[@]} -eq 0 ]]; then
+        feature_record_unticked
         ok "Everything is already the way you want it."
         read -rp "Press Enter to go back to the menu... " _ || break
         continue

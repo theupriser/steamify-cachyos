@@ -54,6 +54,8 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   are ticked and re-applied ("update" in the plan and the app). New default
   options are ticked for installs whose parent (top-level: `gaming`) is on
   (`feature_new`, shown as "new").
+  Options shown but left unticked in a confirmed run are recorded as
+  `off` (`feature_record_unticked`), or `feature_new` would tick them again.
   Status still comes from the system; don't add ad-hoc `<id>_repair` checks
   for new changes.
 - **Reversibility.** Every per-user KDE setting a component changes goes

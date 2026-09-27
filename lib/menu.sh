@@ -73,6 +73,21 @@ menu_visible() {
     [[ -z "${PARENT[$1]:-}" || "${WANTED[${PARENT[$1]}]:-0}" == 1 ]]
 }
 
+feature_record_unticked() {
+    # After a run the user confirmed: options shown but left unticked that
+    # have no record yet count as turned off, or the next run would offer a
+    # default one again as "new" (feature_new) and tick it: e.g. single user
+    # mode unticked on a first run came back ticked when anything else
+    # changed. Hidden sub-options weren't a choice, so they're left alone.
+    local c
+    for c in "${COMPONENTS[@]}"; do
+        is_action "$c" && continue
+        menu_visible "$c" || continue
+        [[ "${WANTED[$c]:-0}" == 0 && -z "$(state_get features "$c")" ]] && state_set features "$c" off
+    done
+    return 0
+}
+
 feature_record() {
     # feature_record <component> <enable|disable>: after a successful run.
     if [[ "$2" == enable ]]; then state_set features "$1" "${FEATURE_VERSION[$1]:-$FEATURE_BASELINE}"
@@ -361,5 +376,6 @@ apply_changes() {
         else echo; echo -e "${c_bold}Turning on: ${LABEL[$c]}${c_reset}"; fi
         if "${c}_enable"; then is_action "$c" || feature_record "$c" enable; else failed+=("$c"); fi
     done
+    feature_record_unticked
     FAILED=("${failed[@]}")
 }
