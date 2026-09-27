@@ -18,6 +18,10 @@ Item {
     property var steps: ({})                 // id -> "wait"|"run"|"ok"|"fail"
     property var failed: []
     property bool restartNeeded: false
+    // Review & apply only when something would change; "Re-apply what's on"
+    // is for when nothing did.
+    readonly property bool canApply: computePlan().length > 0
+    onCanApplyChanged: if (!canApply && sel === rows.length) sel = Math.max(0, rows.length - 1)
     property string runError: ""
     property bool wrongPassword: false
     property bool typing: false              // a text field has the keys
@@ -77,6 +81,8 @@ Item {
         if (id === "poweroff" && w.poweroff) w.machine = true;
         if (id === "machine" && !w.machine) w.kpin = false;
         if (id === "kpin" && w.kpin) w.machine = true;
+        if (id === "launcher" && items.some(function (i) { return i.id === "steamgame"; })) w.steamgame = w.launcher;
+        if (id === "steamgame" && w.steamgame) w.launcher = true;
         want = w;
     }
     function computePlan() {
@@ -93,7 +99,10 @@ Item {
         if (want.gaming && boot !== bootNow) p.push({ id: "boot", action: boot === "desktop" ? "desktop" : "gaming" });
         return p;
     }
-    function goReview(again) { reapply = again; plan = computePlan(); screen = "review"; }
+    function goReview(again) {
+        if (!again && !canApply) return;
+        reapply = again; plan = computePlan(); screen = "review";
+    }
     function wantedIds() {
         var ids = [];
         for (var i = 0; i < items.length; i++)
@@ -195,7 +204,8 @@ Item {
         if (screen === "menu") {
             if (biosChecking) return;
             if (a === "up") sel = Math.max(0, sel - 1);
-            else if (a === "down") sel = Math.min(rows.length, sel + 1);
+            // The greyed-out Apply button can't be selected.
+            else if (a === "down") sel = Math.min(canApply ? rows.length : rows.length - 1, sel + 1);
             else if (a === "accept") {
                 if (sel === rows.length) { goReview(false); return; }
                 var r = rows[sel];
@@ -207,7 +217,9 @@ Item {
                 boot = a === "left" ? "gamescope" : "desktop";
             else if (a === "apply") goReview(false);
             else if (a === "reapply") goReview(true);
-            else if (a === "back") Qt.quit();
+            // B/Esc/Back don't quit: Steam's desktop layout sends Esc for a
+            // Steam Controller's B, which should only ever go back.
+            else if (a === "quit") Qt.quit();
         } else if (screen === "review") {
             if (a === "accept" || a === "apply") onApplyPressed();
             else if (a === "back") { reapply = false; screen = "menu"; }
@@ -246,16 +258,21 @@ Item {
         if (screen === "bios2" && Input.type !== "keyboard" && (e.key === Qt.Key_Return || e.key === Qt.Key_Enter)) {
             if (!e.isAutoRepeat) act("hold"); e.accepted = true; return;
         }
-        if (!fromRemote) Input.type = "keyboard";
+        if (!fromRemote) Input.type = Input.fromSteam ? "steam" : "keyboard";
         var k = e.key;
         if (k === Qt.Key_Up) act("up");
         else if (k === Qt.Key_Down) act("down");
         else if (k === Qt.Key_Left) act("left");
         else if (k === Qt.Key_Right) act("right");
         else if (k === Qt.Key_Space) act("accept");
-        else if (k === Qt.Key_Return || k === Qt.Key_Enter) act(Input.type === "remote" || screen !== "menu" ? "accept" : "apply");
+        // Enter selects, like A on a controller: Steam's desktop layout sends
+        // Enter for a Steam Controller's A (and Space for Y). Ctrl+Enter
+        // goes straight to Review & apply.
+        else if ((k === Qt.Key_Return || k === Qt.Key_Enter) && (e.modifiers & Qt.ControlModifier)) act("apply");
+        else if (k === Qt.Key_Return || k === Qt.Key_Enter) act("accept");
         else if (k === Qt.Key_Escape || k === Qt.Key_Back || k === Qt.Key_Backspace) { if (!e.isAutoRepeat) act("back"); }
         else if (k === Qt.Key_R) act("reapply");
+        else if (k === Qt.Key_Q && (e.modifiers & Qt.ControlModifier)) act("quit");
         else return;
         e.accepted = true;
     }

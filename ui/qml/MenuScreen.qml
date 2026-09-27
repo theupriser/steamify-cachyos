@@ -59,7 +59,10 @@ Item {
         Row {
             anchors.left: parent.left; anchors.leftMargin: 40; anchors.verticalCenter: parent.verticalCenter; spacing: 28
             Repeater {
+                // Quit only has a key on a keyboard (Ctrl+Q), and re-apply has
+                // none through Steam's layout; a controller quits through Steam.
                 model: [[screen.g.toggle, "Toggle"], [screen.g.choose, "Choose"], [screen.g.reapply, "Re-apply what's on"], [screen.g.quit, "Quit"]]
+                           .filter(function (h) { return h[0] !== ""; })
                 Row { required property var modelData; spacing: 8
                     Glyph { k: parent.modelData[0]; anchors.verticalCenter: parent.verticalCenter }
                     Text { text: parent.modelData[1]; color: Theme.label; font.family: Theme.body; font.pixelSize: 14; anchors.verticalCenter: parent.verticalCenter } }
@@ -70,7 +73,8 @@ Item {
             Text { readonly property int n: app.computePlan().length
                    text: n === 0 ? "Everything is the way you want it" : n + (n === 1 ? " change" : " changes")
                    color: Theme.faint; font.family: Theme.body; font.pixelSize: 14; anchors.verticalCenter: parent.verticalCenter }
-            Btn { k: screen.g.apply; text: "Review & apply"; primary: true; focusRing: app.sel === app.rows.length; height: 44; onClicked: app.goReview(false) }
+            Btn { k: screen.g.apply; text: "Review & apply"; primary: true; enabled: app.canApply
+                  focusRing: app.sel === app.rows.length; height: 44; onClicked: app.goReview(false) }
         }
     }
 }

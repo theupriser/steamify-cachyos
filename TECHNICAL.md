@@ -236,6 +236,35 @@ Where Steam Machine support was set up before 2.2.0, the menu ticks the
 power-off fix as a new default sub-option (see feature versions below), so a
 normal run adds it.
 
+## Add as non-Steam game
+
+A sub-option of the Steamify shortcut (`steamgame`, `lib/steam-game.sh`, new
+in 2.5.1, ticked along with the shortcut): Steamify CachyOS in every Steam
+account's non-Steam games (`~/.local/share/Steam/userdata/<id>/config/shortcuts.vdf`,
+binary VDF, edited by `patches/steam-shortcuts.py`), starting the shortcut's
+`run-app`, with the icon rendered as PNG (`~/.local/share/steamify/steamify.png`;
+Steam shows no SVG). Why: while Steam runs, a Steam Controller only talks to
+Steam, which gives its input to the game it started (Steam Input); on the
+desktop through its desktop layout (A = Enter, B = Esc, Y = Space, X =
+Steam's keyboard), in gaming mode as a gamepad.
+
+Steam reads the list only at startup and writes it back on exit, so Steam is
+closed (`steam -shutdown`) for the edit and started again (through
+`steam-desktop-autostart.service` when it's there). That's refused in gaming
+mode and when Steamify itself was started from Steam (`SteamGameId`), since
+closing Steam would end it. An entry for the start script that's already
+there (added by hand, or with the path from before 2.5.0) is updated, not
+added twice; what was done is recorded per account (state `steamgame`:
+`<account>=<appid> added|updated`) and a copy of each list is kept in the
+state directory before the first change. Turning it off (or the shortcut)
+removes every entry for the start script, since it can't start anything
+without it.
+
+Started from Steam, the app re-executes itself without Steam's overlay
+(`LD_PRELOAD` of `gameoverlayrenderer.so` makes Qt abort) and
+`steamify-app.sh` keeps it in the foreground (`SteamGameId`), or Steam
+counts the game as ended right away and stops giving it the controller.
+
 ## Update notifications
 
 The **Update notifications** option (new in 2.5.0, ticked by default)
@@ -414,6 +443,7 @@ immediately, which can turn into a loop - see
 | `lib/cec.sh` | HDMI-CEC: Valve's `cecd` and friends from its `holo` repository |
 | `lib/steam-machine.sh` | Steam Machine support: LED driver, LED access, steamos-manager |
 | `lib/fremont-poweroff.sh` | Steam Machine support: the power-off fix (DKMS module from `patches/`) |
+| `lib/steam-game.sh` | Add as non-Steam game: Steamify in the Steam library (`patches/steam-shortcuts.py`) |
 | `lib/update-notifier.sh` | Update notifications: the notifier from `patches/` and its user timer |
 | `lib/vram-booster.sh` | VRAM booster (`dmemcg-booster`, `plasma-foreground-booster`) |
 | `services/` | The systemd units the scripts install (`service_file`, `@KEY@` placeholders); see its README |

@@ -20,6 +20,14 @@ import tempfile
 import threading
 import time
 
+# Started from Steam (a non-Steam game, so Steam Input hands it the
+# controller): Steam preloads its overlay into every game, and Qt aborts with
+# it loaded. Start again without it, before Qt is imported.
+if "gameoverlayrenderer" in os.environ.get("LD_PRELOAD", ""):
+    os.environ["LD_PRELOAD"] = ":".join(p for p in os.environ["LD_PRELOAD"].split(":")
+                                        if p and "gameoverlayrenderer" not in p)
+    os.execv(sys.executable, [sys.executable] + sys.argv)
+
 HERE = os.path.dirname(os.path.realpath(__file__))
 
 try:
@@ -365,6 +373,9 @@ def main():
     engine = QQmlApplicationEngine()
     engine.setInitialProperties({"backend": backend, "gamepad": pad,
                                  "fullscreen": fullscreen,
+                                 # Started from Steam: its keys are a Steam
+                                 # Controller's buttons (desktop layout).
+                                 "fromSteam": bool(os.environ.get("SteamGameId")),
                                  "iconUrl": QUrl.fromLocalFile(os.path.realpath(icon)).toString()})
     engine.load(os.path.join(HERE, "qml", "Main.qml"))
     if not engine.rootObjects():

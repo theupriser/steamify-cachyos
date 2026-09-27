@@ -5,12 +5,12 @@
 
 # Menu order. Components are turned on in this order and off in reverse;
 # gaming must come first (single user builds on it).
-COMPONENTS=(gaming boot theme glyphs single launcher notify vram cec machine poweroff kpin hdmi bios)
+COMPONENTS=(gaming boot theme glyphs single launcher steamgame notify vram cec machine poweroff kpin hdmi bios)
 # One-off actions rather than on/off components: never preselected, never
 # re-applied, not listed as on or off.
 ACTIONS=(bios)
 # Sub-options, shown indented under their parent and only while it's ticked.
-declare -A PARENT=([boot]=gaming [poweroff]=machine [kpin]=machine [hdmi]=machine [bios]=machine)
+declare -A PARENT=([boot]=gaming [steamgame]=launcher [poweroff]=machine [kpin]=machine [hdmi]=machine [bios]=machine)
 # Never preselected on a first run: booting into the desktop is a choice,
 # gamescope is the default; HDMI-CEC is opt-in (it can wake the machine or
 # upset other devices on the TV, even on SteamOS), except on a Steam Machine,
@@ -26,7 +26,7 @@ NO_PRESELECT=(boot cec kpin hdmi)
 FEATURE_BASELINE=2.1.0
 declare -A FEATURE_VERSION=(
     [gaming]=2.1.0 [boot]=2.1.0 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.1.0
-    [launcher]=2.1.0 [cec]=2.1.0 [machine]=2.2.0 [poweroff]=2.2.0 [vram]=2.3.0 [notify]=2.5.0
+    [launcher]=2.1.0 [cec]=2.1.0 [machine]=2.2.0 [poweroff]=2.2.0 [vram]=2.3.0 [notify]=2.5.0 [steamgame]=2.5.1
     [kpin]=2.1.0 [hdmi]=2.1.0
 )
 
@@ -37,6 +37,7 @@ declare -A LABEL=(
     [glyphs]="Install Steam Deck/Machine icons: Deck button icons in gaming mode"
     [single]="Single user mode: no password, lock screen or log out (SDDM)"
     [launcher]="Steamify shortcut: the app on the desktop, Steamify Terminal in the launcher"
+    [steamgame]="Add as non-Steam game: Steamify in your Steam library, for the controller and gaming mode"
     [notify]="Update notifications: a notification when there's a new Steamify, never updates by itself"
     [vram]="VRAM booster: the game in front keeps its VRAM, background apps make room"
     [cec]="HDMI-CEC: use Steam with the TV remote, TV on/off with the PC (experimental)"
@@ -52,6 +53,7 @@ component_available() {
     case "$1" in
         machine|poweroff) machine_available ;;
         vram) vram_available ;;
+        steamgame) steamgame_available ;;
         kpin) kpin_available ;;
         hdmi) hdmi_available ;;
         bios) bios_available ;;
@@ -192,6 +194,10 @@ toggle_component() {
     if [[ "$c" == machine && "${WANTED[machine]}" == 0 ]]; then WANTED[kpin]=0; WANTED[bios]=0; fi
     if [[ "$c" == kpin && "${WANTED[kpin]}" == 1 ]]; then WANTED[machine]=1; fi
     if [[ "$c" == bios && "${WANTED[bios]}" == 1 ]]; then WANTED[machine]=1; fi
+    # Steam starts Steamify through the shortcut's start script.
+    # Opt-out, like the power-off fix: ticked along with the shortcut.
+    if [[ "$c" == launcher ]] && component_available steamgame; then WANTED[steamgame]=${WANTED[launcher]}; fi
+    if [[ "$c" == steamgame && "${WANTED[steamgame]}" == 1 ]]; then WANTED[launcher]=1; fi
 }
 
 show_menu() {
