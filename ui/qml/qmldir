@@ -1,0 +1,20 @@
+singleton Theme 1.0 Theme.qml
+singleton Texts 1.0 Texts.qml
+singleton Input 1.0 Input.qml
+AppState 1.0 AppState.qml
+Glyph 1.0 Glyph.qml
+Btn 1.0 Btn.qml
+Chip 1.0 Chip.qml
+Badge 1.0 Badge.qml
+Bar 1.0 Bar.qml
+RiskList 1.0 RiskList.qml
+Header 1.0 Header.qml
+MenuRow 1.0 MenuRow.qml
+DetailPanel 1.0 DetailPanel.qml
+MenuScreen 1.0 MenuScreen.qml
+ReviewScreen 1.0 ReviewScreen.qml
+PasswordScreen 1.0 PasswordScreen.qml
+ApplyingScreen 1.0 ApplyingScreen.qml
+BiosWarningScreen 1.0 BiosWarningScreen.qml
+BiosConfirmScreen 1.0 BiosConfirmScreen.qml
+DoneScreen 1.0 DoneScreen.qml

@@ -170,13 +170,8 @@ toggle_component() {
     # The power-off fix is opt-out: ticked along with Steam Machine support.
     if [[ "$c" == machine ]]; then WANTED[poweroff]=${WANTED[machine]}; fi
     if [[ "$c" == poweroff && "${WANTED[poweroff]}" == 1 ]]; then WANTED[machine]=1; fi
-    if [[ "$c" == machine && "${WANTED[machine]}" == 0 ]]; then WANTED[kpin]=0; fi
+    if [[ "$c" == machine && "${WANTED[machine]}" == 0 ]]; then WANTED[kpin]=0; WANTED[bios]=0; fi
     if [[ "$c" == kpin && "${WANTED[kpin]}" == 1 ]]; then WANTED[machine]=1; fi
-    # HDMI refresh boost and the BIOS update sit under Steam Machine support;
-    # the boost also needs the pinned kernel (newer kernels don't need it).
-    if [[ "$c" == machine && "${WANTED[machine]}" == 0 ]]; then WANTED[hdmi]=0; WANTED[bios]=0; fi
-    if [[ "$c" == kpin && "${WANTED[kpin]}" == 0 ]]; then WANTED[hdmi]=0; fi
-    if [[ "$c" == hdmi && "${WANTED[hdmi]}" == 1 ]]; then WANTED[machine]=1; WANTED[kpin]=1; fi
     if [[ "$c" == bios && "${WANTED[bios]}" == 1 ]]; then WANTED[machine]=1; fi
 }
 

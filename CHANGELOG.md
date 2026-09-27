@@ -5,9 +5,14 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.4.0 - 2026-09-27
+
+- **chore: Version 2.4.0**
+- `e699a3f` **refactor(ui): One QML file per screen; the HDMI boost's setup screens and backend commands removed**
+
 ## 2.3.0 - 2026-09-27
 
-- **feat: VRAM booster greyed out with an NVIDIA card, with why**
+- `86b9744` **feat: VRAM booster greyed out with an NVIDIA card, with why**
 - `b0947d7` **feat: VRAM booster only for GPUs with at least 2 GB of their own VRAM**
 - `3f97c85` **feat: VRAM booster for every supported GPU, not only the Steam Machine**
 - `fd162c1` **feat: New badge for default sub-options added in this version**
