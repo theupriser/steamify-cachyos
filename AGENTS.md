@@ -223,6 +223,13 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `linux-cachyos` is clang-built, `-bore` GCC-built: let DKMS pick the
   compiler, never pass `LLVM=1`. Test shutdown on the real machine for every
   new major kernel.
+- Update notifications (`notify`, `lib/update-notifier.sh`, top-level,
+  ticked by default, 2.5.0): a user timer (daily, and the service is wanted
+  by `plasma-workspace.target`) runs `patches/steamify-notifier.py`, which
+  compares GitHub's newest release with the `seen` version every run records
+  (`notify_seen` in the entry point, only while it's on). It must never
+  update anything itself: notification + tray icon, Open Steamify / Skip
+  this version (`skipped`). Desktop only (exits without `plasmashell`).
 - VRAM booster (`vram`, `lib/vram-booster.sh`, top-level, ticked by
   default, 2.3.0; only available when `/sys/fs/cgroup/dmem.capacity` lists a
   VRAM region of at least 2 GB; greyed out with an NVIDIA card,

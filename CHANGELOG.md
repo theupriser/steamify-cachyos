@@ -5,6 +5,10 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.5.0 - 2026-09-27
+
+- **feat: Update notifications: a notification and tray icon when there's a new Steamify**
+
 ## 2.4.1 - 2026-09-27
 
 - **chore: Version 2.4.1**

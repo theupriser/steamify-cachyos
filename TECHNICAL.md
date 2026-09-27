@@ -236,6 +236,27 @@ Where Steam Machine support was set up before 2.2.0, the menu ticks the
 power-off fix as a new default sub-option (see feature versions below), so a
 normal run adds it.
 
+## Update notifications
+
+The **Update notifications** option (new in 2.5.0, ticked by default)
+installs `patches/steamify-notifier.py` as
+`~/.local/share/cachyos-gamescope-boot/steamify-notifier` with two user
+units in `~/.config/systemd/user`: `steamify-update-check.timer` (daily,
+`Persistent=`) and `steamify-update-check.service` (also wanted by
+`plasma-workspace.target`, so it checks a minute after each desktop login).
+Nothing stays running while there's no update.
+
+Every Steamify run records its version as `seen` (`notify.state`). The check
+asks GitHub for the newest release; when it's newer than `seen` and not the
+`skipped` version, it shows a notification (`notify-send` with the buttons
+**Open Steamify** and **Skip this version**) and a tray icon (click: open;
+menu: open, skip, remind me later). Closing the notification keeps the
+icon; opening Steamify in any way records the new version and ends it. It
+only runs on the Plasma desktop: gamescope shows no notifications or tray,
+so an update found in gaming mode waits for the next desktop login. It never
+installs anything: the shortcut always starts the newest release, which then
+shows what's new or updated for this install.
+
 ## VRAM booster
 
 SteamOS 3.9 manages the dGPU's VRAM per cgroup: the game in front is
@@ -357,6 +378,7 @@ immediately, which can turn into a loop - see
 | `lib/cec.sh` | HDMI-CEC: Valve's `cecd` and friends from its `holo` repository |
 | `lib/steam-machine.sh` | Steam Machine support: LED driver, LED access, steamos-manager |
 | `lib/fremont-poweroff.sh` | Steam Machine support: the power-off fix (DKMS module from `patches/`) |
+| `lib/update-notifier.sh` | Update notifications: the notifier from `patches/` and its user timer |
 | `lib/vram-booster.sh` | VRAM booster (`dmemcg-booster`, `plasma-foreground-booster`) |
 | `patches/` | Module sources and patches the scripts build or apply (`patch_file`); see its README |
 | `.github/tools/bundle.sh` | Builds the single-file version (`dist/steamify.sh`), with `patches/` embedded |

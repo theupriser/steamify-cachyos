@@ -5,7 +5,7 @@
 
 # Menu order. Components are turned on in this order and off in reverse;
 # gaming must come first (single user builds on it).
-COMPONENTS=(gaming boot theme glyphs single launcher vram cec machine poweroff kpin hdmi bios)
+COMPONENTS=(gaming boot theme glyphs single launcher notify vram cec machine poweroff kpin hdmi bios)
 # One-off actions rather than on/off components: never preselected, never
 # re-applied, not listed as on or off.
 ACTIONS=(bios)
@@ -26,7 +26,7 @@ NO_PRESELECT=(boot cec kpin hdmi)
 FEATURE_BASELINE=2.1.0
 declare -A FEATURE_VERSION=(
     [gaming]=2.1.0 [boot]=2.1.0 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.1.0
-    [launcher]=2.1.0 [cec]=2.1.0 [machine]=2.2.0 [poweroff]=2.2.0 [vram]=2.3.0
+    [launcher]=2.1.0 [cec]=2.1.0 [machine]=2.2.0 [poweroff]=2.2.0 [vram]=2.3.0 [notify]=2.5.0
     [kpin]=2.1.0 [hdmi]=2.1.0
 )
 
@@ -37,6 +37,7 @@ declare -A LABEL=(
     [glyphs]="Install Steam Deck/Machine icons: Deck button icons in gaming mode"
     [single]="Single user mode: no password, lock screen or log out (SDDM)"
     [launcher]="Steamify shortcut: the app on the desktop, Steamify Terminal in the launcher"
+    [notify]="Update notifications: a notification when there's a new Steamify, never updates by itself"
     [vram]="VRAM booster: the game in front keeps its VRAM, background apps make room"
     [cec]="HDMI-CEC: use Steam with the TV remote, TV on/off with the PC (experimental)"
     [machine]="Steam Machine support: LED bar driver, hardware settings in Steam"
