@@ -5,6 +5,10 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.5.2 - 2026-09-27
+
+- **docs: README screenshot at 2.5.2: everything on, nothing to update**
+
 ## 2.5.1 - 2026-09-27
 
 - **fix: Add as non-Steam game asks Steam to close again every 15 s (a Steam that was still starting ignored it)**
