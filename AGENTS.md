@@ -89,6 +89,10 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
     changelog section) and marks it latest. An existing version is never
     overwritten: without a bump nothing is released, and pull requests show
     a warning.
+  - A release that adds, removes or renames a menu row also retakes the
+    README screenshot (`assets/screenshot-menu.png`): the app from the
+    branch on a Steam Machine, every row visible (window 1280 wide, tall
+    enough), the header showing the new `VERSION`, scaled to 1600 px wide.
   - Users install through `releases/latest/download/steamify.sh`
     (GitHub's newest release). The `latest` tag and release follow the newest
     version tag too (moved, asset replaced, when a new version is released),
