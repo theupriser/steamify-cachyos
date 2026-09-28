@@ -8,7 +8,7 @@ one per merged pull request.
 ## 2.9.0 - 2026-09-28
 
 - `d30d505` **chore: Version 2.9.0**
-- **feat: Steam's OS Version is the SteamOS release Steamify follows (steamos-3.9), its OS Codename steam-machine; About this System keeps "CachyOS Linux" (UseOSReleaseVersion)**
+- `a72d848` **feat: Steam's OS Version is the SteamOS release Steamify follows (steamos-3.9), its OS Codename steam-machine; About this System keeps "CachyOS Linux" (UseOSReleaseVersion)**
 - `27a4070` **fix: Steam's OS Variant shows Steamify's version (VARIANT_ID=steamify-2.9.0; Steam shows VARIANT_ID, not VARIANT)**
 - `44bfe07` **fix: No VERSION_ID in os-release: About this System said "CachyOS Linux 2.9.0"; the version is in VARIANT ("Steamify 2.9.0")**
 - `435f69c` **feat: Steam's System settings: the OS name stays CachyOS (no renaming, also not in About this System), Steamify <version> as the variant, the SteamOS release it follows as the codename (steamos-3.9)**
