@@ -18,6 +18,55 @@ gaming_status() {
     esac
 }
 
+# What Steam shows in its System settings: the OS name (`lsb_release -d`:
+# DISTRIB_DESCRIPTION in /etc/lsb-release) and Steamify as the OS variant and
+# version (os-release's VARIANT/VERSION_ID; its NAME and PRETTY_NAME stay
+# CachyOS's, which limine-snapper-sync finds the boot entries by).
+# cachyos-hooks resets lsb-release on updates, so our hook sets it again.
+OS_NAME_SCRIPT=/usr/local/libexec/steamify-os-release
+OS_NAME_HOOK=/etc/pacman.d/hooks/zz-steamify-os-release.hook
+# limine's tools take the OS name from TARGET_OS_NAME, else os-release's
+# PRETTY_NAME: pinned to CachyOS, the boot entries never depend on os-release.
+LIMINE_DEFAULTS=/etc/default/limine
+
+os_name_enable() {
+    patch_file steamify-os-release.sh | fill VERSION="$VERSION" | sudo install -Dm755 /dev/stdin "$OS_NAME_SCRIPT" &&
+        patch_file steamify-os-release.hook | fill SCRIPT="$OS_NAME_SCRIPT" |
+            sudo install -Dm644 /dev/stdin "$OS_NAME_HOOK" &&
+        sudo "$OS_NAME_SCRIPT" || { err "Setting the OS name for Steam failed."; return 1; }
+    if [[ -f "$LIMINE_DEFAULTS" ]] && ! grep -q '^TARGET_OS_NAME=' "$LIMINE_DEFAULTS"; then
+        backup_file "$LIMINE_DEFAULTS"
+        printf '%s\n' 'TARGET_OS_NAME="CachyOS"' | sudo tee -a "$LIMINE_DEFAULTS" > /dev/null
+        state_set gaming limine_target 1
+    fi
+    return 0
+}
+
+os_name_disable() {
+    sudo rm -f "$OS_NAME_HOOK" "$OS_NAME_SCRIPT"
+    [[ -f /etc/os-release ]] && sudo sed -i -e '/^VARIANT=/d' -e '/^VARIANT_ID=/d' -e '/^VERSION_ID=/d' /etc/os-release
+    # CachyOS's own values back, the way its hooks write them.
+    if [[ -x /usr/share/libalpm/scripts/cachyos-branding ]]; then
+        sudo /usr/share/libalpm/scripts/cachyos-branding os-release
+        sudo /usr/share/libalpm/scripts/cachyos-branding lsb-release
+    fi
+    if [[ -n "$(state_get gaming limine_target)" ]]; then
+        sudo sed -i '/^TARGET_OS_NAME="CachyOS"$/d' "$LIMINE_DEFAULTS"
+        state_set gaming limine_target ""
+    fi
+    return 0
+}
+
+os_version_refresh() {
+    # After every run that changed something (sudo is at hand then): Steam's
+    # OS version follows Steamify's, not just the one that set it up. Silent:
+    # the app reads the backend's stdout as JSON.
+    gaming_status 2>/dev/null || return 0
+    grep -qx "VERSION_ID=$VERSION" /etc/os-release 2>/dev/null && return 0
+    os_name_enable > /dev/null 2>&1
+    return 0
+}
+
 gaming_enable() {
     # LOGIN_MANAGER (sddm with single user, else plasmalogin) is set by the
     # menu. Re-running with the other value switches over cleanly.
@@ -37,6 +86,10 @@ gaming_enable() {
     esac
     create_desktop_shortcut
     steam_enable
+    # System Settings' About this System: the name KInfoCenter shows instead
+    # of os-release's (package-owned, so not edited).
+    kset gaming kcm-about-distrorc General Name "CachyOS Linux with Steamify"
+    os_name_enable || return 1
 }
 
 gaming_disable() {
@@ -49,6 +102,8 @@ gaming_disable() {
     switch_to_plasmalogin
     remove_desktop_shortcut
     steam_disable
+    krevert gaming
+    os_name_disable
     ok "The PC boots to the normal login screen again (from the next boot)."
 }
 

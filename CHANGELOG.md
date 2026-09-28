@@ -7,7 +7,8 @@ one per merged pull request.
 
 ## 2.9.0 - 2026-09-28
 
-- **chore: Version 2.9.0**
+- `d30d505` **chore: Version 2.9.0**
+- **feat: Steam's System settings and About this System like on SteamOS: OS name "CachyOS with Steamify" (lsb-release, kept through CachyOS updates by a pacman hook), Steamify as OS variant and version (os-release VARIANT/VERSION_ID; NAME/PRETTY_NAME stay CachyOS's for limine, TARGET_OS_NAME pinned), "CachyOS Linux with Steamify" in About this System; on a Steam Machine the serial number and Steam's Wi-Fi backend setting (existing installs get it as an update)**
 
 ## 2.8.0 - 2026-09-28
 
