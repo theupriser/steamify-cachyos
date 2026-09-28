@@ -33,12 +33,16 @@ BACKEND=false
 # prompt (the Steam Machine ISO's first login runs this; sudo must not ask).
 DEFAULTS=false
 [[ "${1:-}" == --defaults ]] && DEFAULTS=true
+# --defaults --list: what --defaults can set up here, as JSON (an installer
+# page is built from it); nothing else on stdout.
+LIST=false
+[[ "$DEFAULTS" == true && "${2:-}" == --list ]] && LIST=true
 # --boot gamescope|desktop: only change where an installed conversion
 # starts, everything else stays as it is (for scripts; no menu).
 BOOT_ONLY=false
 [[ "${1:-}" == --boot ]] && BOOT_ONLY=true
 
-if [[ "$BACKEND" == false ]]; then
+if [[ "$BACKEND" == false && "$LIST" == false ]]; then
     echo -e "${c_bold}Steamify CachyOS${c_reset} v$VERSION"
     echo "Turn the SteamOS-style parts on or off. The menu shows what is on now;"
     echo "anything you turn off is put back the way it was."
@@ -125,6 +129,11 @@ fi
 
 if [[ "${1:-}" == --first-login ]]; then
     first_login_run
+    exit 0
+fi
+
+if [[ "$LIST" == true ]]; then
+    defaults_list
     exit 0
 fi
 
