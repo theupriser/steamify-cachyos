@@ -111,7 +111,11 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
       request **into `main`**. Merging it publishes the release (below).
     - A fix for a released version: a new `release/X.Y.Z+1` from `main`,
       with the `bugfix/` branch into it; don't reopen an old release branch.
-    - Never commit to `main` directly; the user merges the pull requests.
+    - Up to the release branch, the agent manages it: create the
+      `feature/`/`bugfix/` branches, commit, push, and merge them into the
+      release branch itself once tested (no pull request needed). Only the
+      release branch's pull request into `main` is the user's: never commit
+      or merge to `main`, the user merges that one.
       Keep a feature/bugfix branch up to date by merging (or rebasing on)
       its release branch, the release branch by merging `main` when that
       moved.
