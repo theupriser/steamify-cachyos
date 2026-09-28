@@ -236,6 +236,31 @@ defaults_options() {
     return 0
 }
 
+defaults_list() {
+    # --defaults --list: what --defaults can set up on this PC, as one JSON
+    # array, for an installer page (the Steam Machine ISO builds its Steamify
+    # page from it, so new items show up without a new ISO). Per item: id,
+    # label, hint, kind (toggle, or choice for boot: on = desktop), parent,
+    # on (preselected like a first run) and selectable. Actions, retired
+    # items and items this PC can't use (e.g. no Steam account yet) are
+    # left out. Read-only: no sudo, no state.
+    local c kind on sel items=""
+    for c in "${COMPONENTS[@]}"; do
+        component_available "$c" || continue
+        is_action "$c" && continue
+        [[ "$c" == kpin || "$c" == hdmi ]] && continue
+        kind=toggle; [[ "$c" == boot ]] && kind=choice
+        sel=false; component_selectable "$c" && sel=true
+        on=false
+        [[ "$sel" == true && " ${NO_PRESELECT[*]} " != *" $c "* ]] && on=true
+        [[ "$c" == cec ]] && machine_available && on=true
+        items+="${items:+,}{\"id\":$(json_str "$c"),\"label\":$(json_str "${LABEL[$c]%%:*}")"
+        items+=",\"hint\":$(json_str "$( [[ "${LABEL[$c]}" == *:* ]] && echo "${LABEL[$c]#*: }")")"
+        items+=",\"kind\":\"$kind\",\"parent\":$(json_str "${PARENT[$c]:-}"),\"on\":$on,\"selectable\":$sel}"
+    done
+    printf '[%s]\n' "$items"
+}
+
 toggle_component() {
     local c="$1"
     component_selectable "$c" || return 1

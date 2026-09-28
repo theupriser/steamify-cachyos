@@ -5,6 +5,10 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.8.0 - 2026-09-28
+
+- **chore: Version 2.8.0**
+
 ## 2.7.0 - 2026-09-28
 
 - `4f6e6fd` **feat: --defaults takes --skip <ids> and --boot gamescope|desktop, for the Steam Machine ISO's installer pages**
