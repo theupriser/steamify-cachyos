@@ -8,7 +8,8 @@ one per merged pull request.
 ## 2.7.0 - 2026-09-28
 
 - `4f6e6fd` **feat: --defaults takes --skip <ids> and --boot gamescope|desktop, for the Steam Machine ISO's installer pages**
-- **fix: HDMI-CEC enables cec-audio-control.socket (the TV remote's volume keys); existing installs get it as an update**
+- `5bf9da4` **fix: HDMI-CEC enables cec-audio-control.socket (the TV remote's volume keys); existing installs get it as an update**
+- **fix: the app's progress screen says "Boot into desktop", not "Boot into Boot into"**
 
 ## 2.6.0 - 2026-09-27
 
