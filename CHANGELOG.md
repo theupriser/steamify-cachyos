@@ -15,7 +15,8 @@ one per merged pull request.
 - `bee18b7` **docs: the agent merges feature/bugfix branches into the release branch; the release into main stays the user's**
 - `501c0ba` **docs: gh or git for merging into the release branch**
 - `b1adacb` **docs: gh is required for the release-branch pull requests; ask the user to install it**
-- **chore: the v2 app preview is gone (it is the released app): no preview pre-release step in CI, no mention in steamify-app.sh**
+- `ced4a45` **chore: the v2 app preview is gone (it is the released app): no preview pre-release step in CI, no mention in steamify-app.sh**
+- **fix: turning the theme off no longer brings back single user's launcher restriction when single user was turned off in between**
 
 ## 2.6.0 - 2026-09-27
 
