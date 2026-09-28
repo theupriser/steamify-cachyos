@@ -113,7 +113,9 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
       with the `bugfix/` branch into it; don't reopen an old release branch.
     - Up to the release branch, the agent manages it: create the
       `feature/`/`bugfix/` branches, commit, push, and merge them into the
-      release branch itself once tested (no pull request needed). Only the
+      release branch itself once tested (with `gh`: `gh pr create --base
+      release/X.Y.Z` + `gh pr merge --merge`, or a plain `git merge --no-ff`;
+      no review needed). Only the
       release branch's pull request into `main` is the user's: never commit
       or merge to `main`, the user merges that one.
       Keep a feature/bugfix branch up to date by merging (or rebasing on)
