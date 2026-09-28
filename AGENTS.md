@@ -314,7 +314,7 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
 - What Steam's System settings show (SteamOS conversion, 2.9.0): the OS name
   stays CachyOS's everywhere (legal clarity; Steam reads `lsb_release -d`,
   not touched). `/etc/os-release` gets only `VARIANT="Steamify <version>"`,
-  `VARIANT_ID` and `VERSION_CODENAME=steamos-X.Y` (no `VERSION_ID`: KDE's About
+  `VARIANT_ID=steamify-<version>` (what Steam shows as OS Variant) and `VERSION_CODENAME=steamos-X.Y` (no `VERSION_ID`: KDE's About
   this System shows it after the name, "CachyOS Linux 2.9.0") (Valve's
   newest jupiter repo), refreshed by `os_version_refresh` after every run that
   changes something; a pacman hook (`zz-steamify-os-release`) runs after
