@@ -21,7 +21,8 @@ gaming_status() {
 # What Steam shows in its System settings besides the OS name (which stays
 # CachyOS's, for legal clarity and because limine-snapper-sync finds the boot
 # entries by it): Steamify as the variant and version, the SteamOS release it
-# follows as the codename (os-release VARIANT/VERSION_ID/VERSION_CODENAME).
+# follows as the codename (os-release VARIANT/VERSION_CODENAME; no
+# VERSION_ID, which About this System would show after CachyOS's name).
 OS_NAME_SCRIPT=/usr/local/libexec/steamify-os-release
 OS_NAME_HOOK=/etc/pacman.d/hooks/zz-steamify-os-release.hook
 # limine's tools take the OS name from TARGET_OS_NAME, else os-release's
@@ -81,7 +82,7 @@ os_version_refresh() {
     # OS version follows Steamify's, not just the one that set it up. Silent:
     # the app reads the backend's stdout as JSON.
     gaming_status 2>/dev/null || return 0
-    grep -qx "VERSION_ID=$VERSION" /etc/os-release 2>/dev/null && return 0
+    grep -qx "VARIANT=\"Steamify $VERSION\"" /etc/os-release 2>/dev/null && return 0
     os_name_enable > /dev/null 2>&1
     return 0
 }
