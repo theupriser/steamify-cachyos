@@ -5,6 +5,16 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.9.0 - 2026-09-28
+
+- `d30d505` **chore: Version 2.9.0**
+- `a72d848` **feat: Steam's OS Version is the SteamOS release Steamify follows (steamos-3.9), its OS Codename steam-machine; About this System keeps "CachyOS Linux" (UseOSReleaseVersion)**
+- `27a4070` **fix: Steam's OS Variant shows Steamify's version (VARIANT_ID=steamify-2.9.0; Steam shows VARIANT_ID, not VARIANT)**
+- `44bfe07` **fix: No VERSION_ID in os-release: About this System said "CachyOS Linux 2.9.0"; the version is in VARIANT ("Steamify 2.9.0")**
+- `435f69c` **feat: Steam's System settings: the OS name stays CachyOS (no renaming, also not in About this System), Steamify <version> as the variant, the SteamOS release it follows as the codename (steamos-3.9)**
+- `ce71b34` **feat: Steam's System settings and About this System like on SteamOS: OS name "CachyOS with Steamify" (lsb-release, kept through CachyOS updates by a pacman hook), Steamify as OS variant and version (os-release VARIANT/VERSION_ID; NAME/PRETTY_NAME stay CachyOS's for limine, TARGET_OS_NAME pinned), "CachyOS Linux with Steamify" in About this System; on a Steam Machine the serial number and Steam's Wi-Fi backend setting (existing installs get it as an update)**
+- `07a94cd` **fix(ui): The progress screen's ✓ and ! stand upright: only a dot on the circle spins while a step runs (they kept the spinner's last angle)**
+
 ## 2.8.0 - 2026-09-28
 
 - **chore: Version 2.8.0**

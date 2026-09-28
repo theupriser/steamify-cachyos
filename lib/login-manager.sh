@@ -18,6 +18,78 @@ gaming_status() {
     esac
 }
 
+# What Steam shows in its System settings besides the OS name (which stays
+# CachyOS's, for legal clarity and because limine-snapper-sync finds the boot
+# entries by it): the SteamOS release as the OS version, steam-machine as the
+# codename, Steamify with its version as the variant (os-release VERSION_ID,
+# VERSION_CODENAME, VARIANT_ID; see patches/steamify-os-release.sh).
+OS_NAME_SCRIPT=/usr/local/libexec/steamify-os-release
+OS_NAME_HOOK=/etc/pacman.d/hooks/zz-steamify-os-release.hook
+# limine's tools take the OS name from TARGET_OS_NAME, else os-release's
+# PRETTY_NAME: pinned to CachyOS, the boot entries never depend on os-release.
+LIMINE_DEFAULTS=/etc/default/limine
+
+steamos_release() {
+    # The SteamOS release Steamify follows: Valve's newest jupiter-X.Y repo
+    # (where the SteamOS extras come from), as an os-release ID (no spaces or
+    # capitals: steamos-3.9). Offline (e.g. in the installer): the one set
+    # before, if any.
+    local v
+    v="$(curl -fsL --max-time 15 "$VALVE_MIRROR/" 2>/dev/null | grep -oE 'jupiter-[0-9]+\.[0-9]+/' | tr -d / | sort -V | tail -n 1)"
+    if [[ -n "$v" ]]; then echo "steamos-${v#jupiter-}"
+    else sed -n 's/^VERSION_ID=\(steamos-.*\)$/\1/p' /etc/os-release 2>/dev/null; fi
+}
+
+os_name_enable() {
+    # 2.9.0 pre-releases renamed the OS itself; the name stays CachyOS's.
+    if grep -q '^DISTRIB_DESCRIPTION=.*with Steamify' /etc/lsb-release 2>/dev/null &&
+        [[ -x /usr/share/libalpm/scripts/cachyos-branding ]]; then
+        sudo /usr/share/libalpm/scripts/cachyos-branding lsb-release
+    fi
+    [[ -n "$(kreadconfig6 --file kcm-about-distrorc --group General --key Name 2>/dev/null)" ]] &&
+        kset gaming kcm-about-distrorc General Name --delete
+    # About this System: os-release's VERSION (CachyOS has none) instead of
+    # VERSION_ID, which is the SteamOS release now.
+    kset gaming kcm-about-distrorc General UseOSReleaseVersion true
+    patch_file steamify-os-release.sh | fill VERSION="$VERSION" STEAMOS="$(steamos_release)" |
+        sudo install -Dm755 /dev/stdin "$OS_NAME_SCRIPT" &&
+        patch_file steamify-os-release.hook | fill SCRIPT="$OS_NAME_SCRIPT" |
+            sudo install -Dm644 /dev/stdin "$OS_NAME_HOOK" &&
+        sudo "$OS_NAME_SCRIPT" || { err "Setting Steamify's version for Steam failed."; return 1; }
+    if [[ -f "$LIMINE_DEFAULTS" ]] && ! grep -q '^TARGET_OS_NAME=' "$LIMINE_DEFAULTS"; then
+        backup_file "$LIMINE_DEFAULTS"
+        printf '%s\n' 'TARGET_OS_NAME="CachyOS"' | sudo tee -a "$LIMINE_DEFAULTS" > /dev/null
+        state_set gaming limine_target 1
+    fi
+    return 0
+}
+
+os_name_disable() {
+    sudo rm -f "$OS_NAME_HOOK" "$OS_NAME_SCRIPT"
+    [[ -f /etc/os-release ]] && sudo sed -i -e '/^VARIANT=/d' -e '/^VARIANT_ID=/d' -e '/^VERSION_ID=/d' -e '/^VERSION_CODENAME=/d' /etc/os-release
+    # CachyOS's own values back, the way its hooks write them.
+    if [[ -x /usr/share/libalpm/scripts/cachyos-branding ]]; then
+        sudo /usr/share/libalpm/scripts/cachyos-branding os-release
+        # Undoes 2.9.0 pre-releases, which changed lsb-release's name too.
+        sudo /usr/share/libalpm/scripts/cachyos-branding lsb-release
+    fi
+    if [[ -n "$(state_get gaming limine_target)" ]]; then
+        sudo sed -i '/^TARGET_OS_NAME="CachyOS"$/d' "$LIMINE_DEFAULTS"
+        state_set gaming limine_target ""
+    fi
+    return 0
+}
+
+os_version_refresh() {
+    # After every run that changed something (sudo is at hand then): Steam's
+    # OS version follows Steamify's, not just the one that set it up. Silent:
+    # the app reads the backend's stdout as JSON.
+    gaming_status 2>/dev/null || return 0
+    grep -qx "VARIANT_ID=steamify-$VERSION" /etc/os-release 2>/dev/null && return 0
+    os_name_enable > /dev/null 2>&1
+    return 0
+}
+
 gaming_enable() {
     # LOGIN_MANAGER (sddm with single user, else plasmalogin) is set by the
     # menu. Re-running with the other value switches over cleanly.
@@ -37,6 +109,7 @@ gaming_enable() {
     esac
     create_desktop_shortcut
     steam_enable
+    os_name_enable || return 1
 }
 
 gaming_disable() {
@@ -49,6 +122,8 @@ gaming_disable() {
     switch_to_plasmalogin
     remove_desktop_shortcut
     steam_disable
+    krevert gaming
+    os_name_disable
     ok "The PC boots to the normal login screen again (from the next boot)."
 }
 

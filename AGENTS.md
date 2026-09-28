@@ -311,6 +311,21 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `steamify.sh --boot gamescope|desktop` on its own (2.7.0, for scripts) only
   switches `boot` on an installed conversion: `WANTED` is `CURRENT` plus
   that, so no updates or removals a normal run would pick.
+- What Steam's System settings show (SteamOS conversion, 2.9.0): the OS name
+  stays CachyOS's everywhere (legal clarity; Steam's OS Name is
+  `lsb_release -d`, not touched). `/etc/os-release` gets `VERSION_ID=steamos-X.Y`
+  (Steam's OS Version: Valve's newest jupiter repo; offline, the previous
+  value), `VERSION_CODENAME=steam-machine`, `VARIANT="Steamify <version>"` and
+  `VARIANT_ID=steamify-<version>` (Steam shows VARIANT_ID as OS Variant),
+  refreshed by `os_version_refresh` after every run that changes something; a
+  pacman hook (`zz-steamify-os-release`) runs after cachyos-hooks. KDE's About
+  this System would show VERSION_ID after the name: `kcm-about-distrorc`
+  `UseOSReleaseVersion=true` (kset) makes it show os-release's VERSION, which
+  CachyOS doesn't have. Never `NAME` or `PRETTY_NAME`: limine-snapper-sync
+  finds the boot entries by the OS name ("Target OS name ... not found in
+  /boot/limine.conf"); `/etc/default/limine` gets `TARGET_OS_NAME="CachyOS"`
+  when it has none, as a guard. The serial number (tmpfiles rule) is Steam
+  Machine support's, so Fremont only.
 - `Relogin=true` means a gamescope that fails to start is relaunched in a
   tight loop; keep that in mind when changing session handling.
 

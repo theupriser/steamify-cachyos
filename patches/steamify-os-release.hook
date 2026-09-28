@@ -1,0 +1,14 @@
+# Installed by Steamify CachyOS (SteamOS conversion): runs after
+# cachyos-hooks' os-release/cachyos-branding hooks (hooks run in file name
+# order).
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = filesystem
+Target = cachyos-hooks
+
+[Action]
+Description = Steamify: the OS variant and version Steam shows
+When = PostTransaction
+Exec = @SCRIPT@

@@ -378,6 +378,46 @@ machine_status() {
     pacman -Qi leds-valve-dkms-git >/dev/null 2>&1 && pacman -Qi steamos-manager >/dev/null 2>&1
 }
 
+# Steam (steamwebhelper) reads the serial number for its System settings
+# straight from DMI, which the kernel makes root-only; SteamOS makes it
+# readable. A tmpfiles rule does that at every boot.
+SERIAL_TMPFILES=/etc/tmpfiles.d/steamify-serial.conf
+
+# Steam's Wi-Fi backend switch goes through steamos-manager, which reads and
+# writes the backend in this file (SteamOS ships it); without it, it fails
+# with "Wi-Fi backend not found in config". wpa_supplicant is what
+# NetworkManager uses on CachyOS anyway. Not written when someone set a
+# backend themselves.
+WIFI_BACKEND_CONF=/etc/NetworkManager/conf.d/99-valve-wifi-backend.conf
+
+wifi_backend_enable() {
+    [[ -f "$WIFI_BACKEND_CONF" ]] && return 0
+    grep -rqs '^wifi.backend=' /etc/NetworkManager/NetworkManager.conf /etc/NetworkManager/conf.d && return 0
+    printf '%s\n' "# Written by Steamify: Steam's Wi-Fi backend setting (steamos-manager)." \
+        '[device]' 'wifi.backend=wpa_supplicant' | sudo install -Dm644 /dev/stdin "$WIFI_BACKEND_CONF" ||
+        { err "Writing the Wi-Fi backend setting failed."; return 1; }
+    state_set machine wifi_backend 1
+}
+
+wifi_backend_disable() {
+    [[ -n "$(state_get machine wifi_backend)" ]] || return 0
+    sudo rm -f "$WIFI_BACKEND_CONF"
+    state_clear machine
+}
+
+serial_enable() {
+    printf '%s\n' "# Written by Steamify: Steam shows the serial number, like on SteamOS." \
+        'z /sys/class/dmi/id/product_serial 0444 - - -' | sudo tee "$SERIAL_TMPFILES" > /dev/null &&
+        sudo systemd-tmpfiles --create "$SERIAL_TMPFILES" ||
+        { err "Making the serial number readable for Steam failed."; return 1; }
+}
+
+serial_disable() {
+    sudo rm -f "$SERIAL_TMPFILES"
+    sudo chmod 0400 /sys/class/dmi/id/product_serial 2>/dev/null
+    return 0
+}
+
 machine_enable() {
     # The pinned kernel first when it's wanted too, so DKMS builds the LED
     # driver for it once, instead of for the current kernel and then again.
@@ -403,6 +443,8 @@ EOF
     # for hardware and controller settings; it knows the Steam Machine from its DMI data.
     info "Installing hardware manager packages (steamos-manager & inputplumber)..."
     sudo pacman -S --needed --noconfirm steamos-manager inputplumber || { err "Installing hardware manager packages failed."; return 1; }
+    serial_enable || return 1
+    wifi_backend_enable || return 1
     sudo systemctl enable --now inputplumber.service
     sudo systemctl enable --now steamos-manager.service
     user_systemctl enable steamos-manager.service 2>/dev/null
@@ -426,6 +468,8 @@ machine_disable() {
     sudo systemctl disable --now steamos-manager.service 2>/dev/null
     sudo systemctl disable --now inputplumber.service 2>/dev/null
     sudo pacman -Rns --noconfirm steamos-manager inputplumber 2>/dev/null
+    serial_disable
+    wifi_backend_disable
     sudo rm -f "$LED_UDEV_RULE" /etc/modules-load.d/leds-valve.conf
     sudo udevadm control --reload
     sudo modprobe -r leds-valve 2>/dev/null
