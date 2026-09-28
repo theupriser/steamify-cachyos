@@ -14,7 +14,8 @@ one per merged pull request.
 - `eadbdda` **docs: release branches (release/X.Y.Z, feature/ and bugfix/ branches into it, the release into main); CI builds release/** pushes**
 - `bee18b7` **docs: the agent merges feature/bugfix branches into the release branch; the release into main stays the user's**
 - `501c0ba` **docs: gh or git for merging into the release branch**
-- **docs: gh is required for the release-branch pull requests; ask the user to install it**
+- `b1adacb` **docs: gh is required for the release-branch pull requests; ask the user to install it**
+- **chore: the v2 app preview is gone (it is the released app): no preview pre-release step in CI, no mention in steamify-app.sh**
 
 ## 2.6.0 - 2026-09-27
 
