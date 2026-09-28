@@ -1,0 +1,15 @@
+# Installed by Steamify CachyOS (SteamOS conversion): runs after
+# cachyos-hooks' lsb-release/cachyos-branding hooks (hooks run in file name
+# order).
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = filesystem
+Target = lsb-release
+Target = cachyos-hooks
+
+[Action]
+Description = Steamify: the OS name Steam shows (CachyOS with Steamify)
+When = PostTransaction
+Exec = @SCRIPT@
