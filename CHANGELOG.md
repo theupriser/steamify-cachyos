@@ -8,7 +8,7 @@ one per merged pull request.
 ## 2.9.0 - 2026-09-28
 
 - `d30d505` **chore: Version 2.9.0**
-- `853a392` **docs: KDE Plasma only: other desktops and display managers "are not supported" (README, was "don't work yet")**
+- `66ea63c` **docs: KDE Plasma only: other desktops and display managers "are not supported" (README, was "don't work yet")**
 - `9b86cd1` **docs: KDE Plasma only: other desktops don't work yet (README)**
 - `d73e71d` **docs: README, TECHNICAL and TROUBLESHOOTING for 2.9.0: Steam's System settings, serial number and Wi-Fi backend, --defaults --list, the Steamify ISO**
 - `a72d848` **feat: Steam's OS Version is the SteamOS release Steamify follows (steamos-3.9), its OS Codename steam-machine; About this System keeps "CachyOS Linux" (UseOSReleaseVersion)**
