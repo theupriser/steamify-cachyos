@@ -7,6 +7,7 @@
 # PRETTY_NAME are never touched: limine-snapper-sync finds the boot entries by
 # the OS name. The zz-steamify-os-release hook runs this after cachyos-hooks.
 sed -i -e '/^VARIANT=/d' -e '/^VARIANT_ID=/d' -e '/^VERSION_ID=/d' -e '/^VERSION_CODENAME=/d' /etc/os-release
-printf '%s\n' 'VARIANT="Steamify @VERSION@"' 'VARIANT_ID=steamify' >> /etc/os-release
+# Steam shows VARIANT_ID as the OS Variant: the version goes in there too.
+printf '%s\n' 'VARIANT="Steamify @VERSION@"' 'VARIANT_ID=steamify-@VERSION@' >> /etc/os-release
 [ -n "@CODENAME@" ] && echo 'VERSION_CODENAME=@CODENAME@' >> /etc/os-release
 exit 0
