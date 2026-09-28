@@ -35,7 +35,11 @@ Item {
                         border.width: step.st === "wait" || step.st === "run" ? 2 : 0; border.color: step.st === "run" ? Theme.accent : "#343f50"
                         Text { anchors.centerIn: parent; text: step.st === "ok" ? "✓" : (step.st === "fail" ? "!" : ""); color: step.st === "ok" ? Theme.good : Theme.bad
                                font.pixelSize: 13; font.weight: Font.Bold }
-                        RotationAnimator on rotation { running: step.st === "run"; from: 0; to: 360; duration: 1000; loops: Animation.Infinite } }
+                        // Only this dot turns while the step runs: ✓ and ! never rotate
+                        // (an animator leaves its item at whatever angle it stopped).
+                        Item { anchors.fill: parent; visible: step.st === "run"
+                            Rectangle { width: 6; height: 6; radius: 3; color: Theme.accent; x: parent.width / 2 - 3; y: -3 }
+                            RotationAnimator on rotation { running: step.st === "run"; from: 0; to: 360; duration: 1000; loops: Animation.Infinite } } }
                     Row { width: 380; anchors.verticalCenter: parent.verticalCenter; spacing: 10
                         // Boot into's label is its prefix already: "Boot into desktop", not "Boot into Boot into".
                         Text { text: step.modelData.id === "boot" ? (Texts.actions[step.modelData.action] || [])[3] + Texts.actions[step.modelData.action][0].toLowerCase()
