@@ -37,7 +37,9 @@ Item {
                                font.pixelSize: 13; font.weight: Font.Bold }
                         RotationAnimator on rotation { running: step.st === "run"; from: 0; to: 360; duration: 1000; loops: Animation.Infinite } }
                     Row { width: 380; anchors.verticalCenter: parent.verticalCenter; spacing: 10
-                        Text { text: (Texts.actions[step.modelData.action] || [])[3] + Texts.label(step.modelData.id)
+                        // Boot into's label is its prefix already: "Boot into desktop", not "Boot into Boot into".
+                        Text { text: step.modelData.id === "boot" ? (Texts.actions[step.modelData.action] || [])[3] + Texts.actions[step.modelData.action][0].toLowerCase()
+                                     : (Texts.actions[step.modelData.action] || [])[3] + Texts.label(step.modelData.id)
                                color: step.st === "wait" ? Theme.faint : Theme.textHi; font.family: Theme.body; font.pixelSize: 16; font.weight: Font.DemiBold
                                anchors.verticalCenter: parent.verticalCenter; elide: Text.ElideRight
                                width: Math.min(implicitWidth, parent.width - (badge.visible ? badge.width + parent.spacing : 0)) }

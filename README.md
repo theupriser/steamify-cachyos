@@ -125,6 +125,14 @@ steamos-session-select persistent  # start where you left off last time
 steamos-session-select oneshot     # always start in gaming mode (default)
 ```
 
+Where the PC starts after a restart can also be set from a script, once the
+SteamOS conversion is on (only that changes; `sudo` may ask for your password):
+
+```bash
+steamify.sh --boot desktop     # start in the desktop from the next boot on
+steamify.sh --boot gamescope   # start in gaming mode again (default)
+```
+
 ## Something wrong?
 
 Stuck on a black screen in gaming mode: press **Ctrl+Alt+F3**, log in, and run

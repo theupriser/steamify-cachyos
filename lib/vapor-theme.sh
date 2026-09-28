@@ -134,7 +134,11 @@ theme_disable() {
     fi
     # After the tools above, so keys that weren't set before are removed again.
     krevert theme
-    single_status && single_launcher
+    if single_status; then
+        single_launcher
+    else
+        single_launcher_drop
+    fi
     restart_plasmashell_if_stopped
     qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure >/dev/null 2>&1 || true
 

@@ -5,9 +5,22 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.7.0 - 2026-09-28
+
+- `4f6e6fd` **feat: --defaults takes --skip <ids> and --boot gamescope|desktop, for the Steam Machine ISO's installer pages**
+- `5bf9da4` **fix: HDMI-CEC enables cec-audio-control.socket (the TV remote's volume keys); existing installs get it as an update**
+- `14aa7c0` **fix: the app's progress screen says "Boot into desktop", not "Boot into Boot into"**
+- `c4ec755` **feat: --defaults --options <ids> (exactly these on) replaces --skip; steamify.sh --boot gamescope|desktop on its own switches where an installed conversion starts**
+- `eadbdda` **docs: release branches (release/X.Y.Z, feature/ and bugfix/ branches into it, the release into main); CI builds release/** pushes**
+- `bee18b7` **docs: the agent merges feature/bugfix branches into the release branch; the release into main stays the user's**
+- `501c0ba` **docs: gh or git for merging into the release branch**
+- `b1adacb` **docs: gh is required for the release-branch pull requests; ask the user to install it**
+- `ced4a45` **chore: the v2 app preview is gone (it is the released app): no preview pre-release step in CI, no mention in steamify-app.sh**
+- **fix: turning the theme off no longer brings back single user's launcher restriction when single user was turned off in between**
+
 ## 2.6.0 - 2026-09-27
 
-- **feat: --defaults applies the default setup without the menu, also from an installer (no session): the base for a Steam Machine ISO**
+- `b948c20` **feat: --defaults applies the default setup without the menu, also from an installer (no session): the base for a Steam Machine ISO**
 
 ## 2.5.2 - 2026-09-27
 

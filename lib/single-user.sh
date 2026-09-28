@@ -101,6 +101,24 @@ single_launcher() {
     done
 }
 
+single_launcher_drop() {
+    # The theme's layout backup is taken when it's turned on: with single
+    # user on then, it holds single's launcher keys, and restoring it after
+    # single was turned off brings them back. Drop exactly single's values
+    # (a launcher set up differently by the user is left alone).
+    local applet
+    local -a kick_args
+    for applet in $(plasma_applets org.kde.plasma.kickoff); do
+        kick_args=(--file plasma-org.kde.plasma.desktop-appletsrc --group Containments --group "${applet%%:*}"
+             --group Applets --group "${applet#*:}" --group Configuration --group General)
+        [[ "$(kreadconfig6 "${kick_args[@]}" --key primaryActions)" == 3 ]] &&
+            kwriteconfig6 "${kick_args[@]}" --key primaryActions --delete
+        [[ "$(kreadconfig6 "${kick_args[@]}" --key systemFavorites)" == 'suspend,reboot,shutdown' ]] &&
+            kwriteconfig6 "${kick_args[@]}" --key systemFavorites --delete
+    done
+    return 0
+}
+
 single_enable() {
     info "Turning off the lock screen, user switching and logging out..."
     stop_plasmashell_for_edit

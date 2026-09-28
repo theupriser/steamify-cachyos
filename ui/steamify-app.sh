@@ -1,12 +1,12 @@
 #!/bin/bash
-# Steamify CachyOS - get and start the app (v2), for `curl | bash`:
+# Steamify CachyOS - get and start the app, for `curl | bash`:
 #   curl -fsSL https://github.com/theupriser/steamify-cachyos/releases/latest/download/steamify-app.sh | bash
 # Downloads the newest release's app package (steamify-app.tar.gz: the app,
 # steamify.sh, lib/, patches/ and services/) to ~/.local/share/steamify/app, installs PySide6 if
 # it's missing, adds a launcher entry, and starts the app.
-# STEAMIFY_RELEASE=<tag> takes that release instead of the newest (the
-# v2-ui-preview build's copy of this script sets it). STEAMIFY_BRANCH=<branch>
-# takes that branch's source instead (for testing before a build).
+# STEAMIFY_RELEASE=<tag> takes that release instead of the newest.
+# STEAMIFY_BRANCH=<branch> takes that branch's source instead (for testing
+# before a build).
 set -euo pipefail
 
 REPO="theupriser/steamify-cachyos"
