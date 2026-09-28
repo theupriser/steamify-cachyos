@@ -8,6 +8,7 @@ one per merged pull request.
 ## 2.8.0 - 2026-09-28
 
 - **chore: Version 2.8.0**
+- **feat: steamify.sh --defaults --list: what --defaults can set up here, as JSON, for an installer page**
 
 ## 2.7.0 - 2026-09-28
 
