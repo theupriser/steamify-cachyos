@@ -81,7 +81,7 @@ What Steamify can do on a Valve Steam Machine:
 
 > **KDE Plasma only.** Steamify works with KDE Plasma and its login managers
 > (plasma-login-manager or SDDM). Other desktops (GNOME, Hyprland, Cosmic,
-> ...) and other display managers don't work yet: the switching between gaming mode
+> ...) and other display managers are not supported: the switching between gaming mode
 > and the desktop, the theme and the shortcuts are all built for Plasma.
 - Your normal user account, with permission to use `sudo`
 
