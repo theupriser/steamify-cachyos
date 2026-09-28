@@ -13,7 +13,8 @@ one per merged pull request.
 - `c4ec755` **feat: --defaults --options <ids> (exactly these on) replaces --skip; steamify.sh --boot gamescope|desktop on its own switches where an installed conversion starts**
 - `eadbdda` **docs: release branches (release/X.Y.Z, feature/ and bugfix/ branches into it, the release into main); CI builds release/** pushes**
 - `bee18b7` **docs: the agent merges feature/bugfix branches into the release branch; the release into main stays the user's**
-- **docs: gh or git for merging into the release branch**
+- `501c0ba` **docs: gh or git for merging into the release branch**
+- **docs: gh is required for the release-branch pull requests; ask the user to install it**
 
 ## 2.6.0 - 2026-09-27
 
