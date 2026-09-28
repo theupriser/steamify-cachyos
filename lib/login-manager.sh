@@ -20,24 +20,24 @@ gaming_status() {
 
 # What Steam shows in its System settings besides the OS name (which stays
 # CachyOS's, for legal clarity and because limine-snapper-sync finds the boot
-# entries by it): Steamify as the variant and version, the SteamOS release it
-# follows as the codename (os-release VARIANT/VERSION_CODENAME; no
-# VERSION_ID, which About this System would show after CachyOS's name).
+# entries by it): the SteamOS release as the OS version, steam-machine as the
+# codename, Steamify with its version as the variant (os-release VERSION_ID,
+# VERSION_CODENAME, VARIANT_ID; see patches/steamify-os-release.sh).
 OS_NAME_SCRIPT=/usr/local/libexec/steamify-os-release
 OS_NAME_HOOK=/etc/pacman.d/hooks/zz-steamify-os-release.hook
 # limine's tools take the OS name from TARGET_OS_NAME, else os-release's
 # PRETTY_NAME: pinned to CachyOS, the boot entries never depend on os-release.
 LIMINE_DEFAULTS=/etc/default/limine
 
-steamos_codename() {
+steamos_release() {
     # The SteamOS release Steamify follows: Valve's newest jupiter-X.Y repo
-    # (where the SteamOS extras come from), as a codename (os-release allows
-    # no spaces or capitals: steamos-3.9). Offline (e.g. in the installer):
-    # the one set before, if any.
+    # (where the SteamOS extras come from), as an os-release ID (no spaces or
+    # capitals: steamos-3.9). Offline (e.g. in the installer): the one set
+    # before, if any.
     local v
     v="$(curl -fsL --max-time 15 "$VALVE_MIRROR/" 2>/dev/null | grep -oE 'jupiter-[0-9]+\.[0-9]+/' | tr -d / | sort -V | tail -n 1)"
     if [[ -n "$v" ]]; then echo "steamos-${v#jupiter-}"
-    else sed -n 's/^VERSION_CODENAME=//p' /etc/os-release 2>/dev/null; fi
+    else sed -n 's/^VERSION_ID=\(steamos-.*\)$/\1/p' /etc/os-release 2>/dev/null; fi
 }
 
 os_name_enable() {
@@ -48,7 +48,10 @@ os_name_enable() {
     fi
     [[ -n "$(kreadconfig6 --file kcm-about-distrorc --group General --key Name 2>/dev/null)" ]] &&
         kset gaming kcm-about-distrorc General Name --delete
-    patch_file steamify-os-release.sh | fill VERSION="$VERSION" CODENAME="$(steamos_codename)" |
+    # About this System: os-release's VERSION (CachyOS has none) instead of
+    # VERSION_ID, which is the SteamOS release now.
+    kset gaming kcm-about-distrorc General UseOSReleaseVersion true
+    patch_file steamify-os-release.sh | fill VERSION="$VERSION" STEAMOS="$(steamos_release)" |
         sudo install -Dm755 /dev/stdin "$OS_NAME_SCRIPT" &&
         patch_file steamify-os-release.hook | fill SCRIPT="$OS_NAME_SCRIPT" |
             sudo install -Dm644 /dev/stdin "$OS_NAME_HOOK" &&
@@ -82,7 +85,7 @@ os_version_refresh() {
     # OS version follows Steamify's, not just the one that set it up. Silent:
     # the app reads the backend's stdout as JSON.
     gaming_status 2>/dev/null || return 0
-    grep -qx "VARIANT=\"Steamify $VERSION\"" /etc/os-release 2>/dev/null && return 0
+    grep -qx "VARIANT_ID=steamify-$VERSION" /etc/os-release 2>/dev/null && return 0
     os_name_enable > /dev/null 2>&1
     return 0
 }
