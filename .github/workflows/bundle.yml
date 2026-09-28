@@ -16,7 +16,7 @@ name: Single-file build
 
 on:
   push:
-    branches: [main, feat/v2-ui]
+    branches: [main, 'release/**']
   pull_request:
   workflow_dispatch:
 

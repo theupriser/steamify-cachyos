@@ -98,11 +98,34 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
     + subject; a commit can't contain its own hash, so fill it in with the
     next commit). The section heading must be `## <VERSION> - <date>`: CI
     cuts the release notes out of the changelog by that heading.
-  - Every PR that should be released bumps `VERSION` and adds its section.
-    A push to `main` publishes release `v$VERSION` (tag + bundle + that
+  - **Branches: one release branch per version.** Work for a release goes
+    into `release/X.Y.Z` (e.g. `release/2.7.0`), branched from `main` when
+    that version starts. That branch bumps `VERSION` to `X.Y.Z` and adds the
+    `## X.Y.Z - <date>` changelog section (first commit on it).
+    - Every change gets its own branch from the release branch:
+      `feature/<name>` (new behaviour) or `bugfix/<name>` (a fix), and a
+      pull request **into the release branch**, not into `main`. Its commits
+      add their changelog lines to that version's section.
+    - When the release is done and tested (the test plan in
+      steamify-cachyos-dev, `TESTPLAN.md`), the release branch gets a pull
+      request **into `main`**. Merging it publishes the release (below).
+    - A fix for a released version: a new `release/X.Y.Z+1` from `main`,
+      with the `bugfix/` branch into it; don't reopen an old release branch.
+    - Up to the release branch, the agent manages it: create the
+      `feature/`/`bugfix/` branches, commit, push, and merge them into the
+      release branch itself once tested (with `gh`: `gh pr create --base
+      release/X.Y.Z` + `gh pr merge --merge`, or a plain `git merge --no-ff`;
+      no review needed). Only the
+      release branch's pull request into `main` is the user's: never commit
+      or merge to `main`, the user merges that one.
+      Keep a feature/bugfix branch up to date by merging (or rebasing on)
+      its release branch, the release branch by merging `main` when that
+      moved.
+  - A push to `main` publishes release `v$VERSION` (tag + bundle + that
     changelog section) and marks it latest. An existing version is never
     overwritten: without a bump nothing is released, and pull requests show
-    a warning.
+    a warning when `VERSION` is a version that's already released (so a
+    release branch that forgot its bump shows it on every PR).
   - A release that adds, removes or renames a menu row also retakes the
     README screenshot (`assets/screenshot-menu.png`): the app from the
     branch on a Steam Machine, every row visible (window 1280 wide, tall

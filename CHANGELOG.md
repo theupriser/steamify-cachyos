@@ -10,7 +10,10 @@ one per merged pull request.
 - `4f6e6fd` **feat: --defaults takes --skip <ids> and --boot gamescope|desktop, for the Steam Machine ISO's installer pages**
 - `5bf9da4` **fix: HDMI-CEC enables cec-audio-control.socket (the TV remote's volume keys); existing installs get it as an update**
 - `14aa7c0` **fix: the app's progress screen says "Boot into desktop", not "Boot into Boot into"**
-- **feat: --defaults --options <ids> (exactly these on) replaces --skip; steamify.sh --boot gamescope|desktop on its own switches where an installed conversion starts**
+- `c4ec755` **feat: --defaults --options <ids> (exactly these on) replaces --skip; steamify.sh --boot gamescope|desktop on its own switches where an installed conversion starts**
+- `eadbdda` **docs: release branches (release/X.Y.Z, feature/ and bugfix/ branches into it, the release into main); CI builds release/** pushes**
+- `bee18b7` **docs: the agent merges feature/bugfix branches into the release branch; the release into main stays the user's**
+- **docs: gh or git for merging into the release branch**
 
 ## 2.6.0 - 2026-09-27
 
