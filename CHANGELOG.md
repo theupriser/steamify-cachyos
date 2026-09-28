@@ -7,7 +7,8 @@ one per merged pull request.
 
 ## 2.9.0 - 2026-09-28
 
-- **chore: Version 2.9.0**
+- `d30d505` **chore: Version 2.9.0**
+- **fix(ui): The progress screen's ✓ and ! stand upright: only a dot on the circle spins while a step runs (they kept the spinner's last angle)**
 
 ## 2.8.0 - 2026-09-28
 
