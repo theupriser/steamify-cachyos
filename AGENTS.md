@@ -279,9 +279,13 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   removes it so Plasma builds Vapor's layout at the first login. What needs
   that layout (single user's launcher) runs then, from a one-time autostart
   (`lib/first-login.sh`, `--first-login`) that also opens the app.
-  `--skip <id>,...` and `--boot gamescope|desktop` (2.7.0, `defaults_options`
-  in `lib/menu.sh`) change the preselection through `toggle_component`, so the
-  menu's dependencies hold; the ISO's installer pages pass them.
+  `--options <id>,...` (exactly these on, the rest off; an item on brings its
+  parent) and `--boot gamescope|desktop` (desktop only with `gaming`) (2.7.0,
+  `defaults_options` in `lib/menu.sh`); the ISO's installer page passes them.
+  Items this PC can't use are left off with a warning, not an error.
+  `steamify.sh --boot gamescope|desktop` on its own (2.7.0, for scripts) only
+  switches `boot` on an installed conversion: `WANTED` is `CURRENT` plus
+  that, so no updates or removals a normal run would pick.
 - `Relogin=true` means a gamescope that fails to start is relaunched in a
   tight loop; keep that in mind when changing session handling.
 

@@ -180,32 +180,59 @@ detect_components() {
 }
 
 defaults_options() {
-    # defaults_options [--skip <id>[,<id>...]] [--boot gamescope|desktop]:
-    # changes --defaults' preselection like unticking items in the menu
-    # (the Steam Machine ISO's installer pages pass them). Returns 1 on an
-    # unknown option or id.
-    local c ids
+    # defaults_options [--options <id>[,<id>...]] [--boot gamescope|desktop]:
+    # what --defaults sets up, from the Steam Machine ISO's installer page.
+    # --options: exactly these items on, every other off (without it, the
+    # menu's preselection). An item that's on brings its parent (single user
+    # the conversion, like ticking it in the menu); one this PC can't use is
+    # left off with a warning. --boot desktop needs the conversion. Returns 1
+    # on an unknown option, item or value.
+    local c ids list=false boot=""
     while [[ $# -gt 0 ]]; do
+        # Both take a value: without one, shift 2 fails and never shifts, so
+        # the loop would spin forever.
+        [[ "$1" == --options || "$1" == --boot ]] && [[ $# -lt 2 ]] && { err "$1 needs a value"; return 1; }
         case "$1" in
-            --skip)
-                IFS=, read -ra ids <<< "${2:-}"
-                for c in "${ids[@]}"; do
-                    [[ -n "${LABEL[$c]:-}" ]] || { err "Unknown item: $c"; return 1; }
-                    # Unticking through the menu's rules: e.g. skipping the
-                    # conversion also skips single user mode.
-                    [[ "${WANTED[$c]:-0}" == 1 ]] && toggle_component "$c"
-                done
+            --options)
+                list=true
+                IFS=, read -ra ids <<< "$2"
                 shift 2 ;;
             --boot)
-                case "${2:-}" in
-                    gamescope) [[ "${WANTED[boot]:-0}" == 1 ]] && toggle_component boot ;;
-                    desktop) [[ "${WANTED[boot]:-0}" == 0 && "${WANTED[gaming]:-0}" == 1 ]] && toggle_component boot ;;
+                case "$2" in
+                    gamescope|desktop) boot="$2" ;;
                     *) err "--boot takes gamescope or desktop"; return 1 ;;
                 esac
                 shift 2 ;;
             *) err "Unknown option: $1"; return 1 ;;
         esac
     done
+    if [[ "$list" == true ]]; then
+        for c in "${ids[@]}"; do
+            [[ -n "$c" ]] || continue
+            [[ -n "${LABEL[$c]:-}" ]] || { err "Unknown item: $c"; return 1; }
+            [[ "$c" == boot ]] && { err "Where to start is --boot, not an item."; return 1; }
+            is_action "$c" && { err "$c can't be part of the install."; return 1; }
+        done
+        for c in "${COMPONENTS[@]}"; do WANTED[$c]=0; done
+        for c in "${ids[@]}"; do
+            [[ -n "$c" ]] || continue
+            if component_available "$c" && component_selectable "$c"; then
+                WANTED[$c]=1
+            else
+                warn "Leaving out ${LABEL[$c]%%:*}: not available on this PC."
+            fi
+        done
+        [[ "${WANTED[single]}" == 1 ]] && WANTED[gaming]=1
+        for c in "${COMPONENTS[@]}"; do
+            [[ "${WANTED[$c]}" == 1 && -n "${PARENT[$c]:-}" ]] && WANTED[${PARENT[$c]}]=1
+        done
+    fi
+    case "$boot" in
+        desktop)
+            [[ "${WANTED[gaming]}" == 1 ]] || { err "--boot desktop needs the SteamOS conversion (gaming)."; return 1; }
+            WANTED[boot]=1 ;;
+        gamescope) WANTED[boot]=0 ;;
+    esac
     return 0
 }
 

@@ -420,6 +420,30 @@ steamos-session-select persistent  # remember the last-used session across reboo
 steamos-session-select oneshot     # always start in gamescope (default, like a Deck)
 ```
 
+`steamify.sh --boot gamescope|desktop` sets where the PC starts after a
+restart (the menu's Boot into row) from a script: it needs the SteamOS
+conversion and changes nothing else, not even the updates a normal run would
+apply. Exit code 1 without the conversion or with another value.
+
+## Install-time mode (`--defaults`)
+
+For an installer (the Steam Machine ISO), without a session or prompts
+(passwordless sudo required):
+
+```bash
+steamify.sh --defaults                                  # what the menu would preselect
+steamify.sh --defaults --options gaming,theme,cec,machine --boot desktop
+```
+
+`--options` turns on exactly the listed items (the menu's ids: `gaming`,
+`theme`, `glyphs`, `single`, `launcher`, `notify`, `vram`, `cec`, `machine`,
+`poweroff`), everything else off; an item that's on brings its parent
+(single user the conversion, the power-off fix Steam Machine support). An
+item this PC can't use (e.g. `vram` without a VRAM region) is left off with
+a warning. `--boot desktop` needs `gaming`. Unknown options, ids, `boot` or
+`bios` in the list: exit code 1 before anything changes. What needs a
+Plasma session waits for the first login (`lib/first-login.sh`).
+
 With `Relogin=true`, a gamescope session that fails to start is restarted
 immediately, which can turn into a loop - see
 [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for the way out.
