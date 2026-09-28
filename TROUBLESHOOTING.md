@@ -18,6 +18,14 @@ restarted right away (`Relogin=true`), which is why it can loop.
 Run the wizard again and press `a` in the menu to re-apply everything that's
 on (also useful after a CachyOS update). To undo a part, untick it.
 
+## "Target OS name ... not found in /boot/limine.conf"
+
+limine-snapper-sync finds the boot entries by the OS name. Steamify never
+changes that name (it only adds version keys to `/etc/os-release`), and pins
+`TARGET_OS_NAME="CachyOS"` in `/etc/default/limine`. If you see this message,
+check that `PRETTY_NAME` in `/etc/os-release` still says `CachyOS`, or set
+`TARGET_OS_NAME` in `/etc/default/limine` to the name your boot entries use.
+
 ## The LED bar on the Steam Machine stays dark
 
 Restart once more; a freshly installed driver often needs a reboot. The menu
