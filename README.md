@@ -19,6 +19,10 @@ Steam Machine.
    on the desktop too.
    - **Boot into: gamescope / desktop** - where the PC starts. Gaming mode is
      the default.
+   - Steam's **System** settings show the SteamOS release Steamify follows
+     as OS Version (e.g. `steamos-3.9`), `steam-machine` as OS Codename and
+     Steamify's version as OS Variant. The OS name stays CachyOS
+     ([details](TECHNICAL.md#what-steams-system-settings-show)).
 2. **SteamOS theme** - the Vapor look of SteamOS for the desktop, with
    **Add to Steam** in right-click menus
    ([details](TECHNICAL.md#steamos-desktop-look)).
@@ -62,7 +66,8 @@ What Steamify can do on a Valve Steam Machine:
   ([details](TECHNICAL.md#hdmi-cec)).
 - **Steam Machine support** - the front **LED bar** works, Steam's
   **hardware settings** (fan, performance) work, and the power button puts
-  it to sleep like a console.
+  it to sleep like a console. Steam's System settings show the serial
+  number, and Steam's **Wi-Fi backend** setting works.
   - **Power-off fix** - on by default: shutting down really turns the Steam
     Machine off, also with the newest CachyOS kernel
     ([details](TECHNICAL.md#power-off-fix-steam-machine)).
@@ -82,6 +87,11 @@ Open **Konsole** on your Plasma desktop and run:
 ```bash
 curl -fsSL https://github.com/theupriser/steamify-cachyos/releases/latest/download/steamify.sh | bash
 ```
+
+Installing CachyOS on a Steam Machine? The
+[Steamify CachyOS ISO](https://github.com/theupriser/steammachine-cachyos-live-iso)
+has Steamify built into the installer: pick the options there, and the
+first boot is already set up.
 
 Prefer to look at the script first? Clone the repository and run
 [`./steamify.sh`](steamify.sh) (keep the whole folder: it needs

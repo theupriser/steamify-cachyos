@@ -111,6 +111,9 @@ Turning it off restores `/etc/plasmalogin.conf` from its backup, removes the
 SDDM autologin, sync bridge, shortcut, sudoers rule and Steam autostart, and
 switches back to plasma-login-manager.
 
+The conversion also sets what Steam's System settings show, see
+[below](#what-steams-system-settings-show).
+
 **Steam Deck/Machine icons:** `STEAM_GAMEPADUI_ARGS="-gamepadui -steamos3"`
 in `~/.config/environment.d/` (and gamescope-session's own environment
 file), which makes Steam show Steam Deck button glyphs in gaming mode.
@@ -139,6 +142,33 @@ taken from the newest `steamdeck-kde-presets` on Valve's SteamOS mirror
 Turning it off restores your previous look and panel layout, and removes `cachyos-vapor` again
 if the wizard installed it (and nothing else, like `cachyos-handheld`, needs it).
 
+## What Steam's System settings show
+
+With the SteamOS conversion on, `/etc/os-release` gets:
+
+| Key | Value | Shown in Steam as |
+|---|---|---|
+| `VERSION_ID` | `steamos-3.9`: the newest SteamOS release in Valve's repo (offline: the previous value) | OS Version |
+| `VERSION_CODENAME` | `steam-machine` | OS Codename |
+| `VARIANT` / `VARIANT_ID` | `Steamify 2.9.0` / `steamify-2.9.0` | OS Variant (`VARIANT_ID`) |
+
+The OS name stays CachyOS everywhere: Steam's OS Name comes from
+`lsb_release -d`, which isn't touched, and `NAME`/`PRETTY_NAME` stay
+CachyOS's. limine-snapper-sync finds the boot entries by that name, so
+changing it would break snapshot boot entries; `/etc/default/limine` gets
+`TARGET_OS_NAME="CachyOS"` as a guard when it has none.
+
+KDE's About this System would show `VERSION_ID` after the name
+("CachyOS Linux steamos-3.9"); `UseOSReleaseVersion=true` in
+`~/.config/kcm-about-distrorc` makes it show `VERSION`, which CachyOS doesn't
+have, so it keeps saying "CachyOS Linux".
+
+CachyOS's own hooks (`cachyos-hooks`) reset os-release on updates of
+`filesystem`; the pacman hook `zz-steamify-os-release` runs after them and
+sets the keys again (`/usr/local/libexec/steamify-os-release`). The values are
+refreshed after every Steamify run that changes something. Turning the
+conversion off removes the hook and runs CachyOS's `cachyos-branding` again.
+
 ## Front LED bar (Steam Machine)
 
 The **Steam Machine support** component, only shown on Fremont hardware
@@ -156,7 +186,14 @@ The **Steam Machine support** component, only shown on Fremont hardware
 - installs and enables `steamos-manager`, the service Steam in gaming mode
   uses for hardware settings (fan, performance, and the HDMI-CEC settings
   when [HDMI-CEC](#hdmi-cec) is on); it recognises the Steam Machine from its
-  DMI data.
+  DMI data;
+- makes the serial number readable for Steam, which shows it in its System
+  settings (`/etc/tmpfiles.d/steamify-serial.conf`: `product_serial` is
+  root-only by default);
+- makes Steam's Wi-Fi backend setting work: steamos-manager switches it in
+  `/etc/NetworkManager/conf.d/99-valve-wifi-backend.conf`, which is created
+  with `wifi.backend=wpa_supplicant` (NetworkManager's default) when no
+  backend is set anywhere yet.
 
 Turning it off removes all of that again (the AUR helper is kept).
 
@@ -433,6 +470,7 @@ For an installer (the Steam Machine ISO), without a session or prompts
 ```bash
 steamify.sh --defaults                                  # what the menu would preselect
 steamify.sh --defaults --options gaming,theme,cec,machine --boot desktop
+steamify.sh --defaults --list                           # what --defaults can set up here, as JSON
 ```
 
 `--options` turns on exactly the listed items (the menu's ids: `gaming`,
