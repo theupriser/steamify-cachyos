@@ -18,22 +18,40 @@ gaming_status() {
     esac
 }
 
-# What Steam shows in its System settings: the OS name (`lsb_release -d`:
-# DISTRIB_DESCRIPTION in /etc/lsb-release) and Steamify as the OS variant and
-# version (os-release's VARIANT/VERSION_ID; its NAME and PRETTY_NAME stay
-# CachyOS's, which limine-snapper-sync finds the boot entries by).
-# cachyos-hooks resets lsb-release on updates, so our hook sets it again.
+# What Steam shows in its System settings besides the OS name (which stays
+# CachyOS's, for legal clarity and because limine-snapper-sync finds the boot
+# entries by it): Steamify as the variant and version, the SteamOS release it
+# follows as the codename (os-release VARIANT/VERSION_ID/VERSION_CODENAME).
 OS_NAME_SCRIPT=/usr/local/libexec/steamify-os-release
 OS_NAME_HOOK=/etc/pacman.d/hooks/zz-steamify-os-release.hook
 # limine's tools take the OS name from TARGET_OS_NAME, else os-release's
 # PRETTY_NAME: pinned to CachyOS, the boot entries never depend on os-release.
 LIMINE_DEFAULTS=/etc/default/limine
 
+steamos_codename() {
+    # The SteamOS release Steamify follows: Valve's newest jupiter-X.Y repo
+    # (where the SteamOS extras come from), as a codename (os-release allows
+    # no spaces or capitals: steamos-3.9). Offline (e.g. in the installer):
+    # the one set before, if any.
+    local v
+    v="$(curl -fsL --max-time 15 "$VALVE_MIRROR/" 2>/dev/null | grep -oE 'jupiter-[0-9]+\.[0-9]+/' | tr -d / | sort -V | tail -n 1)"
+    if [[ -n "$v" ]]; then echo "steamos-${v#jupiter-}"
+    else sed -n 's/^VERSION_CODENAME=//p' /etc/os-release 2>/dev/null; fi
+}
+
 os_name_enable() {
-    patch_file steamify-os-release.sh | fill VERSION="$VERSION" | sudo install -Dm755 /dev/stdin "$OS_NAME_SCRIPT" &&
+    # 2.9.0 pre-releases renamed the OS itself; the name stays CachyOS's.
+    if grep -q '^DISTRIB_DESCRIPTION=.*with Steamify' /etc/lsb-release 2>/dev/null &&
+        [[ -x /usr/share/libalpm/scripts/cachyos-branding ]]; then
+        sudo /usr/share/libalpm/scripts/cachyos-branding lsb-release
+    fi
+    [[ -n "$(kreadconfig6 --file kcm-about-distrorc --group General --key Name 2>/dev/null)" ]] &&
+        kset gaming kcm-about-distrorc General Name --delete
+    patch_file steamify-os-release.sh | fill VERSION="$VERSION" CODENAME="$(steamos_codename)" |
+        sudo install -Dm755 /dev/stdin "$OS_NAME_SCRIPT" &&
         patch_file steamify-os-release.hook | fill SCRIPT="$OS_NAME_SCRIPT" |
             sudo install -Dm644 /dev/stdin "$OS_NAME_HOOK" &&
-        sudo "$OS_NAME_SCRIPT" || { err "Setting the OS name for Steam failed."; return 1; }
+        sudo "$OS_NAME_SCRIPT" || { err "Setting Steamify's version for Steam failed."; return 1; }
     if [[ -f "$LIMINE_DEFAULTS" ]] && ! grep -q '^TARGET_OS_NAME=' "$LIMINE_DEFAULTS"; then
         backup_file "$LIMINE_DEFAULTS"
         printf '%s\n' 'TARGET_OS_NAME="CachyOS"' | sudo tee -a "$LIMINE_DEFAULTS" > /dev/null
@@ -44,10 +62,11 @@ os_name_enable() {
 
 os_name_disable() {
     sudo rm -f "$OS_NAME_HOOK" "$OS_NAME_SCRIPT"
-    [[ -f /etc/os-release ]] && sudo sed -i -e '/^VARIANT=/d' -e '/^VARIANT_ID=/d' -e '/^VERSION_ID=/d' /etc/os-release
+    [[ -f /etc/os-release ]] && sudo sed -i -e '/^VARIANT=/d' -e '/^VARIANT_ID=/d' -e '/^VERSION_ID=/d' -e '/^VERSION_CODENAME=/d' /etc/os-release
     # CachyOS's own values back, the way its hooks write them.
     if [[ -x /usr/share/libalpm/scripts/cachyos-branding ]]; then
         sudo /usr/share/libalpm/scripts/cachyos-branding os-release
+        # Undoes 2.9.0 pre-releases, which changed lsb-release's name too.
         sudo /usr/share/libalpm/scripts/cachyos-branding lsb-release
     fi
     if [[ -n "$(state_get gaming limine_target)" ]]; then
@@ -86,9 +105,6 @@ gaming_enable() {
     esac
     create_desktop_shortcut
     steam_enable
-    # System Settings' About this System: the name KInfoCenter shows instead
-    # of os-release's (package-owned, so not edited).
-    kset gaming kcm-about-distrorc General Name "CachyOS Linux with Steamify"
     os_name_enable || return 1
 }
 
