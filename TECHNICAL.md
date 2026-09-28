@@ -180,7 +180,9 @@ SHA-256 in Valve's package index:
 - `cecd`, Valve's CEC daemon (a user service started with the desktop and
   gaming mode): TV remote keys become normal key presses (arrows, Enter,
   Back), and it turns the TV on and off with the PC;
-- `cec-audio-control`: volume of the TV or receiver;
+- `cec-audio-control`: volume of the TV or receiver (the TV remote's volume
+  keys); its user socket is enabled by Steamify, since SteamOS enables it
+  through a preset that pacman doesn't apply;
 - `inputattach-cec-units` (with `linuxconsole` from CachyOS for
   `inputattach`): attaches USB CEC adapters (Pulse-Eight, RainShadow).
 

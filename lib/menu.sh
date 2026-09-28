@@ -26,7 +26,7 @@ NO_PRESELECT=(boot cec kpin hdmi)
 FEATURE_BASELINE=2.1.0
 declare -A FEATURE_VERSION=(
     [gaming]=2.1.0 [boot]=2.1.0 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.1.0
-    [launcher]=2.1.0 [cec]=2.1.0 [machine]=2.2.0 [poweroff]=2.2.0 [vram]=2.3.0 [notify]=2.5.0 [steamgame]=2.5.1
+    [launcher]=2.1.0 [cec]=2.7.0 [machine]=2.2.0 [poweroff]=2.2.0 [vram]=2.3.0 [notify]=2.5.0 [steamgame]=2.5.1
     [kpin]=2.1.0 [hdmi]=2.1.0
 )
 

@@ -155,6 +155,9 @@ cec_enable() {
     printf '%s\n' "# Written by Steamify: overrides STEAM_ENABLE_CEC=0 from the gaming mode script." \
         '[Service]' "EnvironmentFile=-$CEC_STEAM_ENV" | sudo tee "$CEC_STEAM_DROPIN" >/dev/null
     user_systemctl daemon-reload
+    # The TV remote's volume keys: SteamOS enables this socket through its
+    # preset, which pacman doesn't apply, so nothing else does on CachyOS.
+    user_systemctl enable --now cec-audio-control.socket 2>/dev/null
     cec_link_steamos_manager
     if compgen -G "/dev/cec*" >/dev/null; then
         user_systemctl restart cecd.service 2>/dev/null

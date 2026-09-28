@@ -5,9 +5,10 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
-## 2.7.0 - 2026-09-27
+## 2.7.0 - 2026-09-28
 
-- **feat: --defaults takes --skip <ids> and --boot gamescope|desktop, for the Steam Machine ISO's installer pages**
+- `4f6e6fd` **feat: --defaults takes --skip <ids> and --boot gamescope|desktop, for the Steam Machine ISO's installer pages**
+- **fix: HDMI-CEC enables cec-audio-control.socket (the TV remote's volume keys); existing installs get it as an update**
 
 ## 2.6.0 - 2026-09-27
 
