@@ -26,6 +26,9 @@ CEC_DKMS_VER=1
 CEC_DKMS_SRC="/usr/src/$CEC_DKMS_NAME-$CEC_DKMS_VER"
 CEC_DRIVER_URL="https://raw.githubusercontent.com/evlaV/linux-integration/10c8c8800ccd3ae359203b4eefb6479f613b3b8e/drivers/media/cec/platform/cros-ec/cros-ec-cec.c"
 CEC_DRIVER_SHA256=e89fd4e87fceb32d713ffc59b64794779b3c2b3c012b0e2f2e9f0c40b42f4373
+# Downloaded once, then kept: raw.githubusercontent.com rate-limits (HTTP 429) repeated downloads
+# from one address, and turning CEC off and on again needs no network then.
+CEC_DRIVER_CACHE="/var/cache/steamify/cros-ec-cec-${CEC_DRIVER_SHA256:0:12}.c"
 
 cec_link_steamos_manager() {
     # On a Steam Machine: steamos-manager writes cecd's config from Steam's
@@ -65,12 +68,17 @@ cec_driver_enable() {
     fi
     install_kernel_headers || return 1
     tmp="$(mktemp -d)"
-    info "Downloading Valve's Steam Machine CEC driver..."
-    if ! curl -fsL "$CEC_DRIVER_URL" -o "$tmp/cros-ec-cec.c" ||
-        ! echo "$CEC_DRIVER_SHA256  $tmp/cros-ec-cec.c" | sha256sum -c --quiet -; then
-        rm -rf "$tmp"
-        err "Downloading Valve's CEC driver failed (or its checksum didn't match)."
-        return 1
+    if [[ -f "$CEC_DRIVER_CACHE" ]] && echo "$CEC_DRIVER_SHA256  $CEC_DRIVER_CACHE" | sha256sum -c --quiet - 2>/dev/null; then
+        cp "$CEC_DRIVER_CACHE" "$tmp/cros-ec-cec.c"
+    else
+        info "Downloading Valve's Steam Machine CEC driver..."
+        if ! curl -fsL --retry 2 "$CEC_DRIVER_URL" -o "$tmp/cros-ec-cec.c" ||
+            ! echo "$CEC_DRIVER_SHA256  $tmp/cros-ec-cec.c" | sha256sum -c --quiet -; then
+            rm -rf "$tmp"
+            err "Downloading Valve's CEC driver failed (or its checksum didn't match)."
+            return 1
+        fi
+        sudo install -Dm644 "$tmp/cros-ec-cec.c" "$CEC_DRIVER_CACHE"
     fi
     # So it finds amdgpu's HDMI port (see the patch for why).
     patch_file cros-ec-cec-single-port.patch | patch -s -d "$tmp" -p1 ||
