@@ -61,7 +61,8 @@ jobs:
           ignore_names: steamify.sh
 
       # The build as an artifact on GitHub and on the mirror (Gitea); releases stay GitHub's.
-      # Gitea's artifact server takes upload-artifact@v3 (v4 only on newer Gitea versions).
+      # Gitea's artifact server doesn't speak upload-artifact@v4's protocol, and GitHub fails a workflow
+      # that merely mentions the deprecated @v3: Gitea gets christopherhx's fork of v4 for Gitea.
       - uses: actions/upload-artifact@v4
         if: github.server_url == 'https://github.com'
         with:
@@ -70,7 +71,7 @@ jobs:
             dist/steamify.sh
             dist/steamify-app.tar.gz
             dist/steamify-app.sh
-      - uses: actions/upload-artifact@v3
+      - uses: christopherhx/gitea-upload-artifact@v4
         if: github.server_url != 'https://github.com'
         with:
           name: steamify
