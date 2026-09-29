@@ -5,6 +5,11 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.9.4 - 2026-09-29
+
+- `619ef1f` **docs: AGENTS.md and TECHNICAL.md: the CEC driver cache, the one workflow for GitHub and a Gitea mirror, and that a new release starts the Steamify ISO's release**
+- `b624053` **chore: Version 2.9.4**
+
 ## 2.9.3 - 2026-09-29
 
 - `7f5d29c` **feat(ci): a new Steamify release starts the Steamify ISO's release (a test build from the ISO repo's feat/steamify; secret ISO_DISPATCH_TOKEN)**

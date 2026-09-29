@@ -68,6 +68,13 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   the entry point's `for lib in ...; do` source loop and wraps everything
   after that loop in `main()`. Keep that loop on one line, keep all logic in
   functions, and don't rely on `SCRIPT_DIR` for anything but sourcing.
+  The workflow is one file for GitHub and a Gitea mirror (`github.server_url`): build and check run on both
+  (shellcheck through `ludeeus/action-shellcheck`, which brings its own binary; the artifact with
+  `upload-artifact@v4` on GitHub and `christopherhx/gitea-upload-artifact@v4` elsewhere: never mention
+  `upload-artifact@v3`, GitHub fails a workflow for a deprecated version even in a skipped step); the
+  release is `gh` on GitHub and `akkuman/gitea-release-action` on Gitea. A new release on GitHub also starts the
+  Steamify ISO's release (`gh workflow run iso-release.yml` in steammachine-cachyos-live-iso, secret
+  `ISO_DISPATCH_TOKEN`; skipped without it): the ISO repo's GitHub tag names it, the Gitea mirror builds it.
   CI (`.github/workflows/bundle.yml`) publishes the bundle as release
   `v$VERSION` on pushes to `main`; an existing version is never overwritten,
   so bump `VERSION` for every release.
@@ -252,6 +259,11 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   kernel only pairs that with a named lookup ("Port C") when the CEC driver
   registered first, which never happens since amdgpu loads from the
   initramfs. Without it `/dev/cec0` exists but stays at `f.f.f.f`.
+  The source comes from one raw.githubusercontent.com download, which GitHub rate-limits (HTTP 429 after a
+  day of test installs, per address): it's kept in `/var/cache/steamify/cros-ec-cec-<sha256:12>.c` and reused
+  while its checksum matches. The name carries the checksum, so a new pin (commit + SHA-256 in `lib/cec.sh`)
+  downloads its own file once and removes the old one. The repo is an unofficial mirror of Valve's kernel
+  without releases: if it ever disappears, ship the file with Steamify. The test VMs share the host's cache.
 - Power-off fix (`poweroff`, `lib/fremont-poweroff.sh`, a default sub-option
   of `machine`): recent kernels (7.2 and the 6.x/7.0/7.1 updates with the
   backport) keep the firmware's S4/S5 wake bit on GPIO
