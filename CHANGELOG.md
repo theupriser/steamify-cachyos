@@ -5,6 +5,10 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.9.4 - 2026-09-29
+
+- **chore: Version 2.9.4**
+
 ## 2.9.3 - 2026-09-29
 
 - `7f5d29c` **feat(ci): a new Steamify release starts the Steamify ISO's release (a test build from the ISO repo's feat/steamify; secret ISO_DISPATCH_TOKEN)**
