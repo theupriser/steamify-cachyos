@@ -7,7 +7,7 @@ one per merged pull request.
 
 ## 2.9.3 - 2026-09-29
 
-- **feat(ci): a new Steamify release starts the Steamify ISO's release (a test build from the ISO repo's feat/steamify; secret ISO_DISPATCH_TOKEN)**
+- `7f5d29c` **feat(ci): a new Steamify release starts the Steamify ISO's release (a test build from the ISO repo's feat/steamify; secret ISO_DISPATCH_TOKEN)**
 - `cfe3ce7` **chore: Version 2.9.3**
 
 ## 2.9.2 - 2026-09-29
