@@ -7,7 +7,8 @@ one per merged pull request.
 
 ## 2.9.2 - 2026-09-29
 
-- **chore: Version 2.9.2**
+- **fix(ci): the build also runs on a Gitea mirror (act_runner): shellcheck through ludeeus/action-shellcheck, which brings its own binary; the artifact goes up there with upload-artifact@v3; releases are only published on GitHub**
+- `fe4f3f4` **chore: Version 2.9.2**
 
 ## 2.9.1 - 2026-09-29
 

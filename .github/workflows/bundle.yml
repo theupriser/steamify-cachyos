@@ -40,12 +40,38 @@ jobs:
       - name: Check
         run: |
           bash -n dist/steamify.sh
-          # SC2034/SC2154: variables used across the inlined modules.
-          shellcheck -S warning -e SC2034,SC2154 dist/steamify.sh
-          shellcheck -S warning dist/steamify-app.sh
           python3 -m py_compile ui/steamify-ui
 
+      # shellcheck through an action that brings its own binary: GitHub's runner has it installed,
+      # Gitea's act_runner image doesn't. One file per run, as before (the exceptions are the bundle's).
+      - name: shellcheck the bundle
+        uses: ludeeus/action-shellcheck@2.0.0
+        env:
+          # SC2034/SC2154: variables used across the inlined modules.
+          SHELLCHECK_OPTS: -e SC2034 -e SC2154
+        with:
+          severity: warning
+          scandir: dist
+          ignore_names: steamify-app.sh
+      - name: shellcheck the app launcher
+        uses: ludeeus/action-shellcheck@2.0.0
+        with:
+          severity: warning
+          scandir: dist
+          ignore_names: steamify.sh
+
+      # The build as an artifact on GitHub and on the mirror (Gitea); releases stay GitHub's.
+      # Gitea's artifact server takes upload-artifact@v3 (v4 only on newer Gitea versions).
       - uses: actions/upload-artifact@v4
+        if: github.server_url == 'https://github.com'
+        with:
+          name: steamify
+          path: |
+            dist/steamify.sh
+            dist/steamify-app.tar.gz
+            dist/steamify-app.sh
+      - uses: actions/upload-artifact@v3
+        if: github.server_url != 'https://github.com'
         with:
           name: steamify
           path: |
@@ -55,6 +81,7 @@ jobs:
 
       - name: Version
         id: version
+        if: github.server_url == 'https://github.com'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -69,6 +96,7 @@ jobs:
 
       - name: Publish the v${{ steps.version.outputs.version }} release
         if: >-
+          github.server_url == 'https://github.com' &&
           github.event_name != 'pull_request' && github.ref == 'refs/heads/main' &&
           steps.version.outputs.released == 'false'
         env:
