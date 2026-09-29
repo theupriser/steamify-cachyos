@@ -5,6 +5,10 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.9.3 - 2026-09-29
+
+- **chore: Version 2.9.3**
+
 ## 2.9.2 - 2026-09-29
 
 - **feat(ci): a Gitea mirror publishes its own release per version (akkuman/gitea-release-action; never overwrites one, notes from the changelog, links to the mirror)**
