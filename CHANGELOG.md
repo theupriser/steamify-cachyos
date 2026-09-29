@@ -7,7 +7,8 @@ one per merged pull request.
 
 ## 2.9.1 - 2026-09-29
 
-- **fix: HDMI-CEC: an older cached CEC driver is removed when a new pin is downloaded**
+- `c87e6c7` **docs: changelog for the CEC driver cache**
+- `fc05725` **fix: HDMI-CEC: an older cached CEC driver is removed when a new pin is downloaded**
 - `90bc5e4` **fix: HDMI-CEC: Valve's CEC driver is downloaded once and kept in /var/cache/steamify (GitHub rate-limits repeated downloads with HTTP 429, which left CEC off); turning CEC on again needs no network**
 - `d99ff65` **chore: Version 2.9.1**
 
