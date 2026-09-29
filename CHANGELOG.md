@@ -7,7 +7,7 @@ one per merged pull request.
 
 ## 2.9.4 - 2026-09-29
 
-- **docs: AGENTS.md and TECHNICAL.md: the CEC driver cache, the one workflow for GitHub and a Gitea mirror, and that a new release starts the Steamify ISO's release**
+- `619ef1f` **docs: AGENTS.md and TECHNICAL.md: the CEC driver cache, the one workflow for GitHub and a Gitea mirror, and that a new release starts the Steamify ISO's release**
 - `b624053` **chore: Version 2.9.4**
 
 ## 2.9.3 - 2026-09-29
