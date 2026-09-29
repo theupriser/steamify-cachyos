@@ -191,3 +191,21 @@ jobs:
             dist/steamify-app.sh
             dist/steamify-app.tar.gz
             assets/steam-gaming-settings.svg
+
+      # A new Steamify release starts the Steamify ISO's release with it (a test build from the ISO repo's
+      # feat/steamify, until that is its master): its iso-release.yml names it after this version, tags it,
+      # and the Gitea mirror builds and attaches the ISO. Needs a fine-grained token for that repo
+      # (Actions: read and write) as the secret ISO_DISPATCH_TOKEN; without it, this is skipped.
+      - name: Start the Steamify ISO's release
+        if: >-
+          github.server_url == 'https://github.com' &&
+          github.event_name != 'pull_request' && github.ref == 'refs/heads/main' &&
+          steps.version.outputs.released == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.ISO_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::notice::No ISO_DISPATCH_TOKEN: the Steamify ISO isn't released with this version."; exit 0
+          fi
+          gh workflow run iso-release.yml -R theupriser/steammachine-cachyos-live-iso --ref feat/steamify
+          echo "Started the Steamify ISO's release (theupriser/steammachine-cachyos-live-iso, feat/steamify)"
