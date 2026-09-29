@@ -7,8 +7,9 @@ one per merged pull request.
 
 ## 2.9.2 - 2026-09-29
 
-- **feat(ci): a Gitea mirror publishes its own release per version (akkuman/gitea-release-action; never overwrites one, notes from the changelog, links to the mirror)**
-- **fix(ci): the build also runs on a Gitea mirror (act_runner): shellcheck through ludeeus/action-shellcheck, which brings its own binary; the artifact goes up there with christopherhx/gitea-upload-artifact (GitHub refuses a workflow that mentions the deprecated upload-artifact@v3); releases are only published on GitHub**
+- `3500118` **feat(ci): a Gitea mirror publishes its own release per version (akkuman/gitea-release-action; never overwrites one, notes from the changelog, links to the mirror)**
+- `4a64232` **fix(ci): Gitea gets christopherhx/gitea-upload-artifact@v4 (GitHub fails a workflow that mentions upload-artifact@v3)**
+- `4ec92f4` **fix(ci): the build also runs on a Gitea mirror (act_runner): shellcheck through ludeeus/action-shellcheck, which brings its own binary; the build's artifact is uploaded there too**
 - `fe4f3f4` **chore: Version 2.9.2**
 
 ## 2.9.1 - 2026-09-29
