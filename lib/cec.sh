@@ -27,7 +27,8 @@ CEC_DKMS_SRC="/usr/src/$CEC_DKMS_NAME-$CEC_DKMS_VER"
 CEC_DRIVER_URL="https://raw.githubusercontent.com/evlaV/linux-integration/10c8c8800ccd3ae359203b4eefb6479f613b3b8e/drivers/media/cec/platform/cros-ec/cros-ec-cec.c"
 CEC_DRIVER_SHA256=e89fd4e87fceb32d713ffc59b64794779b3c2b3c012b0e2f2e9f0c40b42f4373
 # Downloaded once, then kept: raw.githubusercontent.com rate-limits (HTTP 429) repeated downloads
-# from one address, and turning CEC off and on again needs no network then.
+# from one address, and turning CEC off and on again needs no network then. Named after its
+# checksum, so a new pin (a new commit and checksum above) downloads its file once by itself.
 CEC_DRIVER_CACHE="/var/cache/steamify/cros-ec-cec-${CEC_DRIVER_SHA256:0:12}.c"
 
 cec_link_steamos_manager() {
@@ -78,6 +79,8 @@ cec_driver_enable() {
             err "Downloading Valve's CEC driver failed (or its checksum didn't match)."
             return 1
         fi
+        # The name carries the checksum: a newer pin gets its own file, the old one goes.
+        sudo find "${CEC_DRIVER_CACHE%/*}" -maxdepth 1 -name 'cros-ec-cec-*.c' ! -name "${CEC_DRIVER_CACHE##*/}" -delete 2>/dev/null
         sudo install -Dm644 "$tmp/cros-ec-cec.c" "$CEC_DRIVER_CACHE"
     fi
     # So it finds amdgpu's HDMI port (see the patch for why).
