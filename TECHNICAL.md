@@ -514,7 +514,7 @@ immediately, which can turn into a loop - see
 | `services/` | The systemd units the scripts install (`service_file`, `@KEY@` placeholders); see its README |
 | `patches/` | Module sources and patches the scripts build or apply (`patch_file`); see its README |
 | `.github/tools/bundle.sh` | Builds the single-file version (`dist/steamify.sh`), with `patches/` and `services/` embedded |
-| `.github/workflows/bundle.yml` | Builds and checks it on every push; publishes it on `main` |
+| `.github/workflows/bundle.yml` | Builds and checks it on every push (GitHub and a Gitea mirror); publishes it on `main`, and starts the Steamify ISO's release |
 
 The single-file version is generated: on every push to `main`, GitHub
 Actions runs `.github/tools/bundle.sh`, checks the result with `bash -n` and
