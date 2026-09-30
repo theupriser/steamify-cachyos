@@ -5,6 +5,10 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.9.6 - 2026-09-30
+
+- **chore: Version 2.9.6**
+
 ## 2.9.5 - 2026-09-30
 
 - `70ecb56` **ci: trigger a mirror sync**
