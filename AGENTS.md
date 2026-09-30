@@ -73,7 +73,7 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `upload-artifact@v4` on GitHub and `christopherhx/gitea-upload-artifact@v4` elsewhere: never mention
   `upload-artifact@v3`, GitHub fails a workflow for a deprecated version even in a skipped step); the
   release is `gh` on GitHub and `akkuman/gitea-release-action` on Gitea. A new release on GitHub also starts the
-  Steamify ISO's release (`gh workflow run iso-release.yml` in steammachine-cachyos-live-iso, secret
+  Steamify ISO's release (`gh workflow run iso-1-github-tag.yml` in steamify-cachyos-live-iso, secret
   `ISO_DISPATCH_TOKEN`; skipped without it): the ISO repo's GitHub tag names it, the Gitea mirror builds it.
   CI (`.github/workflows/bundle.yml`) publishes the bundle as release
   `v$VERSION` on pushes to `main`; an existing version is never overwritten,
@@ -308,7 +308,7 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   (`state_get vram installed_pkgs`).
 - Install-time mode (`steamify.sh --defaults`, 2.6.0): applies what the menu
   would preselect, no menu or prompts (needs passwordless sudo). The Steam
-  Machine ISO ([steammachine-cachyos-live-iso](https://github.com/theupriser/steammachine-cachyos-live-iso))
+  Machine ISO ([steamify-cachyos-live-iso](https://github.com/theupriser/steamify-cachyos-live-iso))
   runs it in the installer for a user who has never logged in: no session
   bus, user systemd or plasmashell. So every `systemctl --user` goes through
   `user_systemctl` (`lib/common.sh`; without a session only unit files change,
