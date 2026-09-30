@@ -8,13 +8,13 @@
 # Needs the secret GIT_UPRISER_URL (the mirror's address, for the ISO). Every job has its own runner, so everything runs in parallel: one job per boot loader and per suite, each with its own VMs (2 vCPUs, 4-6 GB).
 name: Steamify VM tests
 
+# Only on main and the release branches (and by hand): the runners' time is limited, so not on every pull request.
 on:
   push:
     branches: [main, 'release/**']
-  pull_request:
   workflow_dispatch:
 
-# A new run on the same branch or pull request stops the old one.
+# A new run on the same branch stops the old one.
 concurrency:
   group: vmtest-${{ github.ref }}
   cancel-in-progress: true
