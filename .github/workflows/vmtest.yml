@@ -43,7 +43,7 @@ jobs:
           { echo "tag=$tag"; echo "url=$url"; } >> "$GITHUB_OUTPUT"
 
   boot:
-    name: Boot loader ${{ matrix.loader }}
+    name: Boot loaders ${{ matrix.lane }}
     needs: iso
     runs-on: ubuntu-latest
     timeout-minutes: 90
@@ -52,9 +52,9 @@ jobs:
       options: --privileged
     strategy:
       fail-fast: false
-      max-parallel: 2
+      # The runner ignores max-parallel, so two fixed lanes: two VMs at a time, the loaders of a lane one after the other.
       matrix:
-        loader: [limine, systemd-boot, grub]
+        lane: ["limine grub", "systemd-boot"]
     defaults:
       run:
         shell: bash
@@ -99,7 +99,7 @@ jobs:
         run: |
           mkdir -p iso
           [ -n "$(ls iso/*.iso 2>/dev/null)" ] || curl -fL --retry 5 --retry-all-errors -o "iso/${{ needs.iso.outputs.tag }}.iso" "${{ needs.iso.outputs.url }}"
-      - name: Boot loader test (${{ matrix.loader }})
+      - name: Boot loader test (${{ matrix.lane }})
         env:
           CI: "1"
           VM_TIMEZONE: UTC
@@ -109,15 +109,20 @@ jobs:
           mkdir -p ~/.ssh ~/vms/pkg-cache
           ssh-keygen -q -t ed25519 -N "" -C steamify-vm -f ~/.ssh/steamify-vm_ed25519
           cd steamify-cachyos-dev
-          VM_ISO="$(ls "$GITHUB_WORKSPACE"/iso/*.iso | head -n 1)" scripts/vmbootloadertest.sh "${{ matrix.loader }}" --install
+          iso="$(ls "$GITHUB_WORKSPACE"/iso/*.iso | head -n 1)"
+          rc=0
+          for loader in ${{ matrix.lane }}; do
+              VM_ISO="$iso" scripts/vmbootloadertest.sh "$loader" --install || rc=1
+          done
+          exit $rc
       - name: Logs
         if: always()
         uses: christopherhx/gitea-upload-artifact@v4
         with:
-          name: boot-${{ matrix.loader }}
+          name: boot-${{ strategy.job-index }}
           path: |
-            /root/vms/bl-${{ matrix.loader }}.test.log
-            /root/vms/bl-${{ matrix.loader }}/vm.log
+            /root/vms/bl-*.test.log
+            /root/vms/bl-*/vm.log
           retention-days: 7
           if-no-files-found: ignore
 
