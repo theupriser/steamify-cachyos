@@ -7,7 +7,7 @@ one per merged pull request.
 
 ## 2.9.6 - 2026-09-30
 
-- **fix(ci): a version published from main starts a real ISO release (the ISO repo's master), a version on a release branch a dev ISO (its feat/steamify); it always started the dev one**
+- **fix(ci): a version published from main starts a real ISO release, a version on a release branch a dev ISO: the ISO workflow always runs from the ISO repo's master and gets the kind as an input (it always started the dev one from feat/steamify)**
 - **chore: Version 2.9.6**
 
 ## 2.9.5 - 2026-09-30
