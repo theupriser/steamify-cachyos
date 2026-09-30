@@ -53,7 +53,10 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           sudo mkdir -p /mnt/work/iso && sudo chown -R "$USER" /mnt/work
-          curl -fL --retry 5 --retry-all-errors -o /mnt/work/iso/steamify.iso "${{ steps.find.outputs.url }}"
+          # 16 connections: one TCP stream from the mirror to the US stays at a few MB/s whatever the uplink is.
+          sudo apt-get install -y -qq aria2
+          aria2c -x16 -s16 -k8M --file-allocation=none --summary-interval=30 --console-log-level=warn --max-tries=5 --retry-wait=5 \
+              -d /mnt/work/iso -o steamify.iso "${{ steps.find.outputs.url }}"
           ls -la /mnt/work/iso
 
   boot:
