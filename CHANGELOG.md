@@ -7,8 +7,10 @@ one per merged pull request.
 
 ## 2.9.6 - 2026-09-30
 
-- **fix(ci): a version published from main starts a real ISO release, a version on a release branch a dev ISO: the ISO workflow always runs from the ISO repo's master and gets the kind as an input (it always started the dev one from feat/steamify)**
-- **chore: Version 2.9.6**
+- **docs: changelog hashes for 2.9.6**
+- `9a2965d` **fix(ci): the ISO workflow always runs from master; main asks for a release ISO, a release branch for a dev ISO (input `kind` of iso-1-github-tag.yml; feat/steamify is no longer needed)**
+- `c42d545` **fix(ci): a version published from main starts a real ISO release, a release branch a dev ISO (it always started the dev one)**
+- `b3bed43` **chore: Version 2.9.6**
 
 ## 2.9.5 - 2026-09-30
 
@@ -17,7 +19,7 @@ one per merged pull request.
 - `b3549d4` **ci: sync the mirror on release branch pushes too**
 - `a232a55` **feat(ci): sync the git.upriser.nl mirror on every push to main and every tag (git-upriser-sync.yml calls the mirror-sync API: the Gitea mirror builds at once instead of at its interval; secrets GIT_UPRISER_URL and GIT_UPRISER_TOKEN, retried, skipped on Gitea itself)**
 - `3676c64` **docs: link the renamed steamify-cachyos-live-iso repo (the release dispatches the ISO workflow iso-1-github-tag.yml there)**
-- **chore: Version 2.9.5**
+- `971e792` **chore: Version 2.9.5**
 
 ## 2.9.4 - 2026-09-29
 
