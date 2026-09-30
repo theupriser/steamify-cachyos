@@ -11,8 +11,11 @@ runs:
       shell: bash
       run: |
         echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-        sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
-        [ -w /dev/kvm ] || { echo "::error::no usable /dev/kvm on this runner"; exit 1; }
+        sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm && sudo udevadm settle || true
+        for _ in $(seq 10); do [ -w /dev/kvm ] && break; sleep 1; done
+        ls -l /dev/kvm 2>&1 || true
+        grep -cE 'vmx|svm' /proc/cpuinfo || true
+        [ -w /dev/kvm ] || { echo "::error::no usable /dev/kvm on this runner (some GitHub runners have none: re-run the job)"; exit 1; }
         sudo apt-get update -qq
         sudo apt-get install -y -qq qemu-system-x86 qemu-utils ovmf libarchive-tools openssh-client
         # The VMs and the ISO on /mnt (the big disk); ~/vms points there.
