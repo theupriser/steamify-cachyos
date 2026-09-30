@@ -1,11 +1,11 @@
-# Steamify's own test run on the Gitea mirror (git.upriser.nl, its own runner; skipped on GitHub): the same as
+# Steamify's own VM tests on GitHub's runners (4 vCPUs, 16 GB, KVM; skipped on the Gitea mirror): the same as
 # `scripts/vmtest.sh` in steamify-cachyos-dev, on this commit's steamify.sh. The base is the newest Steamify ISO
-# release of the mirror (steamify-cachyos-live-iso): the boot loader tests (limine, systemd-boot, grub) install
-# it with this commit's Steamify, then the suites (cli, menu, hw, installer, toggles) run on a plain VM from
-# the same ISO (its Steamify step skipped: the suites start from a system without Steamify).
-# The runner needs /dev/kvm and privileged containers, about 12 GB of RAM for two VMs at a time (6 GB to
-# install, 4 GB to test, 2 vCPUs each).
-name: Steamify VM tests (Gitea)
+# release (steamify-cachyos-live-iso, built and kept on the git.upriser.nl mirror: GitHub releases take at
+# most 2 GB per file): the boot loader tests (limine, systemd-boot, grub) install it with this commit's
+# Steamify, then the suites (cli, menu, hw, installer, toggles) run on a plain VM from the same ISO (its
+# Steamify step skipped: the suites start from a system without Steamify).
+# Needs the secret GIT_UPRISER_URL (the mirror's address, for the ISO). Two VMs at a time, 2 vCPUs each.
+name: Steamify VM tests
 
 on:
   push:
@@ -21,7 +21,7 @@ concurrency:
 jobs:
   iso:
     name: Newest Steamify ISO
-    if: github.server_url != 'https://github.com'
+    if: github.server_url == 'https://github.com'
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.find.outputs.tag }}
@@ -29,9 +29,11 @@ jobs:
     steps:
       - name: Find the newest ISO release on the mirror
         id: find
+        env:
+          MIRROR: ${{ secrets.GIT_UPRISER_URL }}
         run: |
-          api="${{ github.server_url }}/api/v1/repos/theupriser/steamify-cachyos-live-iso/releases?limit=20"
-          read -r tag url < <(curl -fsS "$api" | python3 -c '
+          [ -n "$MIRROR" ] || { echo "::error::the secret GIT_UPRISER_URL is not set"; exit 1; }
+          read -r tag url < <(curl -fsS "${MIRROR%/}/api/v1/repos/theupriser/steamify-cachyos-live-iso/releases?limit=20" | python3 -c '
           import json, sys
           for r in json.load(sys.stdin):
               for a in r["assets"]:
@@ -43,51 +45,17 @@ jobs:
           { echo "tag=$tag"; echo "url=$url"; } >> "$GITHUB_OUTPUT"
 
   boot:
-    name: Boot loaders ${{ matrix.lane }}
+    name: Boot loader ${{ matrix.loader }}
     needs: iso
     runs-on: ubuntu-latest
-    timeout-minutes: 90
-    container:
-      image: docker.io/cachyos/cachyos:latest
-      options: --privileged
+    timeout-minutes: 120
     strategy:
       fail-fast: false
-      # The runner ignores max-parallel, so two fixed lanes: two VMs at a time, the loaders of a lane one after the other.
+      # One job per boot loader, two VMs at a time (16 GB of RAM).
+      max-parallel: 2
       matrix:
-        lane: ["limine grub", "systemd-boot"]
-    defaults:
-      run:
-        shell: bash
+        loader: [limine, systemd-boot, grub]
     steps:
-      - name: Node and git
-        id: node
-        run: |
-          pacman-key --init && pacman-key --populate
-          pacman -Syu --noconfirm --needed nodejs git
-          echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
-      - name: Cache - pacman packages
-        uses: actions/cache@v4
-        with:
-          path: /var/cache/pacman/pkg
-          key: pacman-test-${{ steps.node.outputs.week }}
-          restore-keys: pacman-test-
-      - name: Cache - the VMs' packages
-        uses: actions/cache@v4
-        with:
-          path: /root/vms/pkg-cache
-          key: vmpkg-steamify-${{ steps.node.outputs.week }}
-          restore-keys: vmpkg-
-      - name: Tools and KVM
-        run: |
-          pacman -S --noconfirm --needed qemu-desktop edk2-ovmf openssh libarchive procps-ng util-linux python curl sudo
-          [ -c /dev/kvm ] || { echo "::error::no /dev/kvm in this container: the runner needs KVM (and privileged containers)"; exit 1; }
-      - name: Cache - the ISO
-        uses: actions/cache@v4
-        with:
-          path: iso
-          key: steamify-iso-${{ needs.iso.outputs.tag }}
-
-      # steamify-cachyos-dev (the scripts) and this commit of steamify-cachyos side by side (9p `repo` in the VMs).
       - uses: actions/checkout@v4
         with:
           path: steamify-cachyos
@@ -95,34 +63,51 @@ jobs:
         with:
           repository: theupriser/steamify-cachyos-dev
           path: steamify-cachyos-dev
-      - name: ISO
+      - name: Runner setup (KVM, qemu, disk)
         run: |
-          mkdir -p iso
-          [ -n "$(ls iso/*.iso 2>/dev/null)" ] || curl -fL --retry 5 --retry-all-errors -o "iso/${{ needs.iso.outputs.tag }}.iso" "${{ needs.iso.outputs.url }}"
-      - name: Boot loader test (${{ matrix.lane }})
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+          [ -w /dev/kvm ] || { echo "::error::no usable /dev/kvm on this runner"; exit 1; }
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq qemu-system-x86 qemu-utils ovmf libarchive-tools openssh-client
+          # The VMs and the ISO on /mnt (the big disk); ~/vms points there.
+          sudo mkdir -p /mnt/work && sudo chown "$USER" /mnt/work
+          mkdir -p /mnt/work/vms/pkg-cache /mnt/work/iso && ln -s /mnt/work/vms "$HOME/vms"
+          nproc; free -g | sed -n 2p; df -h /mnt | tail -n 1
+      - name: Cache - the VMs' packages
+        uses: actions/cache@v4
+        with:
+          path: /mnt/work/vms/pkg-cache
+          key: vmpkg-${{ github.run_id }}
+          restore-keys: vmpkg-
+      - name: Cache - the ISO
+        uses: actions/cache@v4
+        with:
+          path: /mnt/work/iso
+          key: steamify-iso-${{ needs.iso.outputs.tag }}
+      - name: ISO
+        env:
+          URL: ${{ needs.iso.outputs.url }}
+        run: |
+          [ -n "$(ls /mnt/work/iso/*.iso 2>/dev/null)" ] || curl -fL --retry 5 --retry-all-errors -o /mnt/work/iso/steamify.iso "$URL"
+      - name: Boot loader test (${{ matrix.loader }})
         env:
           CI: "1"
           VM_TIMEZONE: UTC
           VM_CPUS: "2"
           VM_INSTALL_MEM: 6G
         run: |
-          mkdir -p ~/.ssh ~/vms/pkg-cache
-          ssh-keygen -q -t ed25519 -N "" -C steamify-vm -f ~/.ssh/steamify-vm_ed25519
+          ssh-keygen -q -t ed25519 -N "" -C steamify-vm -f ~/.ssh/steamify-vm_ed25519 <<< "" || true
           cd steamify-cachyos-dev
-          iso="$(ls "$GITHUB_WORKSPACE"/iso/*.iso | head -n 1)"
-          rc=0
-          for loader in ${{ matrix.lane }}; do
-              VM_ISO="$iso" scripts/vmbootloadertest.sh "$loader" --install || rc=1
-          done
-          exit $rc
+          VM_ISO=/mnt/work/iso/steamify.iso scripts/vmbootloadertest.sh "${{ matrix.loader }}" --install
       - name: Logs
         if: always()
-        uses: christopherhx/gitea-upload-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
-          name: boot-${{ strategy.job-index }}
+          name: boot-${{ matrix.loader }}
           path: |
-            /root/vms/bl-*.test.log
-            /root/vms/bl-*/vm.log
+            /mnt/work/vms/bl-${{ matrix.loader }}.test.log
+            /mnt/work/vms/bl-${{ matrix.loader }}/vm.log
           retention-days: 7
           if-no-files-found: ignore
 
@@ -130,43 +115,8 @@ jobs:
     name: Suites (vmtest.sh)
     needs: [iso, boot]
     runs-on: ubuntu-latest
-    timeout-minutes: 150
-    container:
-      image: docker.io/cachyos/cachyos:latest
-      options: --privileged
-    defaults:
-      run:
-        shell: bash
+    timeout-minutes: 240
     steps:
-      - name: Node and git
-        id: node
-        run: |
-          pacman-key --init && pacman-key --populate
-          pacman -Syu --noconfirm --needed nodejs git
-          echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
-      - name: Cache - pacman packages
-        uses: actions/cache@v4
-        with:
-          path: /var/cache/pacman/pkg
-          key: pacman-test-${{ steps.node.outputs.week }}
-          restore-keys: pacman-test-
-      - name: Cache - the VMs' packages
-        uses: actions/cache@v4
-        with:
-          path: /root/vms/pkg-cache
-          key: vmpkg-steamify-${{ steps.node.outputs.week }}
-          restore-keys: vmpkg-
-      - name: Tools and KVM
-        run: |
-          pacman -S --noconfirm --needed qemu-desktop edk2-ovmf openssh libarchive procps-ng util-linux python curl sudo
-          [ -c /dev/kvm ] || { echo "::error::no /dev/kvm in this container: the runner needs KVM (and privileged containers)"; exit 1; }
-      - name: Cache - the ISO
-        uses: actions/cache@v4
-        with:
-          path: iso
-          key: steamify-iso-${{ needs.iso.outputs.tag }}
-
-      # vmtest.sh wants the live-iso repository too (which boot loaders the ISO advertises).
       - uses: actions/checkout@v4
         with:
           path: steamify-cachyos
@@ -174,14 +124,37 @@ jobs:
         with:
           repository: theupriser/steamify-cachyos-dev
           path: steamify-cachyos-dev
+      # vmtest.sh reads which boot loaders the ISO advertises from this repository.
       - uses: actions/checkout@v4
         with:
           repository: theupriser/steamify-cachyos-live-iso
           path: steamify-cachyos-live-iso
-      - name: ISO
+      - name: Runner setup (KVM, qemu, disk)
         run: |
-          mkdir -p iso
-          [ -n "$(ls iso/*.iso 2>/dev/null)" ] || curl -fL --retry 5 --retry-all-errors -o "iso/${{ needs.iso.outputs.tag }}.iso" "${{ needs.iso.outputs.url }}"
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+          [ -w /dev/kvm ] || { echo "::error::no usable /dev/kvm on this runner"; exit 1; }
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq qemu-system-x86 qemu-utils ovmf libarchive-tools openssh-client
+          sudo mkdir -p /mnt/work && sudo chown "$USER" /mnt/work
+          mkdir -p /mnt/work/vms/pkg-cache /mnt/work/iso && ln -s /mnt/work/vms "$HOME/vms"
+          nproc; free -g | sed -n 2p; df -h /mnt | tail -n 1
+      - name: Cache - the VMs' packages
+        uses: actions/cache@v4
+        with:
+          path: /mnt/work/vms/pkg-cache
+          key: vmpkg-${{ github.run_id }}
+          restore-keys: vmpkg-
+      - name: Cache - the ISO
+        uses: actions/cache@v4
+        with:
+          path: /mnt/work/iso
+          key: steamify-iso-${{ needs.iso.outputs.tag }}
+      - name: ISO
+        env:
+          URL: ${{ needs.iso.outputs.url }}
+        run: |
+          [ -n "$(ls /mnt/work/iso/*.iso 2>/dev/null)" ] || curl -fL --retry 5 --retry-all-errors -o /mnt/work/iso/steamify.iso "$URL"
       - name: Base VM from the ISO
         env:
           CI: "1"
@@ -190,10 +163,9 @@ jobs:
           VM_INSTALL_MEM: 6G
           VM_STEAMIFY: skip
         run: |
-          mkdir -p ~/.ssh ~/vms/pkg-cache
-          ssh-keygen -q -t ed25519 -N "" -C steamify-vm -f ~/.ssh/steamify-vm_ed25519
+          ssh-keygen -q -t ed25519 -N "" -C steamify-vm -f ~/.ssh/steamify-vm_ed25519 <<< "" || true
           cd steamify-cachyos-dev
-          VM_DIR="$HOME/vms/steamify-vm" scripts/vminstall.sh --iso "$(ls "$GITHUB_WORKSPACE"/iso/*.iso | head -n 1)"
+          VM_DIR="$HOME/vms/steamify-vm" scripts/vminstall.sh --iso /mnt/work/iso/steamify.iso
       - name: vmtest.sh (every suite)
         env:
           CI: "1"
@@ -204,11 +176,11 @@ jobs:
           scripts/vmtest.sh cli menu hw installer toggles
       - name: Logs
         if: always()
-        uses: christopherhx/gitea-upload-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: suites
           path: |
-            /root/vms/last-test.txt
-            /root/vms/run-*.log
+            /mnt/work/vms/last-test.txt
+            /mnt/work/vms/run-*.log
           retention-days: 7
           if-no-files-found: ignore
