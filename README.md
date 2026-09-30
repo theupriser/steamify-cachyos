@@ -94,7 +94,7 @@ curl -fsSL https://github.com/theupriser/steamify-cachyos/releases/latest/downlo
 ```
 
 Installing CachyOS on a Steam Machine? The
-[Steamify CachyOS ISO](https://github.com/theupriser/steammachine-cachyos-live-iso)
+[Steamify CachyOS ISO](https://github.com/theupriser/steamify-cachyos-live-iso)
 has Steamify built into the installer: pick the options there, and the
 first boot is already set up.
 
