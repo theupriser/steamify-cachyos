@@ -4,7 +4,8 @@
 # most 2 GB per file): the boot loader tests (limine, systemd-boot, grub) install it with this commit's
 # Steamify, then the suites (cli, menu, hw, installer, toggles) run on a plain VM from the same ISO (its
 # Steamify step skipped: the suites start from a system without Steamify).
-# Needs the secret GIT_UPRISER_URL (the mirror's address, for the ISO). Two VMs at a time, 2 vCPUs each.
+# The ISO is fetched once (the iso job, cached) and restored by the others.
+# Needs the secret GIT_UPRISER_URL (the mirror's address, for the ISO). Every job has its own runner, so everything runs in parallel: one job per boot loader and per suite, each with its own VMs (2 vCPUs, 4-6 GB).
 name: Steamify VM tests
 
 on:
@@ -25,7 +26,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.find.outputs.tag }}
-      url: ${{ steps.find.outputs.url }}
     steps:
       - name: Find the newest ISO release on the mirror
         id: find
@@ -43,6 +43,20 @@ jobs:
           [ -n "$tag" ] || { echo "::error::no ISO release on the mirror"; exit 1; }
           echo "Using $tag"
           { echo "tag=$tag"; echo "url=$url"; } >> "$GITHUB_OUTPUT"
+      - name: Cache - the ISO
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: /mnt/work/iso
+          key: steamify-iso-${{ steps.find.outputs.tag }}
+        env:
+          ISO_DIR: /mnt/work/iso
+      - name: Download the ISO (once for every job)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          sudo mkdir -p /mnt/work/iso && sudo chown -R "$USER" /mnt/work
+          curl -fL --retry 5 --retry-all-errors -o /mnt/work/iso/steamify.iso "${{ steps.find.outputs.url }}"
+          ls -la /mnt/work/iso
 
   boot:
     name: Boot loader ${{ matrix.loader }}
@@ -51,8 +65,6 @@ jobs:
     timeout-minutes: 120
     strategy:
       fail-fast: false
-      # One job per boot loader, two VMs at a time (16 GB of RAM).
-      max-parallel: 2
       matrix:
         loader: [limine, systemd-boot, grub]
     steps:
@@ -63,41 +75,16 @@ jobs:
         with:
           repository: theupriser/steamify-cachyos-dev
           path: steamify-cachyos-dev
-      - name: Runner setup (KVM, qemu, disk)
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
-          [ -w /dev/kvm ] || { echo "::error::no usable /dev/kvm on this runner"; exit 1; }
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq qemu-system-x86 qemu-utils ovmf libarchive-tools openssh-client
-          # The VMs and the ISO on /mnt (the big disk); ~/vms points there.
-          sudo mkdir -p /mnt/work && sudo chown "$USER" /mnt/work
-          mkdir -p /mnt/work/vms/pkg-cache /mnt/work/iso && ln -s /mnt/work/vms "$HOME/vms"
-          nproc; free -g | sed -n 2p; df -h /mnt | tail -n 1
-      - name: Cache - the VMs' packages
-        uses: actions/cache@v4
+      - uses: ./steamify-cachyos/.github/actions/vm-runner
         with:
-          path: /mnt/work/vms/pkg-cache
-          key: vmpkg-${{ github.run_id }}
-          restore-keys: vmpkg-
-      - name: Cache - the ISO
-        uses: actions/cache@v4
-        with:
-          path: /mnt/work/iso
-          key: steamify-iso-${{ needs.iso.outputs.tag }}
-      - name: ISO
-        env:
-          URL: ${{ needs.iso.outputs.url }}
-        run: |
-          [ -n "$(ls /mnt/work/iso/*.iso 2>/dev/null)" ] || curl -fL --retry 5 --retry-all-errors -o /mnt/work/iso/steamify.iso "$URL"
+          iso-tag: ${{ needs.iso.outputs.tag }}
       - name: Boot loader test (${{ matrix.loader }})
         env:
           CI: "1"
           VM_TIMEZONE: UTC
-          VM_CPUS: "2"
+          VM_CPUS: "4"
           VM_INSTALL_MEM: 6G
         run: |
-          ssh-keygen -q -t ed25519 -N "" -C steamify-vm -f ~/.ssh/steamify-vm_ed25519 <<< "" || true
           cd steamify-cachyos-dev
           VM_ISO=/mnt/work/iso/steamify.iso scripts/vmbootloadertest.sh "${{ matrix.loader }}" --install
       - name: Logs
@@ -112,10 +99,14 @@ jobs:
           if-no-files-found: ignore
 
   suites:
-    name: Suites (vmtest.sh)
-    needs: [iso, boot]
+    name: Suite ${{ matrix.suite }}
+    needs: iso
     runs-on: ubuntu-latest
-    timeout-minutes: 240
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [toggles, hw, cli, 'menu installer']
     steps:
       - uses: actions/checkout@v4
         with:
@@ -129,56 +120,33 @@ jobs:
         with:
           repository: theupriser/steamify-cachyos-live-iso
           path: steamify-cachyos-live-iso
-      - name: Runner setup (KVM, qemu, disk)
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
-          [ -w /dev/kvm ] || { echo "::error::no usable /dev/kvm on this runner"; exit 1; }
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq qemu-system-x86 qemu-utils ovmf libarchive-tools openssh-client
-          sudo mkdir -p /mnt/work && sudo chown "$USER" /mnt/work
-          mkdir -p /mnt/work/vms/pkg-cache /mnt/work/iso && ln -s /mnt/work/vms "$HOME/vms"
-          nproc; free -g | sed -n 2p; df -h /mnt | tail -n 1
-      - name: Cache - the VMs' packages
-        uses: actions/cache@v4
+      - uses: ./steamify-cachyos/.github/actions/vm-runner
         with:
-          path: /mnt/work/vms/pkg-cache
-          key: vmpkg-${{ github.run_id }}
-          restore-keys: vmpkg-
-      - name: Cache - the ISO
-        uses: actions/cache@v4
-        with:
-          path: /mnt/work/iso
-          key: steamify-iso-${{ needs.iso.outputs.tag }}
-      - name: ISO
-        env:
-          URL: ${{ needs.iso.outputs.url }}
-        run: |
-          [ -n "$(ls /mnt/work/iso/*.iso 2>/dev/null)" ] || curl -fL --retry 5 --retry-all-errors -o /mnt/work/iso/steamify.iso "$URL"
+          iso-tag: ${{ needs.iso.outputs.tag }}
+      # A plain VM for the suites: the ISO's installer with its Steamify step skipped (the suites start without Steamify).
       - name: Base VM from the ISO
         env:
           CI: "1"
           VM_TIMEZONE: UTC
-          VM_CPUS: "2"
+          VM_CPUS: "4"
           VM_INSTALL_MEM: 6G
           VM_STEAMIFY: skip
         run: |
-          ssh-keygen -q -t ed25519 -N "" -C steamify-vm -f ~/.ssh/steamify-vm_ed25519 <<< "" || true
           cd steamify-cachyos-dev
           VM_DIR="$HOME/vms/steamify-vm" scripts/vminstall.sh --iso /mnt/work/iso/steamify.iso
-      - name: vmtest.sh (every suite)
+      - name: vmtest.sh ${{ matrix.suite }}
         env:
           CI: "1"
           VM_CPUS: "2"
           MAX_PARALLEL: "2"
         run: |
           cd steamify-cachyos-dev
-          scripts/vmtest.sh cli menu hw installer toggles
+          scripts/vmtest.sh ${{ matrix.suite }}
       - name: Logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: suites
+          name: suite-${{ strategy.job-index }}
           path: |
             /mnt/work/vms/last-test.txt
             /mnt/work/vms/run-*.log
