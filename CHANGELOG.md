@@ -5,6 +5,15 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.9.5 - 2026-09-30
+
+- `70ecb56` **ci: trigger a mirror sync**
+- `a7276cf` **ci: sync the git.upriser.nl mirror on every branch and tag**
+- `b3549d4` **ci: sync the mirror on release branch pushes too**
+- `a232a55` **feat(ci): sync the git.upriser.nl mirror on every push to main and every tag (git-upriser-sync.yml calls the mirror-sync API: the Gitea mirror builds at once instead of at its interval; secrets GIT_UPRISER_URL and GIT_UPRISER_TOKEN, retried, skipped on Gitea itself)**
+- `3676c64` **docs: link the renamed steamify-cachyos-live-iso repo (the release dispatches the ISO workflow iso-1-github-tag.yml there)**
+- **chore: Version 2.9.5**
+
 ## 2.9.4 - 2026-09-29
 
 - `619ef1f` **docs: AGENTS.md and TECHNICAL.md: the CEC driver cache, the one workflow for GitHub and a Gitea mirror, and that a new release starts the Steamify ISO's release**
