@@ -84,6 +84,8 @@ jobs:
           VM_INSTALL_MEM: 6G
         run: |
           cd steamify-cachyos-dev
+          touch ~/vms/test.log; tail -n +1 -F ~/vms/test.log & tailpid=$!   # the test's progress, as it happens
+          trap 'kill $tailpid 2>/dev/null' EXIT
           VM_ISO=/mnt/work/iso/steamify.iso scripts/vmbootloadertest.sh "${{ matrix.loader }}" --install
       - name: Logs
         if: always()
@@ -139,6 +141,8 @@ jobs:
           MAX_PARALLEL: "2"
         run: |
           cd steamify-cachyos-dev
+          touch ~/vms/test.log; tail -n +1 -F ~/vms/test.log & tailpid=$!   # the suites' progress, as it happens
+          trap 'kill $tailpid 2>/dev/null' EXIT
           scripts/vmtest.sh ${{ matrix.suite }}
       - name: Logs
         if: always()
