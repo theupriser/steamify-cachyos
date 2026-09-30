@@ -7,6 +7,7 @@ one per merged pull request.
 
 ## 2.9.6 - 2026-09-30
 
+- **fix(ci): a dev ISO from a release branch is built with that branch's own Steamify (input steamify_ref of the ISO workflow), not the newest published release: release/2.9.6 kept producing 2.9.5 ISOs**
 - **docs: changelog hashes for 2.9.6**
 - `9a2965d` **fix(ci): the ISO workflow always runs from master; main asks for a release ISO, a release branch for a dev ISO (input `kind` of iso-1-github-tag.yml; feat/steamify is no longer needed)**
 - `c42d545` **fix(ci): a version published from main starts a real ISO release, a release branch a dev ISO (it always started the dev one)**

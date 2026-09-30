@@ -211,6 +211,7 @@ jobs:
           if [ -z "$GH_TOKEN" ]; then
             echo "::notice::No ISO_DISPATCH_TOKEN: the Steamify ISO isn't released with this version."; exit 0
           fi
-          if [ "$GITHUB_REF" = refs/heads/main ]; then kind=release; else kind=dev; fi
-          gh workflow run iso-1-github-tag.yml -R theupriser/steamify-cachyos-live-iso --ref master -f kind="$kind"
-          echo "Started the Steamify ISO's release (theupriser/steamify-cachyos-live-iso, master, kind $kind)"
+          # A release branch builds the ISO with its own code (and VERSION): steamify_ref. main builds the release it just published.
+          if [ "$GITHUB_REF" = refs/heads/main ]; then kind=release; sref=""; else kind=dev; sref="$GITHUB_REF_NAME"; fi
+          gh workflow run iso-1-github-tag.yml -R theupriser/steamify-cachyos-live-iso --ref master -f kind="$kind" -f steamify_ref="$sref"
+          echo "Started the Steamify ISO's release (theupriser/steamify-cachyos-live-iso, master, kind $kind, Steamify ${sref:-the newest release})"
