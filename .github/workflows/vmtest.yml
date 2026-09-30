@@ -49,8 +49,6 @@ jobs:
         with:
           path: /mnt/work/iso
           key: steamify-iso-${{ steps.find.outputs.tag }}
-        env:
-          ISO_DIR: /mnt/work/iso
       - name: Download the ISO (once for every job)
         if: steps.cache.outputs.cache-hit != 'true'
         run: |

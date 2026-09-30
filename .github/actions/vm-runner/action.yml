@@ -24,7 +24,7 @@ runs:
       uses: actions/cache@v4
       with:
         path: /mnt/work/vms/pkg-cache
-        key: vmpkg-${{ github.run_id }}-${{ github.job }}-${{ strategy.job-index }}
+        key: vmpkg-${{ github.run_id }}
         restore-keys: vmpkg-
     - name: Cache - the ISO (from the iso job)
       uses: actions/cache/restore@v4
