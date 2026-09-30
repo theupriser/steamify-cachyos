@@ -308,7 +308,7 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   (`state_get vram installed_pkgs`).
 - Install-time mode (`steamify.sh --defaults`, 2.6.0): applies what the menu
   would preselect, no menu or prompts (needs passwordless sudo). The Steam
-  Machine ISO ([steammachine-cachyos-live-iso](https://github.com/theupriser/steammachine-cachyos-live-iso))
+  Machine ISO ([steamify-cachyos-live-iso](https://github.com/theupriser/steamify-cachyos-live-iso))
   runs it in the installer for a user who has never logged in: no session
   bus, user systemd or plasmashell. So every `systemctl --user` goes through
   `user_systemctl` (`lib/common.sh`; without a session only unit files change,
