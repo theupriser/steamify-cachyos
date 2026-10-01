@@ -5,6 +5,8 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.11.0 - 2026-10-01
+
 ## 2.10.0 - 2026-10-01
 
 - `d6db4f6` **feat: "Gaming on NVIDIA" (nvidia) replaces the SteamOS conversion on PCs with an NVIDIA GPU, where gamescope's gaming mode shows a corrupted picture (NVIDIA bug 5240452): Steam is installed when missing and starts at login on the Plasma desktop; the sub-option "Steam starts in Big Picture" (bigpicture) starts it in Big Picture, unticked in its normal window, on an empty Plasma session so windows of the last session don't cover it. On a supported card (RTX 20 series or newer) it also sets the NVIDIA kernel parameters and early modules. The conversion and its options are hidden there unless already on**
