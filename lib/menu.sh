@@ -5,19 +5,19 @@
 
 # Menu order. Components are turned on in this order and off in reverse;
 # gaming must come first (single user builds on it).
-COMPONENTS=(gaming boot nvidia bigpicture theme glyphs single launcher steamgame notify extended_controller_support vram cec machine poweroff kpin hdmi bios)
+COMPONENTS=(gaming boot silent nvidia bigpicture nvsilent theme glyphs single launcher steamgame notify extended_controller_support vram cec machine poweroff kpin hdmi bios)
 # One-off actions rather than on/off components: never preselected, never
 # re-applied, not listed as on or off.
 ACTIONS=(bios)
 # Sub-options, shown indented under their parent and only while it's ticked.
-declare -A PARENT=([boot]=gaming [bigpicture]=nvidia [steamgame]=launcher [poweroff]=machine [kpin]=machine [hdmi]=machine [bios]=machine)
+declare -A PARENT=([boot]=gaming [silent]=gaming [bigpicture]=nvidia [nvsilent]=nvidia [steamgame]=launcher [poweroff]=machine [kpin]=machine [hdmi]=machine [bios]=machine)
 # Never preselected on a first run: booting into the desktop is a choice,
 # gamescope is the default; HDMI-CEC is opt-in (it can wake the machine or
 # upset other devices on the TV, even on SteamOS), except on a Steam Machine,
 # which has CEC like on SteamOS. HDMI refresh boost needs someone at the
 # screen to confirm each step. Extended controller support builds kernel modules for
 # every installed kernel: opt-in.
-NO_PRESELECT=(boot cec kpin hdmi extended_controller_support)
+NO_PRESELECT=(boot nvsilent cec kpin hdmi extended_controller_support)
 # Feature versions: the Steamify version in which what a component's enable
 # sets up last changed; set it to the new VERSION whenever you change one.
 # Each successful run records it (state "features"); a component that's on
@@ -26,7 +26,7 @@ NO_PRESELECT=(boot cec kpin hdmi extended_controller_support)
 # FEATURE_BASELINE.
 FEATURE_BASELINE=2.1.0
 declare -A FEATURE_VERSION=(
-    [gaming]=2.9.0 [boot]=2.1.0 [nvidia]=2.10.0 [bigpicture]=2.10.0 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.1.0
+    [gaming]=2.9.0 [boot]=2.1.0 [silent]=2.1.0 [nvidia]=2.10.0 [bigpicture]=2.10.0 [nvsilent]=2.11.0 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.1.0
     [launcher]=2.1.0 [cec]=2.7.0 [machine]=2.9.0 [poweroff]=2.2.0 [vram]=2.3.0 [notify]=2.5.0 [steamgame]=2.5.1 [extended_controller_support]=2.10.0
     [kpin]=2.1.0 [hdmi]=2.1.0
 )
@@ -35,6 +35,8 @@ declare -A LABEL=(
     [gaming]="SteamOS conversion: boot into gaming mode, Steam on the desktop"
     [boot]="Boot into the desktop instead of gaming mode"
     [nvidia]="Gaming on NVIDIA: Steam on the desktop, started at login"
+    [silent]="Start Steam silently: in the tray at login on the desktop, no window"
+    [nvsilent]="Start Steam silently: in the tray at login, no window (untick: Steam's normal window)"
     [bigpicture]="Steam starts in Big Picture: the controller-friendly Steam (untick: Steam's normal window)"
     [theme]="Install SteamOS theme: Vapor look (cachyos-vapor)"
     [glyphs]="Install Steam Deck/Machine icons: Deck button icons in gaming mode"
@@ -57,9 +59,9 @@ component_available() {
     case "$1" in
         # gamescope's own session is broken on NVIDIA: the conversion is replaced by "Gaming on NVIDIA" there (shown
         # anyway when it's already on, so it can be turned off).
-        gaming|boot|glyphs) ! nvidia_present || gaming_status ;;
+        gaming|boot|silent|glyphs) ! nvidia_present || gaming_status ;;
         nvidia) nvidia_available ;;
-        bigpicture) bigpicture_available ;;
+        bigpicture|nvsilent) bigpicture_available ;;
         machine|poweroff) machine_available ;;
         vram) vram_available ;;
         # Steamify in the Steam library is for gaming mode's controller: not needed for Big Picture on the desktop (NVIDIA PCs;
@@ -79,10 +81,25 @@ boot_mode() {
     if [[ "$1" == 1 ]]; then echo desktop; else echo gamescope; fi
 }
 
+silent_needs_boot() {
+    # On a Steam Machine, silent start only makes sense when it boots into
+    # the desktop (gaming mode starts its own Steam): the option is hidden,
+    # and off, while "Boot into" is gaming mode.
+    machine_available
+}
+
+silent_normalize() {
+    silent_needs_boot && [[ "${WANTED[boot]:-0}" != 1 ]] && WANTED[silent]=0
+    return 0
+}
+
 menu_visible() {
     # Shown in the menu. A sub-option ("Boot into", the kernel pin) only
     # while its parent is ticked.
     component_available "$1" || return 1
+    # Silent start is hidden while Steam starts in Big Picture.
+    [[ "$1" == nvsilent && "${WANTED[bigpicture]:-0}" == 1 ]] && return 1
+    [[ "$1" == silent ]] && silent_needs_boot && [[ "${WANTED[boot]:-0}" != 1 ]] && return 1
     [[ -z "${PARENT[$1]:-}" || "${WANTED[${PARENT[$1]}]:-0}" == 1 ]]
 }
 
@@ -203,6 +220,7 @@ detect_components() {
         done
         machine_available && WANTED[cec]=1
     fi
+    silent_normalize
 }
 
 defaults_options() {
@@ -259,6 +277,7 @@ defaults_options() {
             WANTED[boot]=1 ;;
         gamescope) WANTED[boot]=0 ;;
     esac
+    silent_normalize
     return 0
 }
 
@@ -282,7 +301,7 @@ defaults_list() {
         [[ "$c" == cec ]] && machine_available && on=true
         items+="${items:+,}{\"id\":$(json_str "$c"),\"label\":$(json_str "${LABEL[$c]%%:*}")"
         items+=",\"hint\":$(json_str "$( [[ "${LABEL[$c]}" == *:* ]] && echo "${LABEL[$c]#*: }")")"
-        items+=",\"kind\":\"$kind\",\"parent\":$(json_str "${PARENT[$c]:-}"),\"on\":$on,\"selectable\":$sel}"
+        items+=",\"kind\":\"$kind\",\"parent\":$(json_str "${PARENT[$c]:-}"),\"needs\":$(json_str "$([[ "$c" == silent ]] && silent_needs_boot && echo boot)"),\"hideWhen\":$(json_str "$([[ "$c" == nvsilent ]] && echo bigpicture)"),\"on\":$on,\"selectable\":$sel}"
     done
     printf '[%s]\n' "$items"
 }
@@ -299,7 +318,13 @@ toggle_component() {
     if [[ "$c" == boot && "${WANTED[boot]}" == 1 ]]; then WANTED[gaming]=1; fi
     # Big Picture is opt-out: ticked along with "Gaming on NVIDIA".
     if [[ "$c" == nvidia ]]; then WANTED[bigpicture]=${WANTED[nvidia]}; fi
-    if [[ "$c" == bigpicture && "${WANTED[bigpicture]}" == 1 ]]; then WANTED[nvidia]=1; fi
+    if [[ "$c" == bigpicture && "${WANTED[bigpicture]}" == 1 ]]; then WANTED[nvidia]=1; WANTED[nvsilent]=0; fi
+    # Silent and Big Picture exclude each other.
+    if [[ "$c" == nvsilent && "${WANTED[nvsilent]}" == 1 ]]; then WANTED[nvidia]=1; WANTED[bigpicture]=0; fi
+    if [[ "$c" == nvidia && "${WANTED[nvidia]}" == 0 ]]; then WANTED[nvsilent]=0; fi
+    if [[ "$c" == gaming && "${WANTED[gaming]}" == 0 ]]; then WANTED[silent]=0; fi
+    if [[ "$c" == silent && "${WANTED[silent]}" == 1 ]]; then WANTED[gaming]=1; fi
+    silent_normalize
     # The power-off fix is opt-out: ticked along with Steam Machine support.
     if [[ "$c" == machine ]]; then WANTED[poweroff]=${WANTED[machine]}; fi
     if [[ "$c" == poweroff && "${WANTED[poweroff]}" == 1 ]]; then WANTED[machine]=1; fi

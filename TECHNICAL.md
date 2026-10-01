@@ -108,9 +108,9 @@ tools write to the conf.d fragment into the base config.
   (never `zz-steamos-autologin.conf`, which CachyOS's tools own), and
   installs `/usr/local/bin/sync-steamos-session.sh` plus
   `sync-steamos-session.path`/`.service`;
-- `KWIN_IM_SHOW_ALWAYS=1` for the virtual keyboard and a
-  `steam-desktop-autostart` systemd user service that starts Steam silently
-  in Plasma only;
+- `KWIN_IM_SHOW_ALWAYS=1` for the virtual keyboard; the sub-option `silent`
+  ("Start Steam silently", on by default) adds a `steam-desktop-autostart`
+  systemd user service that starts Steam silently in Plasma only;
 - the **Return to Gaming Mode** shortcut; on plasma-login-manager with a
   narrow sudoers rule (`/etc/sudoers.d/gamescope-session-switch`) so it can
   restart the login manager without a password prompt.
@@ -242,7 +242,8 @@ Steam at login): it installs `steam` when missing (recorded in state `nvidia`, r
 unit `steamify-steam-autostart.service` (`services/`, `ExecStart=/usr/bin/steam @ARGS@`, Plasma only). Its sub-option
 `bigpicture` ("Steam starts in Big Picture", ticked along with it) rewrites the unit with `-gamepadui` and sets
 `ksmserverrc [General] loginMode=emptySession` (`kset`, undone with `krevert bigpicture`), so windows of the last session
-(Discord, a browser) aren't restored on top of Big Picture; unticked, Steam starts in its normal window. The PC always boots into the desktop: there is no gamescope session. Takes effect at the next
+(Discord, a browser) aren't restored on top of Big Picture; unticked, Steam starts in its normal window. The opt-in sub-option `nvsilent` ("Start Steam silently") rewrites the unit with `-silent`
+(tray only); it and `bigpicture` exclude each other. The PC always boots into the desktop: there is no gamescope session. Takes effect at the next
 login.
 
 On a supported card (RTX 20 series or newer: not on chwd's legacy lists `/var/lib/chwd/ids/nvidia-*.ids`, the VRAM booster's

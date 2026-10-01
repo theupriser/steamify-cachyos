@@ -38,7 +38,9 @@ Item {
 
     readonly property var status: backend.status || ({})
     readonly property var items: status.items || []
-    readonly property var rows: items.filter(function (i) { return !i.parent || want[i.parent]; })
+    // Hidden: Big Picture excludes a silent start; on a Steam Machine a silent start needs "Boot into" desktop.
+    function hidden(i) { return (i.id === "nvsilent" && want.bigpicture) || (i.needs === "boot" && boot !== "desktop"); }
+    readonly property var rows: items.filter(function (i) { return (!i.parent || want[i.parent]) && !hidden(i); })
     readonly property var bios: status.bios || null
 
     signal passwordRequested()
@@ -76,10 +78,13 @@ Item {
         w[id] = !w[id];
         // The same rules as the terminal menu (toggle_component).
         var hasGaming = items.some(function (i) { return i.id === "gaming"; });
-        if (id === "gaming" && !w.gaming) w.single = false;
+        if (id === "gaming" && !w.gaming) { w.single = false; w.silent = false; }
         if (id === "single" && w.single && hasGaming) w.gaming = true;
         if (id === "nvidia") w.bigpicture = w.nvidia;
-        if (id === "bigpicture" && w.bigpicture) w.nvidia = true;
+        if (id === "bigpicture" && w.bigpicture) { w.nvidia = true; w.nvsilent = false; }
+        if (id === "nvsilent" && w.nvsilent) { w.nvidia = true; w.bigpicture = false; }
+        if (id === "nvidia" && !w.nvidia) w.nvsilent = false;
+        if (id === "silent" && w.silent) w.gaming = true;
         if (id === "machine") w.poweroff = w.machine;
         if (id === "poweroff" && w.poweroff) w.machine = true;
         if (id === "machine" && !w.machine) w.kpin = false;
@@ -93,6 +98,7 @@ Item {
         for (var i = 0; i < items.length; i++) {
             var it = items[i];
             if (it.kind !== "toggle") continue;
+            if (hidden(it)) { if (it.on) p.push({ id: it.id, action: "off" }); continue; }
             if (it.parent && !want[it.parent]) { if (it.on) p.push({ id: it.id, action: "off" }); continue; }
             if (want[it.id] && !it.on) p.push({ id: it.id, action: "on", isNew: !!it["new"] });
             else if (!want[it.id] && it.on) p.push({ id: it.id, action: "off" });
@@ -109,7 +115,7 @@ Item {
     function wantedIds() {
         var ids = [];
         for (var i = 0; i < items.length; i++)
-            if (items[i].kind === "toggle" && want[items[i].id] && (!items[i].parent || want[items[i].parent])) ids.push(items[i].id);
+            if (items[i].kind === "toggle" && want[items[i].id] && !hidden(items[i]) && (!items[i].parent || want[items[i].parent])) ids.push(items[i].id);
         return ids;
     }
 

@@ -5,35 +5,46 @@
 
 steam_enable() {
     info "Applying non-optional SteamOS environment & keyboard fixes..."
-    local steam_env_dir systemd_user_dir
+    local steam_env_dir
     steam_env_dir="$HOME/.config/environment.d"
     mkdir -p "$steam_env_dir"
 
     # 2. Prevent KDE Wayland from blocking the virtual keyboard overlay
     echo "KWIN_IM_SHOW_ALWAYS=1" > "$steam_env_dir/99-kde-virtual-keyboard.conf"
 
-    # 3. Setup robust background systemd service for Steam autostart on Desktop Mode
-    systemd_user_dir="$HOME/.config/systemd/user"
+    ok "Steam UI parameters and keyboard fix deployed successfully."
+}
+
+# Sub-option of the SteamOS conversion: Steam starts silently (in the tray,
+# no window) on the Plasma desktop.
+silent_status() {
+    [[ -f "$HOME/.config/systemd/user/steam-desktop-autostart.service" ]]
+}
+
+silent_enable() {
+    local systemd_user_dir="$HOME/.config/systemd/user"
     mkdir -p "$systemd_user_dir"
-
     service_file steam-desktop-autostart.service > "$systemd_user_dir/steam-desktop-autostart.service"
-
     # Clean out old .desktop shortcut so they don't fight
     rm -f "$HOME/.config/autostart/steam.desktop"
-
-    # Reload user systemd context and activate the background loop
     user_systemctl daemon-reload
     user_systemctl enable --now steam-desktop-autostart.service
+    ok "Steam starts silently on the desktop."
+}
 
-    ok "Steam UI parameters and keyboard autostart deployed successfully."
+silent_disable() {
+    user_systemctl disable --now steam-desktop-autostart.service 2>/dev/null
+    rm -f "$HOME/.config/systemd/user/steam-desktop-autostart.service"
+    user_systemctl daemon-reload
+    ok "Steam no longer starts by itself on the desktop."
 }
 
 steam_disable() {
-    info "Removing Steam desktop autostart..."
-    user_systemctl disable --now steam-desktop-autostart.service 2>/dev/null
-    rm -f "$HOME/.config/systemd/user/steam-desktop-autostart.service" \
-        "$HOME/.config/environment.d/99-kde-virtual-keyboard.conf"
-    user_systemctl daemon-reload
+    info "Removing Steam desktop settings..."
+    # The autostart unit is the `silent` option's: removed with it, and here
+    # too for when the conversion goes off by itself.
+    silent_status && silent_disable
+    rm -f "$HOME/.config/environment.d/99-kde-virtual-keyboard.conf"
     ok "Steam desktop settings removed (takes full effect at next login)."
 }
 
