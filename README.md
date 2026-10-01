@@ -1,6 +1,14 @@
 # Steamify CachyOS
 
-![The Steamify app's menu on a Steam Machine](assets/screenshot-menu.png)
+The Steamify app's menu. On a Steam Machine (or any PC with an AMD or Intel
+graphics card) it offers the full SteamOS conversion, on the left. On a PC with
+an NVIDIA graphics card gamescope's gaming mode shows a corrupted picture, so the
+menu offers **Gaming on NVIDIA** instead (Steam on the desktop, started at login,
+optionally in Big Picture), on the right.
+
+| On a Steam Machine | On a PC with an NVIDIA graphics card |
+|---|---|
+| ![The Steamify app's menu on a Steam Machine](assets/screenshot-menu-steam-machine.png) | ![The Steamify app's menu on a PC with an NVIDIA graphics card](assets/screenshot-menu-nvidia.png) |
 
 Turn a CachyOS desktop PC into a SteamOS-style console: it boots straight
 into Steam's Big Picture (gamescope), and you can switch to the KDE Plasma
@@ -62,6 +70,11 @@ Steam Machine.
    the Steam Machine) or a USB CEC adapter; most graphics cards, NVIDIA
    included, don't have it. See [CEC.md](CEC.md) for which PCs do, and how to
    add it to your own build ([details](TECHNICAL.md#hdmi-cec)).
+9. **Extended controller support** (off by default) - the Xbox wireless
+   dongle (xone) and Xbox controllers over Bluetooth with rumble, the right
+   button mapping and the battery level (xpadneo). Both are installed from the
+   CachyOS repo and built for every installed kernel
+   ([details](TECHNICAL.md#extended-controller-support)).
 
 ## Steam Machine
 

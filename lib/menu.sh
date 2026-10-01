@@ -5,7 +5,7 @@
 
 # Menu order. Components are turned on in this order and off in reverse;
 # gaming must come first (single user builds on it).
-COMPONENTS=(gaming boot nvidia bigpicture theme glyphs single launcher steamgame notify vram cec machine poweroff kpin hdmi bios)
+COMPONENTS=(gaming boot nvidia bigpicture theme glyphs single launcher steamgame notify extended_controller_support vram cec machine poweroff kpin hdmi bios)
 # One-off actions rather than on/off components: never preselected, never
 # re-applied, not listed as on or off.
 ACTIONS=(bios)
@@ -15,8 +15,9 @@ declare -A PARENT=([boot]=gaming [bigpicture]=nvidia [steamgame]=launcher [power
 # gamescope is the default; HDMI-CEC is opt-in (it can wake the machine or
 # upset other devices on the TV, even on SteamOS), except on a Steam Machine,
 # which has CEC like on SteamOS. HDMI refresh boost needs someone at the
-# screen to confirm each step.
-NO_PRESELECT=(boot cec kpin hdmi)
+# screen to confirm each step. Extended controller support builds kernel modules for
+# every installed kernel: opt-in.
+NO_PRESELECT=(boot cec kpin hdmi extended_controller_support)
 # Feature versions: the Steamify version in which what a component's enable
 # sets up last changed; set it to the new VERSION whenever you change one.
 # Each successful run records it (state "features"); a component that's on
@@ -26,7 +27,7 @@ NO_PRESELECT=(boot cec kpin hdmi)
 FEATURE_BASELINE=2.1.0
 declare -A FEATURE_VERSION=(
     [gaming]=2.9.0 [boot]=2.1.0 [nvidia]=2.10.0 [bigpicture]=2.10.0 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.1.0
-    [launcher]=2.1.0 [cec]=2.7.0 [machine]=2.9.0 [poweroff]=2.2.0 [vram]=2.3.0 [notify]=2.5.0 [steamgame]=2.5.1
+    [launcher]=2.1.0 [cec]=2.7.0 [machine]=2.9.0 [poweroff]=2.2.0 [vram]=2.3.0 [notify]=2.5.0 [steamgame]=2.5.1 [extended_controller_support]=2.10.0
     [kpin]=2.1.0 [hdmi]=2.1.0
 )
 
@@ -41,6 +42,7 @@ declare -A LABEL=(
     [launcher]="Steamify shortcut: the app on the desktop, Steamify Terminal in the launcher"
     [steamgame]="Add as non-Steam game: Steamify in your Steam library, for the controller and gaming mode"
     [notify]="Update notifications: a notification when there's a new Steamify, never updates by itself"
+    [extended_controller_support]="Extended controller support: Xbox wireless dongle (xone), Xbox controllers over Bluetooth (xpadneo)"
     [vram]="VRAM booster: the game in front keeps its VRAM, background apps make room"
     [cec]="HDMI-CEC: use Steam with the TV remote, TV on/off with the PC (experimental)"
     [machine]="Steam Machine support: LED bar driver, hardware settings in Steam"
@@ -122,7 +124,7 @@ menu_label() {
     # last run.
     local l="${LABEL[$1]}" b=""
     if feature_outdated "$1"; then b="${c_yellow}(update)${c_reset}"
-    elif feature_new "$1"; then b="${c_green}(new)${c_reset}"; fi
+    elif feature_new "$1" || feature_new_optin "$1"; then b="${c_green}(new)${c_reset}"; fi
     if [[ -n "$b" ]]; then
         if [[ "$l" == *:* ]]; then l="${l%%:*} $b:${l#*:}"
         else l+=" $b"; fi
@@ -130,14 +132,28 @@ menu_label() {
     printf '%s' "$l"
 }
 
-feature_new() {
-    # A default option added after its parent was set up (e.g. the power-off
-    # fix under Steam Machine support; a top-level one counts the SteamOS
-    # conversion as its parent): never turned on or off.
-    local p="${PARENT[$1]:-gaming}"
-    [[ "$1" != gaming && "${CURRENT[$p]:-0}" == 1 && "${CURRENT[$1]:-0}" == 0 ]] &&
-        ! is_action "$1" && component_selectable "$1" && [[ " ${NO_PRESELECT[*]} " != *" $1 "* ]] &&
+feature_added() {
+    # An option added after its parent was set up (e.g. the power-off fix under
+    # Steam Machine support; a top-level one counts the SteamOS conversion, or
+    # "Gaming on NVIDIA" where that replaces it, as its parent), not on yet,
+    # with no record: shown as "new".
+    local p="${PARENT[$1]:-}" parent_on=0
+    if [[ -n "$p" ]]; then parent_on="${CURRENT[$p]:-0}"
+    elif [[ "${CURRENT[gaming]:-0}" == 1 || "${CURRENT[nvidia]:-0}" == 1 ]]; then parent_on=1; fi
+    [[ "$1" != gaming && "$parent_on" == 1 && "${CURRENT[$1]:-0}" == 0 ]] &&
+        ! is_action "$1" && component_selectable "$1" &&
         [[ -z "$(state_get features "$1")" ]]
+}
+
+feature_new() {
+    # A new default option: ticked for you (never turned on or off by itself).
+    feature_added "$1" && [[ " ${NO_PRESELECT[*]} " != *" $1 "* ]]
+}
+
+feature_new_optin() {
+    # A new opt-in option (unticked by default): the "new" badge only, it stays
+    # unticked. Boot into is a choice row of the conversion, not an item.
+    feature_added "$1" && [[ "$1" != boot && " ${NO_PRESELECT[*]} " == *" $1 "* ]]
 }
 
 component_selectable() {

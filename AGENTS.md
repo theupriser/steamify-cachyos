@@ -58,7 +58,9 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   one too): installs recorded with an older version
   are ticked and re-applied ("update" in the plan and the app). New default
   options are ticked for installs whose parent (top-level: `gaming`) is on
-  (`feature_new`, shown as "new").
+  (`feature_new`, shown as "new"). New opt-in options (`NO_PRESELECT`) get the
+  same "new" badge without being ticked (`feature_new_optin`). Both count "Gaming
+  on NVIDIA" as a parent where the conversion isn't offered.
   Options shown but left unticked in a confirmed run are recorded as
   `off` (`feature_record_unticked`), or `feature_new` would tick them again.
   Status still comes from the system; don't add ad-hoc `<id>_repair` checks
@@ -154,9 +156,12 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
     a warning when `VERSION` is a version that's already released (so a
     release branch that forgot its bump shows it on every PR).
   - A release that adds, removes or renames a menu row also retakes the
-    README screenshot (`assets/screenshot-menu.png`): the app from the
-    branch on a Steam Machine, every row visible (window 1280 wide, tall
-    enough), the header showing the new `VERSION`, scaled to 1600 px wide.
+    README screenshots (`assets/screenshot-menu-steam-machine.png` and
+    `assets/screenshot-menu-nvidia.png`, side by side in the README): the app from the branch on a Steam Machine and on a PC
+    with an NVIDIA card, every row visible and each window only as tall as its options need, the header showing the new
+    `VERSION`, 1600 px wide. Size the window with a KWin script (match the `steamify-ui` class exactly: a title match also hits
+    Konsole and editor windows) and crop the full-screen capture to the client rectangle; mind the display scale (the Steam
+    Machine runs at 1.75).
   - Users install through `releases/latest/download/steamify.sh`
     (GitHub's newest release). The `latest` tag and release follow the newest
     version tag too (moved, asset replaced, when a new version is released),
