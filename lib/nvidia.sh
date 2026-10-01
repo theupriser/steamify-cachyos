@@ -69,6 +69,20 @@ nvidia_rebuild_boot() {
     esac
 }
 
+nvidia_boot_has_params() {
+    # 0 when the generated boot entries carry the parameters (or can't be
+    # checked): limine.conf, systemd-boot's entries, grub.cfg.
+    local target
+    case "$1" in
+        */limine) target="${NVIDIA_LIMINE_CONF:-/boot/limine.conf}" ;;
+        */sdboot-manage.conf) target="${NVIDIA_SDBOOT_DIR:-/boot/loader/entries}" ;;
+        */grub) target="${NVIDIA_GRUB_CFG:-/boot/grub/grub.cfg}" ;;
+        *) return 0 ;;
+    esac
+    sudo test -e "$target" || return 0
+    sudo grep -rqs 'nvidia-drm.modeset=1' "$target"
+}
+
 nvidia_enable() {
     nvidia_present || return 0
     local f changed=0 p; f="$(nvidia_boot_file)"
@@ -86,6 +100,10 @@ nvidia_enable() {
                 */grub)
                     sudo sed -i -E "s/^(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*)\"/\1 $NVIDIA_PARAMS\"/" "$f" ;;
             esac
+            if ! grep -q "nvidia-drm.fbdev=1" "$f"; then
+                err "Couldn't add the NVIDIA parameters to $f (no kernel command line setting in it): add '$NVIDIA_PARAMS' yourself."
+                return 1
+            fi
             changed=1
         fi
     fi
@@ -98,9 +116,8 @@ nvidia_enable() {
     fi
     if [[ $changed == 1 ]]; then
         nvidia_rebuild_boot || { err "Rebuilding the boot entries failed."; return 1; }
-        if [[ "$f" == */limine && -f "${NVIDIA_LIMINE_CONF:-/boot/limine.conf}" ]] &&
-            ! grep -q 'nvidia-drm.modeset=1' "${NVIDIA_LIMINE_CONF:-/boot/limine.conf}"; then
-            err "The boot entries don't have the NVIDIA parameters: the initramfs build failed (see above)."
+        if ! nvidia_boot_has_params "$f"; then
+            err "The boot entries don't have the NVIDIA parameters: the initramfs or boot entry build failed (see above)."
             return 1
         fi
         ok "NVIDIA gaming mode fix applied; it takes effect after a reboot."

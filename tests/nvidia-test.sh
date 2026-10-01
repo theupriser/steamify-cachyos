@@ -21,6 +21,7 @@ echo 0x2c02 > "$T/drm/card1/device/device"
 NVIDIA_DRM_DIR="$T/drm"
 mkdir -p "$T/mods/6.1.0-cachyos/kernel"; : > "$T/mods/6.1.0-cachyos/kernel/nvidia-drm.ko.zst"
 NVIDIA_MODULES_DIR="$T/mods"
+NVIDIA_LIMINE_CONF="$T/none/limine.conf"; NVIDIA_SDBOOT_DIR="$T/none/entries"; NVIDIA_GRUB_CFG="$T/none/grub.cfg"   # not generated here: not checked
 
 FAKE_DRIVER=1; check "finds the NVIDIA card as card1 beside an iGPU" nvidia_present
 FAKE_DRIVER=0; check "skips when the driver isn't installed" '! nvidia_present'
@@ -50,6 +51,14 @@ mkdir -p "$T/mods/6.6.0-lts/kernel"; F="$T/sdboot-manage.conf"; printf 'LINUX_OP
 nvidia_boot_file() { echo "$F"; }; rm -f "$NVIDIA_INITRAMFS_CONF"; REBUILDS=0; nvidia_enable
 check "kernel without nvidia modules: no drop-in, parameters set" '[[ ! -f "$NVIDIA_INITRAMFS_CONF" ]] && grep -q "nvidia-drm.fbdev=1" "$F"'
 rm -rf "$T/mods/6.6.0-lts"
+# Generated boot entries without the parameters (the initramfs build failed): an error.
+printf 'linux /vmlinuz root=/dev/sda1\n' > "$T/grub.cfg"; NVIDIA_GRUB_CFG="$T/grub.cfg"
+F="$T/grub"; printf 'GRUB_CMDLINE_LINUX_DEFAULT="quiet"\n' > "$F"; nvidia_boot_file() { echo "$F"; }; rm -f "$NVIDIA_INITRAMFS_CONF"
+check "boot entries without the parameters: error" '! nvidia_enable >/dev/null'
+NVIDIA_GRUB_CFG="$T/none/grub.cfg"
+# A config file without the setting to edit: an error, not "applied".
+F="$T/sdboot-manage.conf"; printf '#LINUX_OPTIONS=""\n' > "$F"; nvidia_boot_file() { echo "$F"; }; REBUILDS=0
+check "no setting to edit: error, nothing rebuilt" '! nvidia_enable >/dev/null && [[ $REBUILDS == 0 ]]'
 FAKE_DRIVER=0; printf 'LINUX_OPTIONS="quiet"\n' > "$T/sdboot"; F="$T/sdboot"; REBUILDS=0; nvidia_enable
 check "no NVIDIA driver: nothing touched" '[[ "$(cat "$F")" == "LINUX_OPTIONS=\"quiet\"" && $REBUILDS == 0 ]]'
 exit $fail
