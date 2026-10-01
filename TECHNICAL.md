@@ -222,7 +222,10 @@ has the NVIDIA modules (mkinitcpio fails on a missing module, and
 On Limine the parameters go into the existing `KERNEL_CMDLINE[default]="..."`
 line: an extra appended `+=` line is pasted into the command line as text.
 Only what's missing is changed; it applies after a reboot. Turning
-the conversion off removes both. Untested on hardware so far.
+the conversion off removes both. `tests/nvidia-test.sh` tests it against a fake GPU
+and fake boot loader files; `tests/nvidia-hardware-test.sh check|apply|visual` is for a
+real NVIDIA PC (read-only check, the real apply, and a prompt for whether the picture
+was clean), and writes `~/steamify-nvidia-report.txt`.
 
 ## HDMI-CEC
 
