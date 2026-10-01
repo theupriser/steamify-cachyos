@@ -8,6 +8,8 @@ one per merged pull request.
 ## 2.10.0 - 2026-10-01
 
 - **docs: changelog hashes for 2.10.0**
+- `8b96e2d` **fix: shellcheck of the bundle: nvidia_enable's local args clashed with an array of another module (renamed unit_args); CI's "shellcheck the bundle" failed on release/2.10.0**
+- `f1fb18e` **docs: changelog for 2.10.0, one entry per commit with its hash**
 - `f1983a9` **docs: README screenshots of the 2.10.0 app, side by side: on a Steam Machine and on a PC with an NVIDIA card**
 - `01a77b7` **feat: a new opt-in option (unticked by default, e.g. Extended controller support) shows the "new" badge in the menu and the app without being ticked for you (feature_new_optin); it counts "Gaming on NVIDIA" as its parent where the conversion isn't offered**
 - `83248a8` **feat: Extended controller support (extended_controller_support, off by default): the Xbox wireless dongle (xone-dkms, xone-dongle-firmware) and Xbox controllers over Bluetooth with rumble, button mapping and battery level (xpadneo-dkms), from the CachyOS repo, built for every installed kernel; a PC with the AUR's xone-dkms-git keeps it; off removes only what Steamify installed (lib/controllers.sh, tests/controllers-test.sh)**
