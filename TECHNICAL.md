@@ -228,8 +228,9 @@ conversion (`gaming`, and its options `boot`, `single`, `glyphs`) isn't offered,
 off). `nvidia` ("Gaming on NVIDIA", `lib/nvidia.sh`) takes its place, hidden while the conversion is on (both would start
 Steam at login): it installs `steam` when missing (recorded in state `nvidia`, removed again only then) and enables the user
 unit `steamify-steam-autostart.service` (`services/`, `ExecStart=/usr/bin/steam @ARGS@`, Plasma only). Its sub-option
-`bigpicture` ("Steam starts in Big Picture", ticked along with it) rewrites the unit with `-gamepadui`; unticked, Steam
-starts in its normal window. The PC always boots into the desktop: there is no gamescope session. Takes effect at the next
+`bigpicture` ("Steam starts in Big Picture", ticked along with it) rewrites the unit with `-gamepadui` and sets
+`ksmserverrc [General] loginMode=emptySession` (`kset`, undone with `krevert bigpicture`), so windows of the last session
+(Discord, a browser) aren't restored on top of Big Picture; unticked, Steam starts in its normal window. The PC always boots into the desktop: there is no gamescope session. Takes effect at the next
 login.
 
 On a supported card (RTX 20 series or newer: not on chwd's legacy lists `/var/lib/chwd/ids/nvidia-*.ids`, the VRAM booster's

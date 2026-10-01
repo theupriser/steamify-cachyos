@@ -74,6 +74,7 @@ nvidia_disable() {
     # shellcheck disable=SC2086 # a list of package names
     [[ -n "$pkgs" ]] && sudo pacman -Rns --noconfirm $pkgs >/dev/null 2>&1
     state_clear nvidia
+    krevert bigpicture
     nvidia_kernel_disable
     ok "Steam no longer starts at login."
 }
@@ -83,10 +84,14 @@ bigpicture_status() { grep -qs -- '-gamepadui' "$(nvidia_unit_file)"; }
 bigpicture_enable() {
     # The unit comes from nvidia_enable (it runs first); without it there is nothing to change.
     [[ -f "$(nvidia_unit_file)" ]] || return 0
-    nvidia_write_unit -gamepadui && ok "Steam starts in Big Picture at your next login."
+    nvidia_write_unit -gamepadui || return 1
+    # Windows of the last session (Discord, a browser) would be restored on top of Big Picture.
+    kset bigpicture ksmserverrc General loginMode emptySession
+    ok "Steam starts in Big Picture at your next login, on an empty desktop."
 }
 
 bigpicture_disable() {
+    krevert bigpicture
     [[ -f "$(nvidia_unit_file)" ]] || return 0
     nvidia_write_unit "" && ok "Steam starts in its normal window at your next login."
 }

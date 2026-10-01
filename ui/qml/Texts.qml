@@ -15,7 +15,7 @@ QtObject {
                   changes: ["Steam is installed when it's missing", "Steam starts at login (a systemd user service)", "Off: the service is removed again; Steam is only removed if Steamify installed it"] },
         bigpicture: { label: "Steam starts in Big Picture", hint: "The controller-friendly Steam, or the normal window",
                       body: "Steam opens in Big Picture at login, which works well with a controller on the TV. Untick it for Steam's normal window.",
-                      changes: ["Steam is started with -gamepadui", "Off: Steam starts in its normal window"] },
+                      changes: ["Steam is started with -gamepadui", "Plasma starts with an empty session, so old windows don't cover Big Picture", "Off: Steam starts in its normal window"] },
         theme: { label: "SteamOS theme", hint: "Vapor look for the desktop, Add to Steam",
                  body: "The Vapor look of SteamOS for the desktop, with its panel, launcher icon and wallpaper.",
                  changes: ["cachyos-vapor global theme", "Add to Steam in right-click menus", "Nested Desktop, Steam keyboard window rule"] },

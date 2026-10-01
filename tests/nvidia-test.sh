@@ -12,8 +12,19 @@ source lib/common.sh; source lib/state.sh; source lib/login-manager.sh; source l
 # Runs as the user, and refuses anything under the real system folders: a test must never touch them.
 sudo() { local a; for a in "$@"; do case "$a" in /etc/*|/usr/*|/boot/*|/var/*) echo "REFUSED sudo $*" >&2; return 1 ;; esac; done; "$@"; }
 info() { :; }; ok() { :; }; warn() { :; }; err() { echo "ERR $*"; }
-kwriteconfig6() { local f g k v; while [[ $# -gt 0 ]]; do case "$1" in --file) f="$2";; --key) k="$2";; esac; [[ $# -ge 2 ]] && v="$2"; shift; done; printf '%s=%s\n' "$k" "$v" > "$f"; }
-kreadconfig6() { local f k; while [[ $# -gt 0 ]]; do case "$1" in --file) f="$2";; --key) k="$2";; esac; shift; done; sed -n "s/^$k=//p" "$f" 2>/dev/null; }
+# KDE's config tools on plain files under the temp home (a relative file name is relative to ~/.config, as in KDE).
+kwriteconfig6() {
+    local f="" k="" v="" del=0
+    while [[ $# -gt 0 ]]; do case "$1" in --file) f="$2"; shift ;; --key) k="$2"; shift ;; --group) shift ;; --delete) del=1 ;; *) v="$1" ;; esac; shift; done
+    [[ "$f" == /* ]] || f="$HOME/.config/$f"; mkdir -p "$(dirname "$f")"
+    if [[ $del == 1 ]]; then sed -i "/^$k=/d" "$f" 2>/dev/null; else sed -i "/^$k=/d" "$f" 2>/dev/null; printf '%s=%s\n' "$k" "$v" >> "$f"; fi
+}
+kreadconfig6() {
+    local f="" k="" d="" r
+    while [[ $# -gt 0 ]]; do case "$1" in --file) f="$2"; shift ;; --key) k="$2"; shift ;; --default) d="$2"; shift ;; --group) shift ;; esac; shift; done
+    [[ "$f" == /* ]] || f="$HOME/.config/$f"
+    r="$(sed -n "s/^$k=//p" "$f" 2>/dev/null)"; printf '%s\n' "${r:-$d}"
+}
 # A pretend package database and systemd: what the tests assert on.
 PKGS=""; PACMAN_LOG="$T/pacman.log"; : > "$PACMAN_LOG"; ENABLED=0
 pacman() {
@@ -83,8 +94,10 @@ bigpicture_enable
 check "Big Picture: Steam starts with -gamepadui" 'grep -q "^ExecStart=/usr/bin/steam -gamepadui$" "$UNIT" && bigpicture_status'
 nvidia_enable
 check "turning Gaming on NVIDIA on again keeps Big Picture" 'bigpicture_status'
+check "Big Picture: Plasma starts with an empty session" '[[ "$(kreadconfig6 --file ksmserverrc --group General --key loginMode)" == emptySession ]]'
 bigpicture_disable
 check "Big Picture off: Steam's normal window again" '! bigpicture_status && nvidia_status'
+check "...and the session setting is back as it was (not set)" '[[ -z "$(kreadconfig6 --file ksmserverrc --group General --key loginMode)" ]]'
 
 # --- turning it off
 bigpicture_enable; nvidia_disable
