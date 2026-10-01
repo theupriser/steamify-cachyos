@@ -216,13 +216,18 @@ its driver installed (`lib/nvidia.sh`), the SteamOS conversion adds
 systemd-boot or GRUB; the file is backed up first) and
 `/etc/mkinitcpio.conf.d/90-steamify-nvidia.conf` (`MODULES+=(nvidia
 nvidia_modeset nvidia_uvm nvidia_drm)`), then rebuilds the initramfs and boot
-entries. The early-load drop-in is only written when every installed kernel
-has the NVIDIA modules (mkinitcpio fails on a missing module, and
-`limine-mkinitcpio` then skips that kernel's boot entry, parameters included).
+entries. The early-load drop-in is only there while every installed kernel has the
+NVIDIA modules (mkinitcpio fails on a missing module, and `limine-mkinitcpio`
+then skips that kernel's boot entry, parameters included). That is decided again
+at every kernel or driver change by a pacman hook
+(`/etc/pacman.d/hooks/85-steamify-nvidia-initramfs.hook`, after DKMS builds,
+before the initramfs is built) running `/usr/local/libexec/steamify-nvidia-initramfs`:
+another kernel without the modules, a failed DKMS build or a downgrade removes
+the drop-in, and it comes back once every kernel has them again.
 On Limine the parameters go into the existing `KERNEL_CMDLINE[default]="..."`
 line: an extra appended `+=` line is pasted into the command line as text.
 Only what's missing is changed; it applies after a reboot. Turning
-the conversion off removes both. `tests/nvidia-test.sh` tests it against a fake GPU
+the conversion off removes both, the hook and its script. `tests/nvidia-test.sh` tests it against a fake GPU
 and fake boot loader files; `tests/nvidia-hardware-test.sh check|apply|visual` is for a
 real NVIDIA PC (read-only check, the real apply, and a prompt for whether the picture
 was clean), and writes `~/steamify-nvidia-report.txt`.

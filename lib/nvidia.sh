@@ -9,6 +9,9 @@
 
 NVIDIA_PARAMS="nvidia-drm.modeset=1 nvidia-drm.fbdev=1"
 NVIDIA_INITRAMFS_CONF=/etc/mkinitcpio.conf.d/90-steamify-nvidia.conf
+# The script and pacman hook that keep the initramfs file right at every kernel change.
+NVIDIA_SCRIPT=${NVIDIA_SCRIPT:-/usr/local/libexec/steamify-nvidia-initramfs}
+NVIDIA_HOOK=${NVIDIA_HOOK:-/etc/pacman.d/hooks/85-steamify-nvidia-initramfs.hook}
 # The DRM devices in sysfs; the tests point this at a fake tree.
 NVIDIA_DRM_DIR=${NVIDIA_DRM_DIR:-/sys/class/drm}
 
@@ -46,16 +49,14 @@ nvidia_initramfs_ok() {
 }
 
 nvidia_modules_everywhere() {
-    # 0 when every installed kernel has the nvidia_drm module: mkinitcpio fails
-    # on a MODULES entry a kernel lacks, and limine-mkinitcpio then skips that
-    # kernel's initramfs and boot entry, so the parameters never reach it.
-    local k found=0
-    for k in "${NVIDIA_MODULES_DIR:-/usr/lib/modules}"/*/; do
-        [[ -f "$k/pkgbase" || -d "$k/kernel" || -d "$k/updates" || -d "$k/extramodules" ]] || continue
-        find "$k" -name 'nvidia-drm.ko*' -print -quit 2>/dev/null | grep -q . || return 1
-        found=1
-    done
-    [[ $found == 1 ]]
+    # 0 when every installed kernel has the nvidia_drm module (the script's own check).
+    patch_file steamify-nvidia-initramfs.sh | NVIDIA_MODULES_DIR="${NVIDIA_MODULES_DIR:-/usr/lib/modules}" bash -s check
+}
+
+nvidia_hook_install() {
+    patch_file steamify-nvidia-initramfs.sh | sudo install -Dm755 /dev/stdin "$NVIDIA_SCRIPT" &&
+        patch_file steamify-nvidia-initramfs.hook | fill SCRIPT="$NVIDIA_SCRIPT" |
+            sudo install -Dm644 /dev/stdin "$NVIDIA_HOOK"
 }
 
 nvidia_rebuild_boot() {
@@ -107,12 +108,17 @@ nvidia_enable() {
             changed=1
         fi
     fi
-    if ! nvidia_initramfs_ok && ! nvidia_modules_everywhere; then
-        warn "Not every installed kernel has the NVIDIA modules: skipping loading them early (the kernel parameters still apply)."
-    elif ! nvidia_initramfs_ok; then
+    nvidia_hook_install || { err "Installing the NVIDIA initramfs hook failed."; return 1; }
+    local had=0; [[ -f "$NVIDIA_INITRAMFS_CONF" ]] && had=1
+    sudo env NVIDIA_INITRAMFS_CONF="$NVIDIA_INITRAMFS_CONF" NVIDIA_MODULES_DIR="${NVIDIA_MODULES_DIR:-/usr/lib/modules}" "$NVIDIA_SCRIPT" sync
+    if [[ -f "$NVIDIA_INITRAMFS_CONF" && $had == 0 ]]; then
         info "Loading the NVIDIA modules early (initramfs)..."
-        printf 'MODULES+=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)\n' |
-            sudo install -Dm644 /dev/stdin "$NVIDIA_INITRAMFS_CONF" && changed=1
+        changed=1
+    elif [[ ! -f "$NVIDIA_INITRAMFS_CONF" && $had == 1 ]]; then
+        warn "A kernel without the NVIDIA modules is installed: not loading them early any more (rebuilding the initramfs without them)."
+        changed=1
+    elif [[ ! -f "$NVIDIA_INITRAMFS_CONF" ]] && ! nvidia_initramfs_ok; then
+        warn "Not every installed kernel has the NVIDIA modules: not loading them early for now (the kernel parameters still apply; this is checked again at every kernel update)."
     fi
     if [[ $changed == 1 ]]; then
         nvidia_rebuild_boot || { err "Rebuilding the boot entries failed."; return 1; }
@@ -132,6 +138,7 @@ nvidia_disable() {
         changed=1
     fi
     [[ -f "$NVIDIA_INITRAMFS_CONF" ]] && { sudo rm -f "$NVIDIA_INITRAMFS_CONF"; changed=1; }
+    sudo rm -f "$NVIDIA_HOOK" "$NVIDIA_SCRIPT"
     [[ $changed == 1 ]] && nvidia_rebuild_boot
     return 0
 }
