@@ -7,13 +7,8 @@ one per merged pull request.
 
 ## 2.9.7 - 2026-10-01
 
-- **feat: the SteamOS conversion fixes a corrupted gaming mode screen with an NVIDIA GPU: nvidia-drm.modeset=1 and fbdev=1 on the kernel command line, NVIDIA modules in the initramfs (lib/nvidia.sh)**
-- **test: tests/nvidia-test.sh runs the NVIDIA fix against a fake RTX 5080 beside an iGPU, a stub modinfo and temp copies of the Limine, systemd-boot and GRUB files (no root, VM or hardware); NVIDIA_DRM_DIR points detection at a fake sysfs tree**
-- **fix: NVIDIA fix on Limine edits the KERNEL_CMDLINE[default] line (an appended += line ended up as literal text on the kernel command line, found in a VM); the modules are only loaded early when every installed kernel has them, and a Limine boot entry without the parameters is an error**
-- **test: tests/nvidia-hardware-test.sh for a real NVIDIA PC: check (read-only state of the detection, the live nvidia_drm modeset/fbdev, versions), apply, and visual (was the gaming mode picture clean), with a report file to paste**
-- **fix: the NVIDIA modules are loaded early only while every installed kernel has them, decided again at every kernel or driver change by a pacman hook (steamify-nvidia-initramfs): a later kernel without the modules (another kernel, a failed DKMS build, a downgrade) no longer makes its initramfs and Limine boot entry fail**
-- **feat: the NVIDIA fix is only for RTX 20 series or newer, decided like the VRAM booster does (vram_nvidia_legacy_id: chwd's legacy card lists); older cards are left alone**
-- **fix: the NVIDIA fix also edits Limine's `KERNEL_CMDLINE[default]+="..."` line (CachyOS writes that form; the fix found no line to edit and stopped) and counts `nvidia_drm.modeset=1` (underscore) as already set; tests/nvidia-hardware-test.sh sets `SCRIPT_DIR` (the hook script was read from `/patches`)**
+- **feat: "Gaming on NVIDIA" (nvidia) replaces the SteamOS conversion on PCs with an NVIDIA GPU, where gamescope's gaming mode shows a corrupted picture (NVIDIA bug 5240452): Steam is installed when missing and starts at login on the Plasma desktop; the sub-option "Steam starts in Big Picture" (bigpicture, ticked along with it) starts it in Big Picture, unticked in its normal window (lib/nvidia.sh, services/steamify-steam-autostart.service). On a supported card (RTX 20 series or newer, chwd's legacy lists like the VRAM booster) it also puts nvidia-drm.modeset=1 and fbdev=1 on the kernel command line (Limine incl. its `+=` line, systemd-boot, GRUB) and the NVIDIA modules in the initramfs while every installed kernel has them (a pacman hook decides at every kernel change). The conversion and its options are hidden there unless already on**
+- **test: tests/nvidia-test.sh runs it against a fake RTX 5080 beside an iGPU, a stub pacman and systemctl, and a temp home (no root, VM or hardware); verified on a real RTX 5080: gamescope's session, a nested gamescope and a KWin-only session all showed artifacts or stutter, Big Picture on the Plasma desktop did not**
 
 ## 2.9.6 - 2026-09-30
 

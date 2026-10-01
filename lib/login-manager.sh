@@ -109,7 +109,6 @@ gaming_enable() {
     esac
     create_desktop_shortcut
     steam_enable
-    nvidia_enable || return 1
     os_name_enable || return 1
 }
 
@@ -125,7 +124,6 @@ gaming_disable() {
     steam_disable
     krevert gaming
     os_name_disable
-    nvidia_disable
     ok "The PC boots to the normal login screen again (from the next boot)."
 }
 

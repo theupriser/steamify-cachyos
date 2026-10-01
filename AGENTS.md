@@ -48,13 +48,11 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `<id>_available` is checked via `component_available` (e.g. `machine`
   only on Fremont). Turn-on order is `COMPONENTS` order, turn-off reverse;
   `gaming` must stay first. Dependencies live in `toggle_component`.
-- **Hardware-specific fixes** that belong to a component but aren't a menu
-  row (e.g. `lib/nvidia.sh`: NVIDIA's kernel parameters and early modules
-  for gaming mode, called from `gaming_enable`/`gaming_disable`) detect the
-  hardware themselves, change only what's missing, and undo it on disable.
-  Add them to the source loop in `steamify.sh` and the table in
-  `TECHNICAL.md`. They can't be tested without the hardware: say so in the
-  changelog and keep the branch behind `.no-release-yet` until it was.
+- **NVIDIA** (`lib/nvidia.sh`): gamescope's session is broken on NVIDIA, so the SteamOS conversion (`gaming`, `boot`, `single`,
+  `glyphs`) is hidden there (unless already on) and `nvidia` + its sub-option `bigpicture` ("Gaming on NVIDIA") replace it:
+  Steam on the Plasma desktop, started at login. Never reintroduce a gamescope session for NVIDIA without re-testing on the
+  hardware (notes: steamify-cachyos-dev, `nvidia/`). It can't be tested without the hardware: keep the branch behind
+  `.no-release-yet` until it was.
 - **Feature versions.** Set `FEATURE_VERSION[<id>]` (`lib/menu.sh`) to the new
   `VERSION` whenever what `<id>_enable` sets up changes (a new component gets
   one too): installs recorded with an older version

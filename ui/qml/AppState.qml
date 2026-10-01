@@ -77,6 +77,8 @@ Item {
         // The same rules as the terminal menu (toggle_component).
         if (id === "gaming" && !w.gaming) w.single = false;
         if (id === "single" && w.single) w.gaming = true;
+        if (id === "nvidia") w.bigpicture = w.nvidia;
+        if (id === "bigpicture" && w.bigpicture) w.nvidia = true;
         if (id === "machine") w.poweroff = w.machine;
         if (id === "poweroff" && w.poweroff) w.machine = true;
         if (id === "machine" && !w.machine) w.kpin = false;

@@ -1,22 +1,99 @@
 #!/bin/bash
-# NVIDIA fix for gaming mode, part of the SteamOS conversion
-# (gaming_enable/gaming_disable). gamescope drives the display itself
-# through DRM/KMS; with NVIDIA that needs kernel modesetting and the
-# framebuffer driver (nvidia-drm.modeset=1 nvidia-drm.fbdev=1) and the
-# driver in the initramfs, or the screen shows a corrupted image.
-# Does nothing without a supported NVIDIA GPU (RTX 20 series or newer) that has
-# its driver installed.
+# Gaming on NVIDIA PCs: the SteamOS conversion (gamescope session) isn't offered there, because gamescope's DRM session shows a
+# corrupted picture on NVIDIA (NVIDIA's open bug 5240452: modes above 2560x1440@120). `nvidia` is the replacement: Steam on the
+# Plasma desktop, installed when missing and started at login; `bigpicture` (a sub-option) makes it start in Big Picture.
+# On a supported card (RTX 20 series or newer, `nvidia_supported`) it also sets up what NVIDIA's Wayland/DRM stack wants:
+# nvidia-drm.modeset=1 and fbdev=1 on the kernel command line and the NVIDIA modules in the initramfs. That didn't cure
+# gamescope's picture (the driver already reported both `Y`), but it is the standard setup and may be needed.
 # Sourced by steamify.sh; not meant to be run on its own.
 
+NVIDIA_UNIT=steamify-steam-autostart.service
 NVIDIA_PARAMS="nvidia-drm.modeset=1 nvidia-drm.fbdev=1"
-NVIDIA_INITRAMFS_CONF=/etc/mkinitcpio.conf.d/90-steamify-nvidia.conf
+NVIDIA_INITRAMFS_CONF=${NVIDIA_INITRAMFS_CONF:-/etc/mkinitcpio.conf.d/90-steamify-nvidia.conf}
 # The script and pacman hook that keep the initramfs file right at every kernel change.
 NVIDIA_SCRIPT=${NVIDIA_SCRIPT:-/usr/local/libexec/steamify-nvidia-initramfs}
 NVIDIA_HOOK=${NVIDIA_HOOK:-/etc/pacman.d/hooks/85-steamify-nvidia-initramfs.hook}
+# The running kernel's command line; the tests point this at a file.
+NVIDIA_CMDLINE=${NVIDIA_CMDLINE:-/proc/cmdline}
 # The DRM devices in sysfs; the tests point this at a fake tree.
 NVIDIA_DRM_DIR=${NVIDIA_DRM_DIR:-/sys/class/drm}
 
+nvidia_unit_file() { echo "$HOME/.config/systemd/user/$NVIDIA_UNIT"; }
+
 nvidia_present() {
+    # An NVIDIA GPU (PCI vendor 0x10de, display class) whose driver provides
+    # nvidia_drm. nouveau has none, and gamescope is not a problem there.
+    local d
+    for d in "$NVIDIA_DRM_DIR"/card[0-9]*/device; do
+        [[ "$(cat "$d/vendor" 2>/dev/null)" == 0x10de ]] || continue
+        [[ "$(cat "$d/class" 2>/dev/null)" == 0x03* ]] || continue
+        modinfo nvidia_drm >/dev/null 2>&1 && return 0
+    done
+    return 1
+}
+
+# Shown on NVIDIA PCs, unless the SteamOS conversion is already on there (it
+# has to be turned off first: both would start Steam at login).
+nvidia_available() { nvidia_present && ! gaming_status 2>/dev/null; }
+bigpicture_available() { nvidia_available; }
+
+nvidia_status() {
+    pacman -Q steam >/dev/null 2>&1 && [[ -f "$(nvidia_unit_file)" ]] &&
+        user_systemctl is-enabled -q "$NVIDIA_UNIT" 2>/dev/null
+}
+
+nvidia_write_unit() {
+    # nvidia_write_unit [args]: the autostart unit, Steam started with those arguments.
+    local unit; unit="$(nvidia_unit_file)"
+    mkdir -p "$(dirname "$unit")"
+    service_file steamify-steam-autostart.service ARGS="$1" > "$unit" || { err "Writing $unit failed."; return 1; }
+    user_systemctl daemon-reload
+}
+
+nvidia_enable() {
+    info "Gaming on NVIDIA: Steam on the desktop, started at login..."
+    if ! pacman -Q steam >/dev/null 2>&1; then
+        sudo pacman -S --needed --noconfirm steam || { err "Installing Steam failed."; return 1; }
+        state_set nvidia installed_pkgs steam
+    fi
+    # Keeps what the Big Picture option set up; a first run starts Steam normally.
+    local args=""; bigpicture_status && args=-gamepadui
+    nvidia_write_unit "$args" || return 1
+    user_systemctl enable "$NVIDIA_UNIT" >/dev/null 2>&1 || { err "Enabling $NVIDIA_UNIT failed."; return 1; }
+    nvidia_kernel_enable || return 1
+    ok "Steam starts at your next login."
+}
+
+nvidia_disable() {
+    local pkgs unit; unit="$(nvidia_unit_file)"
+    user_systemctl disable --now "$NVIDIA_UNIT" >/dev/null 2>&1
+    rm -f "$unit"
+    user_systemctl daemon-reload
+    pkgs="$(state_get nvidia installed_pkgs)"
+    # Only what Steamify installed; games and the Steam folder stay.
+    # shellcheck disable=SC2086 # a list of package names
+    [[ -n "$pkgs" ]] && sudo pacman -Rns --noconfirm $pkgs >/dev/null 2>&1
+    state_clear nvidia
+    nvidia_kernel_disable
+    ok "Steam no longer starts at login."
+}
+
+bigpicture_status() { grep -qs -- '-gamepadui' "$(nvidia_unit_file)"; }
+
+bigpicture_enable() {
+    # The unit comes from nvidia_enable (it runs first); without it there is nothing to change.
+    [[ -f "$(nvidia_unit_file)" ]] || return 0
+    nvidia_write_unit -gamepadui && ok "Steam starts in Big Picture at your next login."
+}
+
+bigpicture_disable() {
+    [[ -f "$(nvidia_unit_file)" ]] || return 0
+    nvidia_write_unit "" && ok "Steam starts in its normal window at your next login."
+}
+
+# --- Kernel parameters and early modules (a supported card only)
+
+nvidia_supported() {
     # A supported NVIDIA GPU: PCI vendor 0x10de, display class, its kernel
     # driver installed, and not older than the RTX 20 series, decided like the
     # VRAM booster does (vram_nvidia_legacy_id: chwd's legacy card lists, every
@@ -53,7 +130,7 @@ nvidia_param_set() {
     # The kernel treats "nvidia_drm" and "nvidia-drm" alike: CachyOS' own
     # setup may already have written the underscore spelling.
     local f re; f="$(nvidia_boot_file)"; re="${1//nvidia-drm/nvidia[-_]drm}"
-    grep -qwE -- "$re" /proc/cmdline 2>/dev/null ||
+    grep -qwE -- "$re" "$NVIDIA_CMDLINE" 2>/dev/null ||
         { [[ -n "$f" ]] && grep -qwE -- "$re" "$f" 2>/dev/null; }
 }
 
@@ -107,8 +184,8 @@ nvidia_boot_has_params() {
     sudo grep -rqs 'nvidia-drm.modeset=1' "$target"
 }
 
-nvidia_enable() {
-    nvidia_present || return 0
+nvidia_kernel_enable() {
+    nvidia_supported || return 0
     local f changed=0 p; f="$(nvidia_boot_file)"
     if nvidia_params_missing; then
         if [[ -z "$f" ]]; then
@@ -154,7 +231,7 @@ nvidia_enable() {
     return 0
 }
 
-nvidia_disable() {
+nvidia_kernel_disable() {
     local f changed=0; f="$(nvidia_boot_file)"
     if [[ -n "$f" ]] && grep -q "$NVIDIA_PARAMS" "$f" 2>/dev/null; then
         sudo sed -i "s/ \?$NVIDIA_PARAMS//" "$f"

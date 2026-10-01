@@ -206,33 +206,39 @@ or upgraded. A newly added kernel doesn't come with its headers, so
 `ensure-kernel-headers.service` checks at every boot and installs any
 missing `-headers` package, which makes DKMS build the driver for it.
 
-## NVIDIA fix for gaming mode
+## Gaming on NVIDIA
 
-gamescope drives the display itself through DRM/KMS, which with NVIDIA needs
-kernel modesetting and the framebuffer driver, and the driver loaded early;
-without them gaming mode can show a corrupted image. With a supported NVIDIA GPU (RTX 20 series or newer, decided like the VRAM
-booster does: a card on chwd's legacy lists `/var/lib/chwd/ids/nvidia-*.ids`
-is older and left alone, `vram_nvidia_legacy_id`; without those lists every
-card counts) and its driver installed (`lib/nvidia.sh`), the SteamOS conversion adds
-`nvidia-drm.modeset=1 nvidia-drm.fbdev=1` to the kernel command line (Limine,
-systemd-boot or GRUB; the file is backed up first) and
-`/etc/mkinitcpio.conf.d/90-steamify-nvidia.conf` (`MODULES+=(nvidia
-nvidia_modeset nvidia_uvm nvidia_drm)`), then rebuilds the initramfs and boot
-entries. The early-load drop-in is only there while every installed kernel has the
-NVIDIA modules (mkinitcpio fails on a missing module, and `limine-mkinitcpio`
-then skips that kernel's boot entry, parameters included). That is decided again
-at every kernel or driver change by a pacman hook
-(`/etc/pacman.d/hooks/85-steamify-nvidia-initramfs.hook`, after DKMS builds,
-before the initramfs is built) running `/usr/local/libexec/steamify-nvidia-initramfs`:
-another kernel without the modules, a failed DKMS build or a downgrade removes
-the drop-in, and it comes back once every kernel has them again.
-On Limine the parameters go into the existing `KERNEL_CMDLINE[default]="..."`
-line: an extra appended `+=` line is pasted into the command line as text.
-Only what's missing is changed; it applies after a reboot. Turning
-the conversion off removes both, the hook and its script. `tests/nvidia-test.sh` tests it against a fake GPU
-and fake boot loader files; `tests/nvidia-hardware-test.sh check|apply|visual` is for a
-real NVIDIA PC (read-only check, the real apply, and a prompt for whether the picture
-was clean), and writes `~/steamify-nvidia-report.txt`.
+gamescope's own gaming mode shows a corrupted picture on NVIDIA graphics cards: NVIDIA's open bug 5240452 (flicker and
+artifacts in the DRM session at modes above 2560x1440@120, seen up to driver 595 and on RTX 3070 Ti, 4090, 5090 and 5080;
+no fix known). The kernel parameters `nvidia-drm.modeset=1`/`fbdev=1` and loading the NVIDIA modules early don't change it
+(the driver already reports both `Y`), and gamescope started nested inside KDE artifacts too when KWin hands its fullscreen
+window straight to the display. What does work on an RTX 5080: Steam's Big Picture (`steam -gamepadui`) as a normal window of
+the Plasma desktop session, smooth and clean.
+
+So with an NVIDIA GPU (PCI vendor 0x10de, display class, its driver providing `nvidia_drm`: `nvidia_present`) the SteamOS
+conversion (`gaming`, and its options `boot`, `single`, `glyphs`) isn't offered, unless it is already on (so it can be turned
+off). `nvidia` ("Gaming on NVIDIA", `lib/nvidia.sh`) takes its place, hidden while the conversion is on (both would start
+Steam at login): it installs `steam` when missing (recorded in state `nvidia`, removed again only then) and enables the user
+unit `steamify-steam-autostart.service` (`services/`, `ExecStart=/usr/bin/steam @ARGS@`, Plasma only). Its sub-option
+`bigpicture` ("Steam starts in Big Picture", ticked along with it) rewrites the unit with `-gamepadui`; unticked, Steam
+starts in its normal window. The PC always boots into the desktop: there is no gamescope session. Takes effect at the next
+login.
+
+On a supported card (RTX 20 series or newer: not on chwd's legacy lists `/var/lib/chwd/ids/nvidia-*.ids`, the VRAM booster's
+check, `vram_nvidia_legacy_id`; `nvidia_supported`) enabling it also does what NVIDIA's DRM stack wants, though it didn't cure
+gamescope: `nvidia-drm.modeset=1 nvidia-drm.fbdev=1` on the kernel command line (Limine, systemd-boot or GRUB; the file is
+backed up first; on Limine into the existing `KERNEL_CMDLINE[default]="..."` or `+="..."` line, never an extra appended line,
+which ends up as text; the kernel treats `nvidia_drm` and `nvidia-drm` alike) and
+`/etc/mkinitcpio.conf.d/90-steamify-nvidia.conf` (`MODULES+=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)`), then the initramfs
+and boot entries are rebuilt and checked for the parameters. The early-load drop-in is only there while every installed kernel
+has the NVIDIA modules (mkinitcpio fails on a missing module, and `limine-mkinitcpio` then skips that kernel's boot entry):
+a pacman hook (`/etc/pacman.d/hooks/85-steamify-nvidia-initramfs.hook`, after DKMS, before the initramfs is built) runs
+`/usr/local/libexec/steamify-nvidia-initramfs` at every kernel or driver change and decides again. Turning it off removes
+all of it. `tests/nvidia-hardware-test.sh check|apply|visual` is for a real NVIDIA PC (writes `~/steamify-nvidia-report.txt`). `tests/nvidia-test.sh` tests it against a fake GPU, a stub `pacman` and `systemctl`, and a temp home.
+
+Tried and dropped (notes in steamify-cachyos-dev, `nvidia/HARDWARE-RESULTS.md`): a gamescope session that opens Big Picture in Plasma (it needed the `start-gamescope-session`
+command shadowed in `/usr/local/bin`, and showed the desktop for a few seconds, then a Steam window with a black border);
+a KWin session without Plasma (the mouse stuttered every second or two).
 
 ## HDMI-CEC
 
@@ -538,7 +544,7 @@ immediately, which can turn into a loop - see
 | `lib/steam-game.sh` | Add as non-Steam game: Steamify in the Steam library (`patches/steam-shortcuts.py`) |
 | `lib/update-notifier.sh` | Update notifications: the notifier from `patches/` and its user timer |
 | `lib/first-login.sh` | `--defaults` without a session (the Steam Machine ISO's installer): the one-time first-login step that sets up single user's launcher on Plasma's new layout and opens the app |
-| `lib/nvidia.sh` | NVIDIA fix for gaming mode: kernel parameters and early modules (part of the SteamOS conversion) |
+| `lib/nvidia.sh` | Gaming on NVIDIA: Steam on the desktop, started at login, optionally in Big Picture (replaces the SteamOS conversion there) |
 | `lib/vram-booster.sh` | VRAM booster (`dmemcg-booster`, `plasma-foreground-booster`) |
 | `services/` | The systemd units the scripts install (`service_file`, `@KEY@` placeholders); see its README |
 | `patches/` | Module sources and patches the scripts build or apply (`patch_file`); see its README |

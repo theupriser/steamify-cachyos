@@ -5,12 +5,12 @@
 
 # Menu order. Components are turned on in this order and off in reverse;
 # gaming must come first (single user builds on it).
-COMPONENTS=(gaming boot theme glyphs single launcher steamgame notify vram cec machine poweroff kpin hdmi bios)
+COMPONENTS=(gaming boot nvidia bigpicture theme glyphs single launcher steamgame notify vram cec machine poweroff kpin hdmi bios)
 # One-off actions rather than on/off components: never preselected, never
 # re-applied, not listed as on or off.
 ACTIONS=(bios)
 # Sub-options, shown indented under their parent and only while it's ticked.
-declare -A PARENT=([boot]=gaming [steamgame]=launcher [poweroff]=machine [kpin]=machine [hdmi]=machine [bios]=machine)
+declare -A PARENT=([boot]=gaming [bigpicture]=nvidia [steamgame]=launcher [poweroff]=machine [kpin]=machine [hdmi]=machine [bios]=machine)
 # Never preselected on a first run: booting into the desktop is a choice,
 # gamescope is the default; HDMI-CEC is opt-in (it can wake the machine or
 # upset other devices on the TV, even on SteamOS), except on a Steam Machine,
@@ -25,7 +25,7 @@ NO_PRESELECT=(boot cec kpin hdmi)
 # FEATURE_BASELINE.
 FEATURE_BASELINE=2.1.0
 declare -A FEATURE_VERSION=(
-    [gaming]=2.9.7 [boot]=2.1.0 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.1.0
+    [gaming]=2.9.0 [boot]=2.1.0 [nvidia]=2.9.7 [bigpicture]=2.9.7 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.1.0
     [launcher]=2.1.0 [cec]=2.7.0 [machine]=2.9.0 [poweroff]=2.2.0 [vram]=2.3.0 [notify]=2.5.0 [steamgame]=2.5.1
     [kpin]=2.1.0 [hdmi]=2.1.0
 )
@@ -33,6 +33,8 @@ declare -A FEATURE_VERSION=(
 declare -A LABEL=(
     [gaming]="SteamOS conversion: boot into gaming mode, Steam on the desktop"
     [boot]="Boot into the desktop instead of gaming mode"
+    [nvidia]="Gaming on NVIDIA: Steam on the desktop, started at login"
+    [bigpicture]="Steam starts in Big Picture: the controller-friendly Steam (untick: Steam's normal window)"
     [theme]="Install SteamOS theme: Vapor look (cachyos-vapor)"
     [glyphs]="Install Steam Deck/Machine icons: Deck button icons in gaming mode"
     [single]="Single user mode: no password, lock screen or log out (SDDM)"
@@ -51,6 +53,11 @@ declare -A CURRENT WANTED
 
 component_available() {
     case "$1" in
+        # gamescope's own session is broken on NVIDIA: the conversion is replaced by "Gaming on NVIDIA" there (shown
+        # anyway when it's already on, so it can be turned off).
+        gaming|boot|single|glyphs) ! nvidia_present || gaming_status ;;
+        nvidia) nvidia_available ;;
+        bigpicture) bigpicture_available ;;
         machine|poweroff) machine_available ;;
         vram) vram_available ;;
         steamgame) steamgame_available ;;
@@ -141,6 +148,7 @@ component_selectable() {
 
 detect_components() {
     local c any=false
+    for c in "${COMPONENTS[@]}"; do CURRENT[$c]=0; WANTED[$c]=0; done
     for c in "${COMPONENTS[@]}"; do
         component_available "$c" || continue
         if "${c}_status"; then CURRENT[$c]=1; any=true; else CURRENT[$c]=0; fi
@@ -270,6 +278,9 @@ toggle_component() {
     if [[ "$c" == gaming && "${WANTED[gaming]}" == 0 ]]; then WANTED[single]=0; WANTED[boot]=0; fi
     # Where to boot to is part of the conversion, too.
     if [[ "$c" == boot && "${WANTED[boot]}" == 1 ]]; then WANTED[gaming]=1; fi
+    # Big Picture is opt-out: ticked along with "Gaming on NVIDIA".
+    if [[ "$c" == nvidia ]]; then WANTED[bigpicture]=${WANTED[nvidia]}; fi
+    if [[ "$c" == bigpicture && "${WANTED[bigpicture]}" == 1 ]]; then WANTED[nvidia]=1; fi
     # The power-off fix is opt-out: ticked along with Steam Machine support.
     if [[ "$c" == machine ]]; then WANTED[poweroff]=${WANTED[machine]}; fi
     if [[ "$c" == poweroff && "${WANTED[poweroff]}" == 1 ]]; then WANTED[machine]=1; fi

@@ -148,6 +148,8 @@ backend_apply() {
     # The same rules as the menu's toggles.
     [[ "${WANTED[single]:-0}" == 1 ]] && WANTED[gaming]=1
     [[ "${WANTED[gaming]:-0}" == 0 ]] && { WANTED[single]=0; WANTED[boot]=0; }
+    [[ "${WANTED[bigpicture]:-0}" == 1 ]] && WANTED[nvidia]=1
+    [[ "${WANTED[nvidia]:-0}" == 0 ]] && WANTED[bigpicture]=0
     [[ "${WANTED[poweroff]:-0}" == 1 ]] && WANTED[machine]=1
     [[ "${WANTED[machine]:-0}" == 0 ]] && WANTED[poweroff]=0
     [[ "${WANTED[kpin]:-0}" == 1 ]] && WANTED[machine]=1
