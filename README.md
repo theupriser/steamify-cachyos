@@ -62,6 +62,11 @@ Steam Machine.
    the Steam Machine) or a USB CEC adapter; most graphics cards, NVIDIA
    included, don't have it. See [CEC.md](CEC.md) for which PCs do, and how to
    add it to your own build ([details](TECHNICAL.md#hdmi-cec)).
+9. **Extended controller support** (off by default) - the Xbox wireless
+   dongle (xone) and Xbox controllers over Bluetooth with rumble, the right
+   button mapping and the battery level (xpadneo). Both are installed from the
+   CachyOS repo and built for every installed kernel
+   ([details](TECHNICAL.md#extended-controller-support)).
 
 ## Steam Machine
 

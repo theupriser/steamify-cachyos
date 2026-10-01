@@ -214,6 +214,18 @@ or upgraded. A newly added kernel doesn't come with its headers, so
 `ensure-kernel-headers.service` checks at every boot and installs any
 missing `-headers` package, which makes DKMS build the driver for it.
 
+## Extended controller support
+
+`extended_controller_support` (`lib/controllers.sh`, top-level, off by default, 2.10.0) installs two kernel drivers from CachyOS's own
+repo (no AUR): `xone-dkms` with `xone-dongle-firmware` for the Xbox wireless dongle (the kernel has no driver for it; wired
+Xbox controllers go through the same driver), and `xpadneo-dkms` for Xbox One/Series controllers over Bluetooth (without it
+they work as plain gamepads but miss rumble including the triggers, the right button mapping and the battery level). Both are
+DKMS modules, built for every installed kernel, so `install_kernel_headers` (`lib/steam-machine.sh`) makes sure each kernel has its
+headers first. A PC that already has the AUR's `xone-dkms-git` keeps it: it provides the same driver and conflicts with the repo's
+`xone-dkms`. Status is the three packages being installed. Off removes only what Steamify installed (state
+`extended_controller_support`, `installed_pkgs`); the headers stay. The drivers load when the device shows up: the dongle is
+plugged in again, or the controller reconnected. `tests/controllers-test.sh` tests it with a stub `pacman`.
+
 ## Gaming on NVIDIA
 
 gamescope's own gaming mode shows a corrupted picture on NVIDIA graphics cards: NVIDIA's open bug 5240452 (flicker and
@@ -553,6 +565,7 @@ immediately, which can turn into a loop - see
 | `lib/steam-game.sh` | Add as non-Steam game: Steamify in the Steam library (`patches/steam-shortcuts.py`) |
 | `lib/update-notifier.sh` | Update notifications: the notifier from `patches/` and its user timer |
 | `lib/first-login.sh` | `--defaults` without a session (the Steam Machine ISO's installer): the one-time first-login step that sets up single user's launcher on Plasma's new layout and opens the app |
+| `lib/controllers.sh` | Extended controller support: Xbox wireless dongle (xone) and Xbox Bluetooth (xpadneo) from the CachyOS repo |
 | `lib/nvidia.sh` | Gaming on NVIDIA: Steam on the desktop, started at login, optionally in Big Picture (replaces the SteamOS conversion there) |
 | `lib/vram-booster.sh` | VRAM booster (`dmemcg-booster`, `plasma-foreground-booster`) |
 | `services/` | The systemd units the scripts install (`service_file`, `@KEY@` placeholders); see its README |
