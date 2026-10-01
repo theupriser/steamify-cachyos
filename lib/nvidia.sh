@@ -57,8 +57,8 @@ nvidia_enable() {
         state_set nvidia installed_pkgs steam
     fi
     # Keeps what the Big Picture option set up; a first run starts Steam normally.
-    local args=""; bigpicture_status && args=-gamepadui
-    nvidia_write_unit "$args" || return 1
+    local unit_args=""; bigpicture_status && unit_args=-gamepadui
+    nvidia_write_unit "$unit_args" || return 1
     user_systemctl enable "$NVIDIA_UNIT" >/dev/null 2>&1 || { err "Enabling $NVIDIA_UNIT failed."; return 1; }
     nvidia_kernel_enable || return 1
     ok "Steam starts at your next login."
