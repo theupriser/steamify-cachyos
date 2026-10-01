@@ -19,7 +19,7 @@ VERSION=2.9.7
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-for lib in common state packages login-manager single-user steam-desktop steam-machine fremont-poweroff vram-booster hdmi-refresh cec boot-session vapor-theme steamos-extras bios desktop-shortcut wizard-shortcut steam-game update-notifier first-login menu backend; do
+for lib in common state packages login-manager single-user steam-desktop steam-machine fremont-poweroff vram-booster hdmi-refresh nvidia cec boot-session vapor-theme steamos-extras bios desktop-shortcut wizard-shortcut steam-game update-notifier first-login menu backend; do
     # shellcheck source=/dev/null
     source "$SCRIPT_DIR/lib/$lib.sh"
 done

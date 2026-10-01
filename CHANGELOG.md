@@ -7,6 +7,8 @@ one per merged pull request.
 
 ## 2.9.7 - 2026-10-01
 
+- **feat: the SteamOS conversion fixes a corrupted gaming mode screen with an NVIDIA GPU: nvidia-drm.modeset=1 and fbdev=1 on the kernel command line, NVIDIA modules in the initramfs (lib/nvidia.sh)**
+
 ## 2.9.6 - 2026-09-30
 
 - **fix(ci): a dev ISO from a release branch is built with that branch's own Steamify (input steamify_ref of the ISO workflow), not the newest published release: release/2.9.6 kept producing 2.9.5 ISOs**

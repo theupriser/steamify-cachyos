@@ -206,6 +206,19 @@ or upgraded. A newly added kernel doesn't come with its headers, so
 `ensure-kernel-headers.service` checks at every boot and installs any
 missing `-headers` package, which makes DKMS build the driver for it.
 
+## NVIDIA fix for gaming mode
+
+gamescope drives the display itself through DRM/KMS, which with NVIDIA needs
+kernel modesetting and the framebuffer driver, and the driver loaded early;
+without them gaming mode can show a corrupted image. With an NVIDIA GPU and
+its driver installed (`lib/nvidia.sh`), the SteamOS conversion adds
+`nvidia-drm.modeset=1 nvidia-drm.fbdev=1` to the kernel command line (Limine,
+systemd-boot or GRUB; the file is backed up first) and
+`/etc/mkinitcpio.conf.d/90-steamify-nvidia.conf` (`MODULES+=(nvidia
+nvidia_modeset nvidia_uvm nvidia_drm)`), then rebuilds the initramfs and boot
+entries. Only what's missing is changed; it applies after a reboot. Turning
+the conversion off removes both. Untested on hardware so far.
+
 ## HDMI-CEC
 
 The **HDMI-CEC** item (on every PC; ticked by default only on a Steam
@@ -510,6 +523,7 @@ immediately, which can turn into a loop - see
 | `lib/steam-game.sh` | Add as non-Steam game: Steamify in the Steam library (`patches/steam-shortcuts.py`) |
 | `lib/update-notifier.sh` | Update notifications: the notifier from `patches/` and its user timer |
 | `lib/first-login.sh` | `--defaults` without a session (the Steam Machine ISO's installer): the one-time first-login step that sets up single user's launcher on Plasma's new layout and opens the app |
+| `lib/nvidia.sh` | NVIDIA fix for gaming mode: kernel parameters and early modules (part of the SteamOS conversion) |
 | `lib/vram-booster.sh` | VRAM booster (`dmemcg-booster`, `plasma-foreground-booster`) |
 | `services/` | The systemd units the scripts install (`service_file`, `@KEY@` placeholders); see its README |
 | `patches/` | Module sources and patches the scripts build or apply (`patch_file`); see its README |

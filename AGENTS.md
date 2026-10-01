@@ -127,6 +127,11 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
       it. Only the
       release branch's pull request into `main` is the user's: never commit
       or merge to `main`, the user merges that one.
+      A `.no-release-yet` file at the root of a feature/bugfix branch means
+      it must not be merged into the release branch yet (work in progress,
+      untested on hardware). When the feature is complete, ask the user
+      whether it may be released; on a yes, delete the file, then open the
+      pull request and merge it.
       Keep a feature/bugfix branch up to date by merging (or rebasing on)
       its release branch, the release branch by merging `main` when that
       moved.
