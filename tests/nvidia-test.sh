@@ -80,6 +80,14 @@ check "no NVIDIA: the conversion is shown as before" 'component_available gaming
 check "...and Gaming on NVIDIA is hidden" '! component_available nvidia && ! component_available bigpicture'
 NVIDIA_DRM_DIR="$T/drm"
 
+# --- "Add as non-Steam game" is for gaming mode's controller: not offered on an NVIDIA PC (unless already on)
+steamgame_available() { return 0; }; STEAMGAME_ON=0; steamgame_status() { [[ "$STEAMGAME_ON" == 1 ]]; }
+check "NVIDIA PC: Add as non-Steam game is hidden" '! component_available steamgame'
+STEAMGAME_ON=1; check "...unless it is already on (so it can be turned off)" 'component_available steamgame'; STEAMGAME_ON=0
+NVIDIA_DRM_DIR="$T/none"; check "no NVIDIA: it is offered as before" 'component_available steamgame'
+steamgame_available() { return 1; }; check "no NVIDIA, no Steam account yet: still not offered" '! component_available steamgame'
+steamgame_available() { return 0; }; NVIDIA_DRM_DIR="$T/drm"
+
 # --- turning it on
 check "off to begin with" '! nvidia_status && ! bigpicture_status'
 nvidia_enable

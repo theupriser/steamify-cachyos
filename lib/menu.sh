@@ -60,7 +60,9 @@ component_available() {
         bigpicture) bigpicture_available ;;
         machine|poweroff) machine_available ;;
         vram) vram_available ;;
-        steamgame) steamgame_available ;;
+        # Steamify in the Steam library is for gaming mode's controller: not needed for Big Picture on the desktop (NVIDIA PCs;
+        # shown anyway when it's already on, so it can be turned off).
+        steamgame) steamgame_available && { ! nvidia_present || steamgame_status; } ;;
         kpin) kpin_available ;;
         hdmi) hdmi_available ;;
         bios) bios_available ;;

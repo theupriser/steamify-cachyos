@@ -43,7 +43,7 @@ Steam Machine.
    With **Add as non-Steam game** (on by default) it's in your Steam library
    too: started from Steam it gets your controller (a Steam Controller only
    talks to Steam), in gaming mode as well. Steam closes for a moment while
-   it's added, so that's done from the desktop.
+   it's added, so that's done from the desktop. Not offered on PCs with an NVIDIA graphics card, which have no gaming mode.
 6. **Update notifications** - on by default: a notification and a tray icon
    when there's a new Steamify, with Open Steamify and Skip this version. It
    never updates anything by itself
