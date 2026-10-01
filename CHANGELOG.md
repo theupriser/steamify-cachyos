@@ -7,30 +7,12 @@ one per merged pull request.
 
 ## 2.10.0 - 2026-10-01
 
-- **docs: changelog hashes for 2.10.0**
-- `8b96e2d` **fix: shellcheck of the bundle: nvidia_enable's local args clashed with an array of another module (renamed unit_args); CI's "shellcheck the bundle" failed on release/2.10.0**
-- `f1fb18e` **docs: changelog for 2.10.0, one entry per commit with its hash**
+- `d6db4f6` **feat: "Gaming on NVIDIA" (nvidia) replaces the SteamOS conversion on PCs with an NVIDIA GPU, where gamescope's gaming mode shows a corrupted picture (NVIDIA bug 5240452): Steam is installed when missing and starts at login on the Plasma desktop; the sub-option "Steam starts in Big Picture" (bigpicture) starts it in Big Picture, unticked in its normal window, on an empty Plasma session so windows of the last session don't cover it. On a supported card (RTX 20 series or newer) it also sets the NVIDIA kernel parameters and early modules. The conversion and its options are hidden there unless already on**
+- `d1373e2` **feat: single user mode also works on NVIDIA PCs, without the SteamOS conversion**
+- `5811f5c` **fix: "Add as non-Steam game" isn't offered on NVIDIA PCs (shown when already on, so it can be turned off)**
+- `83248a8` **feat: Extended controller support (extended_controller_support, off by default): the Xbox wireless dongle (xone) and Xbox controllers over Bluetooth with rumble and battery level (xpadneo), built for every installed kernel; off removes only what Steamify installed**
+- `01a77b7` **feat: a new opt-in option (unticked by default) shows the "new" badge in the menu and the app**
 - `f1983a9` **docs: README screenshots of the 2.10.0 app, side by side: on a Steam Machine and on a PC with an NVIDIA card**
-- `01a77b7` **feat: a new opt-in option (unticked by default, e.g. Extended controller support) shows the "new" badge in the menu and the app without being ticked for you (feature_new_optin); it counts "Gaming on NVIDIA" as its parent where the conversion isn't offered**
-- `83248a8` **feat: Extended controller support (extended_controller_support, off by default): the Xbox wireless dongle (xone-dkms, xone-dongle-firmware) and Xbox controllers over Bluetooth with rumble, button mapping and battery level (xpadneo-dkms), from the CachyOS repo, built for every installed kernel; a PC with the AUR's xone-dkms-git keeps it; off removes only what Steamify installed (lib/controllers.sh, tests/controllers-test.sh)**
-- `5811f5c` **fix: "Add as non-Steam game" isn't offered on NVIDIA PCs (there is no gaming mode there for it to give the controller; shown when already on, so it can be turned off)**
-- `d0e4d8c` **feat: Big Picture on NVIDIA starts on an empty Plasma session (ksmserverrc loginMode=emptySession, undone when it is turned off), so windows of the last session don't cover it**
-- `d1373e2` **feat: single user mode also works on NVIDIA PCs, without the SteamOS conversion: it switches to SDDM and logs in to the Plasma session by itself (zzz-steamify-autologin.conf), and no longer ticks the conversion where that isn't offered**
-- `d6db4f6` **feat: "Gaming on NVIDIA" (nvidia) replaces the SteamOS conversion on PCs with an NVIDIA GPU, where gamescope's gaming mode shows a corrupted picture (NVIDIA bug 5240452): Steam is installed when missing and starts at login on the Plasma desktop; the sub-option "Steam starts in Big Picture" (bigpicture, ticked along with it) starts it in Big Picture, unticked in its normal window. On a supported card (RTX 20 series or newer) it also sets the NVIDIA kernel parameters and early modules of the commits below. The conversion and its options are hidden there unless already on (lib/nvidia.sh, services/steamify-steam-autostart.service, tests/nvidia-test.sh)**
-- `a5e9015` **fix: the NVIDIA kernel part handles Limine's `+=` command line and the underscore spelling nvidia_drm.modeset=1; the hardware test sets SCRIPT_DIR**
-- `ae238ff` **chore: .no-release-yet: this NVIDIA branch is not ready to be released**
-- `c1217bc` **feat: NVIDIA fix only for RTX 20 series or newer, with the VRAM booster's chwd legacy check (vram_nvidia_legacy_id)**
-- `f3d67fb` **fix: never install an empty NVIDIA hook or script (a failed patch_file piped into install succeeded with no input)**
-- `84cf095` **feat: NVIDIA modules in the initramfs only while every kernel has them, decided again by a pacman hook at every kernel change**
-- `7caefb7` **test: nvidia-hardware-test.sh to check, apply and visually verify the NVIDIA fix on a real PC**
-- `453656a` **fix: NVIDIA fix checks the edit and the generated boot entries for every boot loader (limine.conf, systemd-boot entries, grub.cfg)**
-- `6aa1377` **fix: NVIDIA fix on Limine edits the existing cmdline line; early modules only when every kernel has them**
-- `6bcae8a` **test: NVIDIA fix against a fake RTX 5080, stub modinfo and temp boot loader files**
-- `3cbeb58` **docs: AGENTS.md: never work on main or a release branch, hardware-specific fixes, git identity**
-- `83561bb` **feat: NVIDIA fix for gaming mode (kernel parameters and early modules)**
-- `ca027cb` **chore: Version 2.9.7**
-- `3d20a7e` **chore: Version 2.10.0**
-- `71bb2e7` **chore: Version 2.10.0**
 
 ## 2.9.6 - 2026-09-30
 
