@@ -61,4 +61,24 @@ check "packages you had before stay" 'pacman -Q xpadneo-dkms xone-dkms xone-dong
 check "offered on every PC" 'component_available extended_controller_support'
 check "not preselected: it builds kernel modules for every kernel" '[[ " ${NO_PRESELECT[*]} " == *" extended_controller_support "* ]]'
 check "a top-level item with a label" '[[ -z "${PARENT[extended_controller_support]:-}" && -n "${LABEL[extended_controller_support]}" ]]'
+
+# The "new" badge: an opt-in option added after setup shows it, but is never ticked for you.
+component_selectable() { return 0; }
+declare -A CURRENT=([gaming]=1 [nvidia]=0 [extended_controller_support]=0 [vram]=0 [boot]=0)
+rm -f "$STATE_DIR/features.state"
+check "new opt-in option (conversion on, no record): the new badge" 'feature_new_optin extended_controller_support'
+check "...but it is not ticked for you (not a new default option)" '! feature_new extended_controller_support'
+check "...and the menu label says (new)" '[[ "$(menu_label extended_controller_support)" == *"(new)"* ]]'
+check "a new default option is still ticked for you, and is not the opt-in kind" 'feature_new vram && ! feature_new_optin vram'
+check "Boot into never gets the badge (it is a choice row)" '! feature_new_optin boot'
+state_set_features() { kwriteconfig6 --file "$STATE_DIR/features.state" --group State --key "$1" "$2"; }
+state_set_features extended_controller_support off
+check "once a run recorded it as off, the badge is gone" '! feature_new_optin extended_controller_support'
+rm -f "$STATE_DIR/features.state"
+CURRENT[gaming]=0; CURRENT[nvidia]=1
+check "on an NVIDIA PC (Gaming on NVIDIA on, no conversion) it shows too" 'feature_new_optin extended_controller_support'
+CURRENT[nvidia]=0
+check "with neither the conversion nor Gaming on NVIDIA on (a fresh PC) nothing is new" '! feature_new_optin extended_controller_support && ! feature_new vram'
+CURRENT[gaming]=1; CURRENT[extended_controller_support]=1
+check "already on: not new" '! feature_new_optin extended_controller_support'
 exit $fail

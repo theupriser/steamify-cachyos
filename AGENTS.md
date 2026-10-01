@@ -58,7 +58,9 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   one too): installs recorded with an older version
   are ticked and re-applied ("update" in the plan and the app). New default
   options are ticked for installs whose parent (top-level: `gaming`) is on
-  (`feature_new`, shown as "new").
+  (`feature_new`, shown as "new"). New opt-in options (`NO_PRESELECT`) get the
+  same "new" badge without being ticked (`feature_new_optin`). Both count "Gaming
+  on NVIDIA" as a parent where the conversion isn't offered.
   Options shown but left unticked in a confirmed run are recorded as
   `off` (`feature_record_unticked`), or `feature_new` would tick them again.
   Status still comes from the system; don't add ad-hoc `<id>_repair` checks

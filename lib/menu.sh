@@ -124,7 +124,7 @@ menu_label() {
     # last run.
     local l="${LABEL[$1]}" b=""
     if feature_outdated "$1"; then b="${c_yellow}(update)${c_reset}"
-    elif feature_new "$1"; then b="${c_green}(new)${c_reset}"; fi
+    elif feature_new "$1" || feature_new_optin "$1"; then b="${c_green}(new)${c_reset}"; fi
     if [[ -n "$b" ]]; then
         if [[ "$l" == *:* ]]; then l="${l%%:*} $b:${l#*:}"
         else l+=" $b"; fi
@@ -132,14 +132,28 @@ menu_label() {
     printf '%s' "$l"
 }
 
-feature_new() {
-    # A default option added after its parent was set up (e.g. the power-off
-    # fix under Steam Machine support; a top-level one counts the SteamOS
-    # conversion as its parent): never turned on or off.
-    local p="${PARENT[$1]:-gaming}"
-    [[ "$1" != gaming && "${CURRENT[$p]:-0}" == 1 && "${CURRENT[$1]:-0}" == 0 ]] &&
-        ! is_action "$1" && component_selectable "$1" && [[ " ${NO_PRESELECT[*]} " != *" $1 "* ]] &&
+feature_added() {
+    # An option added after its parent was set up (e.g. the power-off fix under
+    # Steam Machine support; a top-level one counts the SteamOS conversion, or
+    # "Gaming on NVIDIA" where that replaces it, as its parent), not on yet,
+    # with no record: shown as "new".
+    local p="${PARENT[$1]:-}" parent_on=0
+    if [[ -n "$p" ]]; then parent_on="${CURRENT[$p]:-0}"
+    elif [[ "${CURRENT[gaming]:-0}" == 1 || "${CURRENT[nvidia]:-0}" == 1 ]]; then parent_on=1; fi
+    [[ "$1" != gaming && "$parent_on" == 1 && "${CURRENT[$1]:-0}" == 0 ]] &&
+        ! is_action "$1" && component_selectable "$1" &&
         [[ -z "$(state_get features "$1")" ]]
+}
+
+feature_new() {
+    # A new default option: ticked for you (never turned on or off by itself).
+    feature_added "$1" && [[ " ${NO_PRESELECT[*]} " != *" $1 "* ]]
+}
+
+feature_new_optin() {
+    # A new opt-in option (unticked by default): the "new" badge only, it stays
+    # unticked. Boot into is a choice row of the conversion, not an item.
+    feature_added "$1" && [[ "$1" != boot && " ${NO_PRESELECT[*]} " == *" $1 "* ]]
 }
 
 component_selectable() {

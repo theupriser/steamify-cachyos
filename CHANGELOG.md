@@ -11,6 +11,7 @@ one per merged pull request.
 - **feat: single user mode also works on NVIDIA PCs, without the SteamOS conversion: it switches to SDDM and logs in to the Plasma session by itself (/etc/sddm.conf.d/zzz-steamify-autologin.conf), and no longer ticks the conversion where that isn't offered (lib/single-user.sh)**
 - **fix: "Add as non-Steam game" isn't offered on NVIDIA PCs (there is no gaming mode there for it to give the controller; shown when already on, so it can be turned off)**
 - **feat: Extended controller support (extended_controller_support, off by default): the Xbox wireless dongle (xone-dkms, xone-dongle-firmware) and Xbox controllers over Bluetooth with rumble, button mapping and battery level (xpadneo-dkms), from the CachyOS repo, built for every installed kernel; a PC with the AUR's xone-dkms-git keeps it; off removes only what Steamify installed (lib/controllers.sh, tests/controllers-test.sh)**
+- **feat: a new opt-in option (unticked by default, e.g. Extended controller support) shows the "new" badge in the menu and the app without being ticked for you (feature_new_optin); it counts "Gaming on NVIDIA" as its parent where the conversion isn't offered**
 - **test: tests/nvidia-test.sh runs it against a fake RTX 5080 beside an iGPU, a stub pacman and systemctl, and a temp home (no root, VM or hardware); verified on a real RTX 5080: gamescope's session, a nested gamescope and a KWin-only session all showed artifacts or stutter, Big Picture on the Plasma desktop did not**
 
 ## 2.9.6 - 2026-09-30
