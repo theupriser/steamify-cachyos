@@ -5,6 +5,8 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.9.7 - 2026-10-01
+
 ## 2.9.6 - 2026-09-30
 
 - **fix(ci): a dev ISO from a release branch is built with that branch's own Steamify (input steamify_ref of the ISO workflow), not the newest published release: release/2.9.6 kept producing 2.9.5 ISOs**
