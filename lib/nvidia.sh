@@ -54,9 +54,13 @@ nvidia_modules_everywhere() {
 }
 
 nvidia_hook_install() {
-    patch_file steamify-nvidia-initramfs.sh | sudo install -Dm755 /dev/stdin "$NVIDIA_SCRIPT" &&
-        patch_file steamify-nvidia-initramfs.hook | fill SCRIPT="$NVIDIA_SCRIPT" |
-            sudo install -Dm644 /dev/stdin "$NVIDIA_HOOK"
+    # Never installs an empty script or hook (a piped patch_file that failed
+    # still lets install succeed with no input).
+    local script hook
+    script="$(patch_file steamify-nvidia-initramfs.sh)" && [[ -n "$script" ]] &&
+        hook="$(patch_file steamify-nvidia-initramfs.hook | fill SCRIPT="$NVIDIA_SCRIPT")" && [[ -n "$hook" ]] || return 1
+    printf '%s\n' "$script" | sudo install -Dm755 /dev/stdin "$NVIDIA_SCRIPT" &&
+        printf '%s\n' "$hook" | sudo install -Dm644 /dev/stdin "$NVIDIA_HOOK"
 }
 
 nvidia_rebuild_boot() {

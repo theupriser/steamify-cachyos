@@ -48,6 +48,8 @@ for loader in limine sdboot grub; do
     check "$loader: disable restores the file, drops the drop-in, script and hook" '[[ "$(cat "$F")" == "$ORIG" && ! -f "$NVIDIA_INITRAMFS_CONF" && ! -e "$NVIDIA_SCRIPT" && ! -e "$NVIDIA_HOOK" ]]'
 done
 
+# A missing patches/ file must be an error, never an empty script or hook.
+( SCRIPT_DIR="$T/no-patches"; NVIDIA_SCRIPT="$T/empty/script"; NVIDIA_HOOK="$T/empty/hook"; ! nvidia_hook_install 2>/dev/null && [[ ! -s "$T/empty/script" ]] ) && echo "ok   a missing patch file is an error, nothing empty installed" || { echo "FAIL a missing patch file is an error, nothing empty installed"; fail=1; }
 # The pacman hook's script decides again at every kernel change.
 syncit() { NVIDIA_INITRAMFS_CONF="$NVIDIA_INITRAMFS_CONF" NVIDIA_MODULES_DIR="$NVIDIA_MODULES_DIR" bash "$NVIDIA_SCRIPT" sync; }
 nvidia_hook_install; rm -f "$NVIDIA_INITRAMFS_CONF"
