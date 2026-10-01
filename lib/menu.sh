@@ -55,7 +55,7 @@ component_available() {
     case "$1" in
         # gamescope's own session is broken on NVIDIA: the conversion is replaced by "Gaming on NVIDIA" there (shown
         # anyway when it's already on, so it can be turned off).
-        gaming|boot|single|glyphs) ! nvidia_present || gaming_status ;;
+        gaming|boot|glyphs) ! nvidia_present || gaming_status ;;
         nvidia) nvidia_available ;;
         bigpicture) bigpicture_available ;;
         machine|poweroff) machine_available ;;
@@ -230,7 +230,7 @@ defaults_options() {
                 warn "Leaving out ${LABEL[$c]%%:*}: not available on this PC."
             fi
         done
-        [[ "${WANTED[single]}" == 1 ]] && WANTED[gaming]=1
+        [[ "${WANTED[single]}" == 1 ]] && component_available gaming && WANTED[gaming]=1
         for c in "${COMPONENTS[@]}"; do
             [[ "${WANTED[$c]}" == 1 && -n "${PARENT[$c]:-}" ]] && WANTED[${PARENT[$c]}]=1
         done
@@ -274,7 +274,8 @@ toggle_component() {
     component_selectable "$c" || return 1
     WANTED[$c]=$(( 1 - WANTED[$c] ))
     # Single user mode only makes sense on top of the SteamOS conversion.
-    if [[ "$c" == single && "${WANTED[single]}" == 1 ]]; then WANTED[gaming]=1; fi
+    # (On NVIDIA the conversion isn't offered: single user mode logs in by itself, see lib/single-user.sh.)
+    if [[ "$c" == single && "${WANTED[single]}" == 1 ]] && component_available gaming; then WANTED[gaming]=1; fi
     if [[ "$c" == gaming && "${WANTED[gaming]}" == 0 ]]; then WANTED[single]=0; WANTED[boot]=0; fi
     # Where to boot to is part of the conversion, too.
     if [[ "$c" == boot && "${WANTED[boot]}" == 1 ]]; then WANTED[gaming]=1; fi

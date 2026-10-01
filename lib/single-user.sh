@@ -119,7 +119,36 @@ single_launcher_drop() {
     return 0
 }
 
+# Without the SteamOS conversion (NVIDIA PCs: gamescope's session is broken there) nothing logs in by itself, so single user
+# mode does it: SDDM, autologin into the Plasma session. Named to sort after steam-set-session's zz-steamos-autologin.conf,
+# which may still say gamescope from an earlier conversion.
+SINGLE_AUTOLOGIN=${SINGLE_AUTOLOGIN:-/etc/sddm.conf.d/zzz-steamify-autologin.conf}
+
+single_login_needed() { nvidia_present && ! gaming_status; }
+
+single_login_enable() {
+    single_login_needed || return 0
+    switch_to_sddm || return 1
+    info "Logging in to the desktop by itself (SDDM autologin for $TARGET_USER)..."
+    sudo mkdir -p "$(dirname "$SINGLE_AUTOLOGIN")"
+    sudo tee "$SINGLE_AUTOLOGIN" > /dev/null << EOF
+[Autologin]
+User=$TARGET_USER
+Session=plasma.desktop
+Relogin=true
+EOF
+    remove_sddm_base_autologin
+}
+
+single_login_disable() {
+    [[ -f "$SINGLE_AUTOLOGIN" ]] || return 0
+    sudo rm -f "$SINGLE_AUTOLOGIN"
+    # The way back is CachyOS's own login manager, unless the conversion is on (it keeps SDDM).
+    gaming_status || switch_to_plasmalogin
+}
+
 single_enable() {
+    single_login_enable || return 1
     info "Turning off the lock screen, user switching and logging out..."
     stop_plasmashell_for_edit
 
@@ -145,6 +174,7 @@ single_enable() {
 }
 
 single_disable() {
+    single_login_disable
     info "Restoring the lock screen, user switching and logging out..."
     stop_plasmashell_for_edit
     if has_journal single; then

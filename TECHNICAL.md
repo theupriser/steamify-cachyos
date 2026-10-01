@@ -43,6 +43,14 @@ user wallet, with anything saved in it meanwhile, is kept as
 `kdewallet.kwl.steamify-single-user` and used again the next time it's on.
 Passwords aren't shared between the two wallets.
 
+**Without the conversion (NVIDIA PCs, where gamescope's session is broken)** nothing else logs in by itself, so single user mode
+does that too: `single_login_enable` (`lib/single-user.sh`) switches to SDDM and writes
+`/etc/sddm.conf.d/zzz-steamify-autologin.conf` (`User=`, `Session=plasma.desktop`, `Relogin=true`; named to sort after
+`steam-set-session`'s `zz-steamos-autologin.conf`, which may still say gamescope from an earlier conversion), and drops any
+`[Autologin]` from `/etc/sddm.conf`. Turning it off removes the file and goes back to plasma-login-manager. With the
+conversion on, the conversion does the login as before. Ticking single user mode only ticks the conversion where the
+conversion is offered.
+
 **SDDM** is what SteamOS uses, and CachyOS's `steam-set-session` supports it
 directly: it writes `/etc/sddm.conf.d/zz-steamos-autologin.conf`, which SDDM
 honours. The script installs and enables `sddm` (active from the next boot),

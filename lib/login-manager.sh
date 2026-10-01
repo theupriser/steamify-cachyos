@@ -167,6 +167,20 @@ switch_to_sddm() {
     ok "SDDM is the login manager from the next boot on."
 }
 
+remove_sddm_base_autologin() {
+    # /etc/sddm.conf is read last: an [Autologin] there would override our fragments.
+    if [[ -f /etc/sddm.conf ]] && grep -q '^\[Autologin\]' /etc/sddm.conf; then
+        backup_file /etc/sddm.conf
+        sudo awk '
+            /^\[Autologin\]/ { skip=1; next }
+            /^\[/ { skip=0 }
+            !skip { print }
+        ' /etc/sddm.conf | sudo tee /etc/sddm.conf.tmp > /dev/null &&
+            sudo mv /etc/sddm.conf.tmp /etc/sddm.conf
+        info "Removed [Autologin] from /etc/sddm.conf (backup kept)."
+    fi
+}
+
 configure_sddm_autologin() {
     # User= and Relogin= live in our own fragment; steam-set-session keeps
     # Session= up to date in zz-steamos-autologin.conf, which sorts later
@@ -182,16 +196,7 @@ Session=gamescope-session.desktop
 Relogin=true
 EOF
 
-    if [[ -f /etc/sddm.conf ]] && grep -q '^\[Autologin\]' /etc/sddm.conf; then
-        backup_file /etc/sddm.conf
-        sudo awk '
-            /^\[Autologin\]/ { skip=1; next }
-            /^\[/ { skip=0 }
-            !skip { print }
-        ' /etc/sddm.conf | sudo tee /etc/sddm.conf.tmp > /dev/null &&
-            sudo mv /etc/sddm.conf.tmp /etc/sddm.conf
-        info "Removed [Autologin] from /etc/sddm.conf (backup kept)."
-    fi
+    remove_sddm_base_autologin
 
     # Start in gamescope, through CachyOS's own tool so its file is current.
     sudo /usr/lib/steamos/steam-set-session gamescope-session.desktop

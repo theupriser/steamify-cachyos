@@ -75,8 +75,9 @@ Item {
         var w = Object.assign({}, want);
         w[id] = !w[id];
         // The same rules as the terminal menu (toggle_component).
+        var hasGaming = items.some(function (i) { return i.id === "gaming"; });
         if (id === "gaming" && !w.gaming) w.single = false;
-        if (id === "single" && w.single) w.gaming = true;
+        if (id === "single" && w.single && hasGaming) w.gaming = true;
         if (id === "nvidia") w.bigpicture = w.nvidia;
         if (id === "bigpicture" && w.bigpicture) w.nvidia = true;
         if (id === "machine") w.poweroff = w.machine;

@@ -8,7 +8,7 @@ fail=0
 check() { if eval "$2"; then echo "ok   $1"; else echo "FAIL $1"; fail=1; fi; }
 
 SCRIPT_DIR="$PWD"; HOME="$T/home"; mkdir -p "$HOME"
-source lib/common.sh; source lib/state.sh; source lib/hdmi-refresh.sh; source lib/vram-booster.sh; source lib/nvidia.sh; source lib/menu.sh
+source lib/common.sh; source lib/state.sh; source lib/login-manager.sh; source lib/single-user.sh; source lib/hdmi-refresh.sh; source lib/vram-booster.sh; source lib/nvidia.sh; source lib/menu.sh
 # Runs as the user, and refuses anything under the real system folders: a test must never touch them.
 sudo() { local a; for a in "$@"; do case "$a" in /etc/*|/usr/*|/boot/*|/var/*) echo "REFUSED sudo $*" >&2; return 1 ;; esac; done; "$@"; }
 info() { :; }; ok() { :; }; warn() { :; }; err() { echo "ERR $*"; }
@@ -59,7 +59,7 @@ FAKE_DRIVER=1; NVIDIA_DRM_DIR="$T/none"; check "no NVIDIA GPU: not an NVIDIA PC"
 NVIDIA_DRM_DIR="$T/drm"
 
 # --- which items the menu shows
-check "NVIDIA PC: the SteamOS conversion and its options are hidden" '! component_available gaming && ! component_available boot && ! component_available single && ! component_available glyphs'
+check "NVIDIA PC: the SteamOS conversion and its gamescope options are hidden" '! component_available gaming && ! component_available boot && ! component_available glyphs'
 check "NVIDIA PC: Gaming on NVIDIA and Big Picture are shown" 'component_available nvidia && component_available bigpicture'
 GAMING_ON=1
 check "NVIDIA PC with the conversion already on: it is shown, so it can be turned off" 'component_available gaming && component_available boot'
@@ -154,6 +154,23 @@ check "no setting to edit: error, nothing rebuilt" '! nvidia_kernel_enable >/dev
 FAKE_DRIVER=0; NVIDIA_DRM_DIR="$T/drm"; printf 'LINUX_OPTIONS="quiet"\n' > "$T/sdboot"; F="$T/sdboot"; REBUILDS=0; nvidia_kernel_enable
 check "no NVIDIA driver: nothing touched" '[[ "$(cat "$F")" == "LINUX_OPTIONS=\"quiet\"" && $REBUILDS == 0 ]]'
 
+# --- single user mode on NVIDIA: its own login step (SDDM, autologin into Plasma) without the conversion
+FAKE_DRIVER=1; NVIDIA_DRM_DIR="$T/drm"   # an earlier section ended without the driver
+SW="$T/switches.log"; : > "$SW"; TARGET_USER=tester; SINGLE_AUTOLOGIN="$T/sddm.conf.d/zzz-steamify-autologin.conf"
+switch_to_sddm() { echo sddm >> "$SW"; }; switch_to_plasmalogin() { echo plasmalogin >> "$SW"; }
+remove_sddm_base_autologin() { :; }   # would look at the real /etc/sddm.conf
+GAMING_ON=0
+check "single user mode is offered on NVIDIA without the conversion..." 'component_available single'
+GAMING_ON=1; check "...and with it" 'component_available single'; GAMING_ON=0
+single_login_enable
+check "single user: SDDM, autologin of the user into the Plasma session" 'grep -qx "User=tester" "$SINGLE_AUTOLOGIN" && grep -qx "Session=plasma.desktop" "$SINGLE_AUTOLOGIN" && grep -qx "Relogin=true" "$SINGLE_AUTOLOGIN" && grep -qx sddm "$SW"'
+c1="$(cat "$SINGLE_AUTOLOGIN")"; single_login_enable
+check "single user login: a second run changes nothing" '[[ "$(cat "$SINGLE_AUTOLOGIN")" == "$c1" ]]'
+single_login_disable
+check "single user off: the file is gone and plasma-login-manager is the login manager again" '[[ ! -e "$SINGLE_AUTOLOGIN" ]] && grep -qx plasmalogin "$SW"'
+: > "$SW"; GAMING_ON=1; single_login_enable
+check "with the conversion on, single user mode leaves the login to it" '[[ ! -e "$SINGLE_AUTOLOGIN" && ! -s "$SW" ]]'
+GAMING_ON=0
 # --- the menu rules
 declare -A WANTED=([nvidia]=1 [bigpicture]=1 [gaming]=0 [boot]=0 [single]=0 [machine]=0 [poweroff]=0 [launcher]=0 [steamgame]=0)
 component_selectable() { return 0; }
@@ -161,6 +178,8 @@ toggle_component nvidia
 check "unticking Gaming on NVIDIA unticks Big Picture" '[[ "${WANTED[nvidia]}" == 0 && "${WANTED[bigpicture]}" == 0 ]]'
 toggle_component bigpicture
 check "ticking Big Picture ticks Gaming on NVIDIA" '[[ "${WANTED[nvidia]}" == 1 && "${WANTED[bigpicture]}" == 1 ]]'
+WANTED[single]=0; WANTED[gaming]=0; toggle_component single
+check "ticking single user mode does not tick the conversion where it isn't offered" '[[ "${WANTED[single]}" == 1 && "${WANTED[gaming]}" == 0 ]]'
 check "Big Picture follows Gaming on NVIDIA in the menu" '[[ " ${COMPONENTS[*]} " == *" nvidia bigpicture "* && "${PARENT[bigpicture]}" == nvidia ]]'
 
 exit $fail
