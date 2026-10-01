@@ -1,0 +1,17 @@
+# Installed by Steamify CachyOS (SteamOS conversion, NVIDIA fix): decides
+# again whether the NVIDIA modules go into the initramfs, after DKMS has built
+# its modules (71-dkms-install) and before the initramfs is built
+# (90-mkinitcpio-install); hooks run in file name order.
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Path
+Target = usr/lib/modules/*/vmlinuz
+Target = usr/lib/modules/*/extramodules/nvidia*
+Target = usr/lib/modules/*/updates/*
+
+[Action]
+Description = Steamify: NVIDIA modules in the initramfs only if every kernel has them
+When = PostTransaction
+Exec = @SCRIPT@ sync

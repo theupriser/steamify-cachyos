@@ -23,6 +23,12 @@ Steam Machine.
      as OS Version (e.g. `steamos-3.9`), `steam-machine` as OS Codename and
      Steamify's version as OS Variant. The OS name stays CachyOS
      ([details](TECHNICAL.md#what-steams-system-settings-show)).
+   - **NVIDIA graphics cards:** gamescope's gaming mode shows a corrupted
+     picture there (an open NVIDIA driver bug), so the conversion isn't
+     offered. **Gaming on NVIDIA** takes its place: Steam on the desktop,
+     installed if it's missing and started at login, in **Big Picture** or its
+     normal window as you choose
+     ([details](TECHNICAL.md#gaming-on-nvidia)).
 2. **SteamOS theme** - the Vapor look of SteamOS for the desktop, with
    **Add to Steam** in right-click menus
    ([details](TECHNICAL.md#steamos-desktop-look)).
@@ -37,7 +43,7 @@ Steam Machine.
    With **Add as non-Steam game** (on by default) it's in your Steam library
    too: started from Steam it gets your controller (a Steam Controller only
    talks to Steam), in gaming mode as well. Steam closes for a moment while
-   it's added, so that's done from the desktop.
+   it's added, so that's done from the desktop. Not offered on PCs with an NVIDIA graphics card, which have no gaming mode.
 6. **Update notifications** - on by default: a notification and a tray icon
    when there's a new Steamify, with Open Steamify and Skip this version. It
    never updates anything by itself

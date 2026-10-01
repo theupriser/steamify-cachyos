@@ -48,6 +48,11 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `<id>_available` is checked via `component_available` (e.g. `machine`
   only on Fremont). Turn-on order is `COMPONENTS` order, turn-off reverse;
   `gaming` must stay first. Dependencies live in `toggle_component`.
+- **NVIDIA** (`lib/nvidia.sh`): gamescope's session is broken on NVIDIA, so the SteamOS conversion (`gaming`, `boot`, `single`,
+  `glyphs`) is hidden there (unless already on) and `nvidia` + its sub-option `bigpicture` ("Gaming on NVIDIA") replace it:
+  Steam on the Plasma desktop, started at login. Never reintroduce a gamescope session for NVIDIA without re-testing on the
+  hardware (notes: steamify-cachyos-dev, `nvidia/`). It can't be tested without the hardware: keep the branch behind
+  `.no-release-yet` until it was.
 - **Feature versions.** Set `FEATURE_VERSION[<id>]` (`lib/menu.sh`) to the new
   `VERSION` whenever what `<id>_enable` sets up changes (a new component gets
   one too): installs recorded with an older version
@@ -126,7 +131,20 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
       `sudo apt install gh`, then `gh auth login`) instead of working around
       it. Only the
       release branch's pull request into `main` is the user's: never commit
-      or merge to `main`, the user merges that one.
+      or merge to `main`, the user merges that one. Never work directly on
+      `main` or a `release/*` branch either: edits, even uncommitted ones,
+      go on a `feature/`/`bugfix/` branch (create it before editing; the
+      release branch only gets the version-bump commit and merged PRs).
+      Don't push a new `release/*` branch before it's needed: a push can
+      start CI builds (a dev ISO).
+      A machine without a git identity: pass the repo's author per command
+      (`git -c user.name=... -c user.email=... commit`, taken from `git
+      log`) instead of changing the git config.
+      A `.no-release-yet` file at the root of a feature/bugfix branch means
+      it must not be merged into the release branch yet (work in progress,
+      untested on hardware). When the feature is complete, ask the user
+      whether it may be released; on a yes, delete the file, then open the
+      pull request and merge it.
       Keep a feature/bugfix branch up to date by merging (or rebasing on)
       its release branch, the release branch by merging `main` when that
       moved.
