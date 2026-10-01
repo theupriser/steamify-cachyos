@@ -9,7 +9,6 @@
 
 NVIDIA_PARAMS="nvidia-drm.modeset=1 nvidia-drm.fbdev=1"
 NVIDIA_INITRAMFS_CONF=/etc/mkinitcpio.conf.d/90-steamify-nvidia.conf
-NVIDIA_MARK="# steamify-nvidia"
 # The DRM devices in sysfs; the tests point this at a fake tree.
 NVIDIA_DRM_DIR=${NVIDIA_DRM_DIR:-/sys/class/drm}
 
@@ -46,6 +45,19 @@ nvidia_initramfs_ok() {
     [[ -f "$NVIDIA_INITRAMFS_CONF" ]] || grep -qE '^MODULES=.*nvidia_drm' /etc/mkinitcpio.conf 2>/dev/null
 }
 
+nvidia_modules_everywhere() {
+    # 0 when every installed kernel has the nvidia_drm module: mkinitcpio fails
+    # on a MODULES entry a kernel lacks, and limine-mkinitcpio then skips that
+    # kernel's initramfs and boot entry, so the parameters never reach it.
+    local k found=0
+    for k in "${NVIDIA_MODULES_DIR:-/usr/lib/modules}"/*/; do
+        [[ -f "$k/pkgbase" || -d "$k/kernel" || -d "$k/updates" || -d "$k/extramodules" ]] || continue
+        find "$k" -name 'nvidia-drm.ko*' -print -quit 2>/dev/null | grep -q . || return 1
+        found=1
+    done
+    [[ $found == 1 ]]
+}
+
 nvidia_rebuild_boot() {
     local f; f="$(nvidia_boot_file)"
     info "Rebuilding the initramfs and boot entries..."
@@ -68,7 +80,7 @@ nvidia_enable() {
             backup_file "$f"
             case "$f" in
                 */limine)
-                    printf 'KERNEL_CMDLINE[default]+=" %s" %s\n' "$NVIDIA_PARAMS" "$NVIDIA_MARK" | sudo tee -a "$f" >/dev/null ;;
+                    sudo sed -i -E "s/^(KERNEL_CMDLINE\[default\]=\"[^\"]*)\"/\1 $NVIDIA_PARAMS\"/" "$f" ;;
                 */sdboot-manage.conf)
                     sudo sed -i -E "s/^(LINUX_OPTIONS=\"[^\"]*)\"/\1 $NVIDIA_PARAMS\"/" "$f" ;;
                 */grub)
@@ -77,13 +89,20 @@ nvidia_enable() {
             changed=1
         fi
     fi
-    if ! nvidia_initramfs_ok; then
+    if ! nvidia_initramfs_ok && ! nvidia_modules_everywhere; then
+        warn "Not every installed kernel has the NVIDIA modules: skipping loading them early (the kernel parameters still apply)."
+    elif ! nvidia_initramfs_ok; then
         info "Loading the NVIDIA modules early (initramfs)..."
         printf 'MODULES+=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)\n' |
             sudo install -Dm644 /dev/stdin "$NVIDIA_INITRAMFS_CONF" && changed=1
     fi
     if [[ $changed == 1 ]]; then
         nvidia_rebuild_boot || { err "Rebuilding the boot entries failed."; return 1; }
+        if [[ "$f" == */limine && -f "${NVIDIA_LIMINE_CONF:-/boot/limine.conf}" ]] &&
+            ! grep -q 'nvidia-drm.modeset=1' "${NVIDIA_LIMINE_CONF:-/boot/limine.conf}"; then
+            err "The boot entries don't have the NVIDIA parameters: the initramfs build failed (see above)."
+            return 1
+        fi
         ok "NVIDIA gaming mode fix applied; it takes effect after a reboot."
     fi
     return 0
@@ -92,10 +111,7 @@ nvidia_enable() {
 nvidia_disable() {
     local f changed=0; f="$(nvidia_boot_file)"
     if [[ -n "$f" ]] && grep -q "$NVIDIA_PARAMS" "$f" 2>/dev/null; then
-        case "$f" in
-            */limine) sudo sed -i "/$NVIDIA_MARK\$/d" "$f" ;;
-            *) sudo sed -i "s/ \?$NVIDIA_PARAMS//" "$f" ;;
-        esac
+        sudo sed -i "s/ \?$NVIDIA_PARAMS//" "$f"
         changed=1
     fi
     [[ -f "$NVIDIA_INITRAMFS_CONF" ]] && { sudo rm -f "$NVIDIA_INITRAMFS_CONF"; changed=1; }

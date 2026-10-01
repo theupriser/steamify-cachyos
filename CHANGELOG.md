@@ -9,6 +9,7 @@ one per merged pull request.
 
 - **feat: the SteamOS conversion fixes a corrupted gaming mode screen with an NVIDIA GPU: nvidia-drm.modeset=1 and fbdev=1 on the kernel command line, NVIDIA modules in the initramfs (lib/nvidia.sh)**
 - **test: tests/nvidia-test.sh runs the NVIDIA fix against a fake RTX 5080 beside an iGPU, a stub modinfo and temp copies of the Limine, systemd-boot and GRUB files (no root, VM or hardware); NVIDIA_DRM_DIR points detection at a fake sysfs tree**
+- **fix: NVIDIA fix on Limine edits the KERNEL_CMDLINE[default] line (an appended += line ended up as literal text on the kernel command line, found in a VM); the modules are only loaded early when every installed kernel has them, and a Limine boot entry without the parameters is an error**
 
 ## 2.9.6 - 2026-09-30
 

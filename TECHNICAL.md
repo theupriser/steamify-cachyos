@@ -216,7 +216,12 @@ its driver installed (`lib/nvidia.sh`), the SteamOS conversion adds
 systemd-boot or GRUB; the file is backed up first) and
 `/etc/mkinitcpio.conf.d/90-steamify-nvidia.conf` (`MODULES+=(nvidia
 nvidia_modeset nvidia_uvm nvidia_drm)`), then rebuilds the initramfs and boot
-entries. Only what's missing is changed; it applies after a reboot. Turning
+entries. The early-load drop-in is only written when every installed kernel
+has the NVIDIA modules (mkinitcpio fails on a missing module, and
+`limine-mkinitcpio` then skips that kernel's boot entry, parameters included).
+On Limine the parameters go into the existing `KERNEL_CMDLINE[default]="..."`
+line: an extra appended `+=` line is pasted into the command line as text.
+Only what's missing is changed; it applies after a reboot. Turning
 the conversion off removes both. Untested on hardware so far.
 
 ## HDMI-CEC
