@@ -1,5 +1,0 @@
-This branch is not ready to be released: do not merge it into the release branch.
-When the feature is complete and tested, ask the user whether it may be released;
-on a yes, delete this file, then open the pull request into the release branch.
-Open work, research and the test instructions for the NVIDIA PC are NOT in this repo:
-see steamify-cachyos-dev, folder nvidia/ (github.com/theupriser/steamify-cachyos-dev).
