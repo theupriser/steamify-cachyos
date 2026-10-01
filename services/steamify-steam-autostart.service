@@ -1,0 +1,15 @@
+[Unit]
+Description=Steam at login (Steamify, NVIDIA PCs)
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+# Only in the Plasma desktop session.
+ExecCondition=/bin/sh -c '[ "$XDG_CURRENT_DESKTOP" = KDE ]'
+ExecStart=/usr/bin/steam @ARGS@
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

@@ -53,7 +53,7 @@ backend_status() {
         items+=",\"on\":$( [[ "$now" == 1 ]] && echo true || echo false)"
         items+=",\"wanted\":$( [[ "${WANTED[$c]:-0}" == 1 ]] && echo true || echo false)"
         items+=",\"update\":$(feature_outdated "$c" && echo true || echo false)"
-        items+=",\"new\":$(feature_new "$c" && echo true || echo false)"
+        items+=",\"new\":$({ feature_new "$c" || feature_new_optin "$c"; } && echo true || echo false)"
         items+=",\"selectable\":$(component_selectable "$c" && echo true || echo false)"
         # Why it can't be turned on, for the app's explanation.
         [[ "$c" == vram && -n "${VRAM_NVIDIA_CASE:-}" ]] &&
@@ -146,8 +146,15 @@ backend_apply() {
         for id in "${want[@]}"; do [[ "$id" == "$c" ]] && WANTED[$c]=1; done
     done
     # The same rules as the menu's toggles.
-    [[ "${WANTED[single]:-0}" == 1 ]] && WANTED[gaming]=1
-    [[ "${WANTED[gaming]:-0}" == 0 ]] && { WANTED[single]=0; WANTED[boot]=0; }
+    # (Single user mode only needs the conversion where it is offered: not on NVIDIA PCs.)
+    [[ "${WANTED[single]:-0}" == 1 ]] && component_available gaming && WANTED[gaming]=1
+    if component_available gaming; then
+        [[ "${WANTED[gaming]:-0}" == 0 ]] && { WANTED[single]=0; WANTED[boot]=0; }
+    else
+        WANTED[boot]=0
+    fi
+    [[ "${WANTED[bigpicture]:-0}" == 1 ]] && WANTED[nvidia]=1
+    [[ "${WANTED[nvidia]:-0}" == 0 ]] && WANTED[bigpicture]=0
     [[ "${WANTED[poweroff]:-0}" == 1 ]] && WANTED[machine]=1
     [[ "${WANTED[machine]:-0}" == 0 ]] && WANTED[poweroff]=0
     [[ "${WANTED[kpin]:-0}" == 1 ]] && WANTED[machine]=1

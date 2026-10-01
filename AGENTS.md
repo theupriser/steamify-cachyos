@@ -48,12 +48,19 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `<id>_available` is checked via `component_available` (e.g. `machine`
   only on Fremont). Turn-on order is `COMPONENTS` order, turn-off reverse;
   `gaming` must stay first. Dependencies live in `toggle_component`.
+- **NVIDIA** (`lib/nvidia.sh`): gamescope's session is broken on NVIDIA, so the SteamOS conversion (`gaming`, `boot`, `single`,
+  `glyphs`) is hidden there (unless already on) and `nvidia` + its sub-option `bigpicture` ("Gaming on NVIDIA") replace it:
+  Steam on the Plasma desktop, started at login. Never reintroduce a gamescope session for NVIDIA without re-testing on the
+  hardware (notes: steamify-cachyos-dev, `nvidia/`). It can't be tested without the hardware: keep the branch behind
+  `.no-release-yet` until it was.
 - **Feature versions.** Set `FEATURE_VERSION[<id>]` (`lib/menu.sh`) to the new
   `VERSION` whenever what `<id>_enable` sets up changes (a new component gets
   one too): installs recorded with an older version
   are ticked and re-applied ("update" in the plan and the app). New default
   options are ticked for installs whose parent (top-level: `gaming`) is on
-  (`feature_new`, shown as "new").
+  (`feature_new`, shown as "new"). New opt-in options (`NO_PRESELECT`) get the
+  same "new" badge without being ticked (`feature_new_optin`). Both count "Gaming
+  on NVIDIA" as a parent where the conversion isn't offered.
   Options shown but left unticked in a confirmed run are recorded as
   `off` (`feature_record_unticked`), or `feature_new` would tick them again.
   Status still comes from the system; don't add ad-hoc `<id>_repair` checks
@@ -126,7 +133,20 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
       `sudo apt install gh`, then `gh auth login`) instead of working around
       it. Only the
       release branch's pull request into `main` is the user's: never commit
-      or merge to `main`, the user merges that one.
+      or merge to `main`, the user merges that one. Never work directly on
+      `main` or a `release/*` branch either: edits, even uncommitted ones,
+      go on a `feature/`/`bugfix/` branch (create it before editing; the
+      release branch only gets the version-bump commit and merged PRs).
+      Don't push a new `release/*` branch before it's needed: a push can
+      start CI builds (a dev ISO).
+      A machine without a git identity: pass the repo's author per command
+      (`git -c user.name=... -c user.email=... commit`, taken from `git
+      log`) instead of changing the git config.
+      A `.no-release-yet` file at the root of a feature/bugfix branch means
+      it must not be merged into the release branch yet (work in progress,
+      untested on hardware). When the feature is complete, ask the user
+      whether it may be released; on a yes, delete the file, then open the
+      pull request and merge it.
       Keep a feature/bugfix branch up to date by merging (or rebasing on)
       its release branch, the release branch by merging `main` when that
       moved.
@@ -136,9 +156,12 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
     a warning when `VERSION` is a version that's already released (so a
     release branch that forgot its bump shows it on every PR).
   - A release that adds, removes or renames a menu row also retakes the
-    README screenshot (`assets/screenshot-menu.png`): the app from the
-    branch on a Steam Machine, every row visible (window 1280 wide, tall
-    enough), the header showing the new `VERSION`, scaled to 1600 px wide.
+    README screenshots (`assets/screenshot-menu-steam-machine.png` and
+    `assets/screenshot-menu-nvidia.png`, side by side in the README): the app from the branch on a Steam Machine and on a PC
+    with an NVIDIA card, every row visible and each window only as tall as its options need, the header showing the new
+    `VERSION`, 1600 px wide. Size the window with a KWin script (match the `steamify-ui` class exactly: a title match also hits
+    Konsole and editor windows) and crop the full-screen capture to the client rectangle; mind the display scale (the Steam
+    Machine runs at 1.75).
   - Users install through `releases/latest/download/steamify.sh`
     (GitHub's newest release). The `latest` tag and release follow the newest
     version tag too (moved, asset replaced, when a new version is released),

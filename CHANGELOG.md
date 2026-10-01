@@ -5,6 +5,15 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.10.0 - 2026-10-01
+
+- `d6db4f6` **feat: "Gaming on NVIDIA" (nvidia) replaces the SteamOS conversion on PCs with an NVIDIA GPU, where gamescope's gaming mode shows a corrupted picture (NVIDIA bug 5240452): Steam is installed when missing and starts at login on the Plasma desktop; the sub-option "Steam starts in Big Picture" (bigpicture) starts it in Big Picture, unticked in its normal window, on an empty Plasma session so windows of the last session don't cover it. On a supported card (RTX 20 series or newer) it also sets the NVIDIA kernel parameters and early modules. The conversion and its options are hidden there unless already on**
+- `d1373e2` **feat: single user mode also works on NVIDIA PCs, without the SteamOS conversion**
+- `5811f5c` **fix: "Add as non-Steam game" isn't offered on NVIDIA PCs (shown when already on, so it can be turned off)**
+- `83248a8` **feat: Extended controller support (extended_controller_support, off by default): the Xbox wireless dongle (xone) and Xbox controllers over Bluetooth with rumble and battery level (xpadneo), built for every installed kernel; off removes only what Steamify installed**
+- `01a77b7` **feat: a new opt-in option (unticked by default) shows the "new" badge in the menu and the app**
+- `f1983a9` **docs: README screenshots of the 2.10.0 app, side by side: on a Steam Machine and on a PC with an NVIDIA card**
+
 ## 2.9.6 - 2026-09-30
 
 - **fix(ci): a dev ISO from a release branch is built with that branch's own Steamify (input steamify_ref of the ISO workflow), not the newest published release: release/2.9.6 kept producing 2.9.5 ISOs**

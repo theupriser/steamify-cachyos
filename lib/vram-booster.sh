@@ -44,6 +44,13 @@ vram_nvidia() {
 # 470xx, 390xx); every other NVIDIA card runs the open kernel modules.
 VRAM_CHWD_IDS=/var/lib/chwd/ids
 
+vram_nvidia_legacy_id() {
+    # vram_nvidia_legacy_id <pci device id, with or without 0x>: 0 when chwd
+    # lists the card for a closed legacy branch, i.e. it is older than the
+    # RTX 20 series. Also what lib/nvidia.sh uses to decide if a card is supported.
+    grep -qwi "${1#0x}" "$VRAM_CHWD_IDS"/nvidia-*.ids 2>/dev/null
+}
+
 vram_nvidia_case() {
     # Why an NVIDIA card's VRAM isn't registered, so the menu can say what to
     # do: "update" (open modules older than 615), "switch <chwd profile>"
@@ -62,8 +69,7 @@ vram_nvidia_case() {
     esac
     for d in /sys/bus/pci/devices/*; do
         [[ "$(cat "$d/vendor" 2>/dev/null)" == 0x10de && "$(cat "$d/class" 2>/dev/null)" == 0x03* ]] || continue
-        id="$(cat "$d/device")"; id="${id#0x}"
-        grep -qwi "$id" "$VRAM_CHWD_IDS"/nvidia-*.ids 2>/dev/null && { echo legacy; return; }
+        vram_nvidia_legacy_id "$(cat "$d/device")" && { echo legacy; return; }
     done
     for p in 580xx 470xx 390xx; do
         pacman -Q "nvidia-$p-dkms" >/dev/null 2>&1 && { echo "switch nvidia-dkms-$p"; return; }
