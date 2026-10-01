@@ -38,9 +38,11 @@ FAKE_DRIVER=0; check "skips when the driver isn't installed" '! nvidia_present'
 FAKE_DRIVER=1; NVIDIA_DRM_DIR="$T/none"; check "skips without an NVIDIA GPU" '! nvidia_present'
 NVIDIA_DRM_DIR="$T/drm"
 
-for loader in limine sdboot grub; do
+for loader in limine limineplus sdboot grub; do
     case $loader in
         limine) F="$T/limine"; printf 'KERNEL_CMDLINE[default]="quiet splash"\n' > "$F" ;;
+        # CachyOS writes its line as "+=" and may already have nvidia_drm.modeset=1 in it.
+        limineplus) F="$T/limine"; printf 'KERNEL_CMDLINE[default]+="quiet splash nvidia_drm.modeset=1"\n' > "$F" ;;
         sdboot) F="$T/sdboot-manage.conf"; printf 'LINUX_OPTIONS="quiet splash"\n' > "$F" ;;
         grub)   F="$T/grub";   printf 'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"\n' > "$F" ;;
     esac

@@ -13,6 +13,7 @@ one per merged pull request.
 - **test: tests/nvidia-hardware-test.sh for a real NVIDIA PC: check (read-only state of the detection, the live nvidia_drm modeset/fbdev, versions), apply, and visual (was the gaming mode picture clean), with a report file to paste**
 - **fix: the NVIDIA modules are loaded early only while every installed kernel has them, decided again at every kernel or driver change by a pacman hook (steamify-nvidia-initramfs): a later kernel without the modules (another kernel, a failed DKMS build, a downgrade) no longer makes its initramfs and Limine boot entry fail**
 - **feat: the NVIDIA fix is only for RTX 20 series or newer, decided like the VRAM booster does (vram_nvidia_legacy_id: chwd's legacy card lists); older cards are left alone**
+- **fix: the NVIDIA fix also edits Limine's `KERNEL_CMDLINE[default]+="..."` line (CachyOS writes that form; the fix found no line to edit and stopped) and counts `nvidia_drm.modeset=1` (underscore) as already set; tests/nvidia-hardware-test.sh sets `SCRIPT_DIR` (the hook script was read from `/patches`)**
 
 ## 2.9.6 - 2026-09-30
 

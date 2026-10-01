@@ -6,6 +6,8 @@
 #   bash tests/nvidia-hardware-test.sh visual   after trying gaming mode: was the picture clean? (asks you)
 # Every run appends to ~/steamify-nvidia-report.txt: paste that file when asking for help.
 cd "$(dirname "$0")/.." || exit 1
+# patch_file (lib/common.sh) reads the hook script from $SCRIPT_DIR/patches.
+SCRIPT_DIR="$PWD"
 REPORT="${NVIDIA_REPORT:-$HOME/steamify-nvidia-report.txt}"
 source lib/common.sh; source lib/hdmi-refresh.sh; source lib/vram-booster.sh; source lib/nvidia.sh
 mode="${1:-check}"

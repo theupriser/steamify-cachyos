@@ -50,9 +50,11 @@ nvidia_boot_file() {
 nvidia_param_set() {
     # 0 when $1 (e.g. nvidia-drm.modeset=1) is on the kernel command line or
     # already in the boot loader's file (not booted yet).
-    local f; f="$(nvidia_boot_file)"
-    grep -qw -- "$1" /proc/cmdline 2>/dev/null ||
-        { [[ -n "$f" ]] && grep -qw -- "$1" "$f" 2>/dev/null; }
+    # The kernel treats "nvidia_drm" and "nvidia-drm" alike: CachyOS' own
+    # setup may already have written the underscore spelling.
+    local f re; f="$(nvidia_boot_file)"; re="${1//nvidia-drm/nvidia[-_]drm}"
+    grep -qwE -- "$re" /proc/cmdline 2>/dev/null ||
+        { [[ -n "$f" ]] && grep -qwE -- "$re" "$f" 2>/dev/null; }
 }
 
 nvidia_params_missing() {
@@ -116,7 +118,7 @@ nvidia_enable() {
             backup_file "$f"
             case "$f" in
                 */limine)
-                    sudo sed -i -E "s/^(KERNEL_CMDLINE\[default\]=\"[^\"]*)\"/\1 $NVIDIA_PARAMS\"/" "$f" ;;
+                    sudo sed -i -E "s/^(KERNEL_CMDLINE\[default\]\+?=\"[^\"]*)\"/\1 $NVIDIA_PARAMS\"/" "$f" ;;
                 */sdboot-manage.conf)
                     sudo sed -i -E "s/^(LINUX_OPTIONS=\"[^\"]*)\"/\1 $NVIDIA_PARAMS\"/" "$f" ;;
                 */grub)
