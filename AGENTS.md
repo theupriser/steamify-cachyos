@@ -156,9 +156,12 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
     a warning when `VERSION` is a version that's already released (so a
     release branch that forgot its bump shows it on every PR).
   - A release that adds, removes or renames a menu row also retakes the
-    README screenshot (`assets/screenshot-menu.png`): the app from the
-    branch on a Steam Machine, every row visible (window 1280 wide, tall
-    enough), the header showing the new `VERSION`, scaled to 1600 px wide.
+    README screenshots (`assets/screenshot-menu-steam-machine.png` and
+    `assets/screenshot-menu-nvidia.png`, side by side in the README): the app from the branch on a Steam Machine and on a PC
+    with an NVIDIA card, every row visible and each window only as tall as its options need, the header showing the new
+    `VERSION`, 1600 px wide. Size the window with a KWin script (match the `steamify-ui` class exactly: a title match also hits
+    Konsole and editor windows) and crop the full-screen capture to the client rectangle; mind the display scale (the Steam
+    Machine runs at 1.75).
   - Users install through `releases/latest/download/steamify.sh`
     (GitHub's newest release). The `latest` tag and release follow the newest
     version tag too (moved, asset replaced, when a new version is released),
