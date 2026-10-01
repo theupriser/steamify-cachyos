@@ -4,7 +4,8 @@
 # through DRM/KMS; with NVIDIA that needs kernel modesetting and the
 # framebuffer driver (nvidia-drm.modeset=1 nvidia-drm.fbdev=1) and the
 # driver in the initramfs, or the screen shows a corrupted image.
-# Does nothing without an NVIDIA GPU that has its driver installed.
+# Does nothing without a supported NVIDIA GPU (RTX 20 series or newer) that has
+# its driver installed.
 # Sourced by steamify.sh; not meant to be run on its own.
 
 NVIDIA_PARAMS="nvidia-drm.modeset=1 nvidia-drm.fbdev=1"
@@ -16,13 +17,29 @@ NVIDIA_HOOK=${NVIDIA_HOOK:-/etc/pacman.d/hooks/85-steamify-nvidia-initramfs.hook
 NVIDIA_DRM_DIR=${NVIDIA_DRM_DIR:-/sys/class/drm}
 
 nvidia_present() {
-    # An NVIDIA GPU (PCI vendor 0x10de, display class) and its kernel driver.
+    # A supported NVIDIA GPU: PCI vendor 0x10de, display class, its kernel
+    # driver installed, and not older than the RTX 20 series, decided like the
+    # VRAM booster does (vram_nvidia_legacy_id: chwd's legacy card lists, every
+    # other card runs NVIDIA's open modules). Older cards are left alone.
     local d
     for d in "$NVIDIA_DRM_DIR"/card[0-9]*/device; do
         [[ "$(cat "$d/vendor" 2>/dev/null)" == 0x10de ]] || continue
-        [[ "$(cat "$d/class" 2>/dev/null)" == 0x03* ]] && modinfo nvidia_drm >/dev/null 2>&1 && return 0
+        [[ "$(cat "$d/class" 2>/dev/null)" == 0x03* ]] || continue
+        vram_nvidia_legacy_id "$(cat "$d/device" 2>/dev/null)" && continue
+        modinfo nvidia_drm >/dev/null 2>&1 && return 0
     done
     return 1
+}
+
+nvidia_legacy_gpu() {
+    # 0 when the only NVIDIA GPU(s) are older than RTX 20 (reported, not fixed).
+    local d found=0
+    for d in "$NVIDIA_DRM_DIR"/card[0-9]*/device; do
+        [[ "$(cat "$d/vendor" 2>/dev/null)" == 0x10de && "$(cat "$d/class" 2>/dev/null)" == 0x03* ]] || continue
+        vram_nvidia_legacy_id "$(cat "$d/device" 2>/dev/null)" || return 1
+        found=1
+    done
+    [[ $found == 1 ]]
 }
 
 nvidia_boot_file() {

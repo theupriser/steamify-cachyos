@@ -210,8 +210,10 @@ missing `-headers` package, which makes DKMS build the driver for it.
 
 gamescope drives the display itself through DRM/KMS, which with NVIDIA needs
 kernel modesetting and the framebuffer driver, and the driver loaded early;
-without them gaming mode can show a corrupted image. With an NVIDIA GPU and
-its driver installed (`lib/nvidia.sh`), the SteamOS conversion adds
+without them gaming mode can show a corrupted image. With a supported NVIDIA GPU (RTX 20 series or newer, decided like the VRAM
+booster does: a card on chwd's legacy lists `/var/lib/chwd/ids/nvidia-*.ids`
+is older and left alone, `vram_nvidia_legacy_id`; without those lists every
+card counts) and its driver installed (`lib/nvidia.sh`), the SteamOS conversion adds
 `nvidia-drm.modeset=1 nvidia-drm.fbdev=1` to the kernel command line (Limine,
 systemd-boot or GRUB; the file is backed up first) and
 `/etc/mkinitcpio.conf.d/90-steamify-nvidia.conf` (`MODULES+=(nvidia

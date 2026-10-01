@@ -7,7 +7,7 @@
 # Every run appends to ~/steamify-nvidia-report.txt: paste that file when asking for help.
 cd "$(dirname "$0")/.." || exit 1
 REPORT="${NVIDIA_REPORT:-$HOME/steamify-nvidia-report.txt}"
-source lib/common.sh; source lib/hdmi-refresh.sh; source lib/nvidia.sh
+source lib/common.sh; source lib/hdmi-refresh.sh; source lib/vram-booster.sh; source lib/nvidia.sh
 mode="${1:-check}"
 fail=0
 say() { echo "$*" | tee -a "$REPORT"; }
@@ -31,7 +31,13 @@ report_system() {
 
 check_state() {
     say "-- Steamify's view"
-    if nvidia_present; then pass "an NVIDIA GPU with its driver is detected"; else bad "no NVIDIA GPU/driver detected: the fix does nothing here"; fi
+    if nvidia_present; then pass "a supported NVIDIA GPU (RTX 20 series or newer) with its driver is detected"
+    elif nvidia_legacy_gpu; then bad "the NVIDIA GPU is older than RTX 20 (on chwd's legacy lists in $VRAM_CHWD_IDS): the fix is not applied"
+    else bad "no NVIDIA GPU with its driver detected: the fix does nothing here"; fi
+    for c in /sys/class/drm/card[0-9]*/device; do
+        [[ "$(cat "$c/vendor" 2>/dev/null)" == 0x10de ]] && note "NVIDIA PCI device id $(cat "$c/device") $(vram_nvidia_legacy_id "$(cat "$c/device")" && echo '(on a chwd legacy list)' || echo '(not on a legacy list: RTX 20 or newer)')"
+    done
+    ls "$VRAM_CHWD_IDS"/nvidia-*.ids >/dev/null 2>&1 || note "no chwd legacy lists found: every NVIDIA card counts as supported"
     local p
     for p in $NVIDIA_PARAMS; do
         if grep -qw -- "$p" /proc/cmdline; then pass "$p is on the running kernel's command line"

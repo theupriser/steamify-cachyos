@@ -7,7 +7,7 @@ T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 fail=0
 check() { if eval "$2"; then echo "ok   $1"; else echo "FAIL $1"; fail=1; fi; }
 
-SCRIPT_DIR="$PWD"; source lib/common.sh; source lib/hdmi-refresh.sh; source lib/nvidia.sh
+SCRIPT_DIR="$PWD"; source lib/common.sh; source lib/hdmi-refresh.sh; source lib/vram-booster.sh; source lib/nvidia.sh
 sudo() { "$@"; }
 info() { :; }; ok() { :; }; warn() { :; }; err() { echo "ERR $*"; }
 backup_file() { [[ -f "$1.bak" ]] || cp "$1" "$1.bak"; }
@@ -24,7 +24,16 @@ NVIDIA_SCRIPT="$T/libexec/steamify-nvidia-initramfs"; NVIDIA_HOOK="$T/hooks/85-s
 NVIDIA_MODULES_DIR="$T/mods"
 NVIDIA_LIMINE_CONF="$T/none/limine.conf"; NVIDIA_SDBOOT_DIR="$T/none/entries"; NVIDIA_GRUB_CFG="$T/none/grub.cfg"   # not generated here: not checked
 
-FAKE_DRIVER=1; check "finds the NVIDIA card as card1 beside an iGPU" nvidia_present
+mkdir -p "$T/chwd"; VRAM_CHWD_IDS="$T/chwd"
+FAKE_DRIVER=1; check "finds the NVIDIA card as card1 beside an iGPU (no legacy lists)" nvidia_present
+printf '1c03\n1b80\n' > "$T/chwd/nvidia-580.ids"   # a GTX 1060 and a GTX 1080: chwd's 580xx legacy list
+check "RTX 5080 (2c02) is not on a legacy list: supported" nvidia_present
+echo 0x1c03 > "$T/drm/card1/device/device"
+check "GTX 1060 (on chwd's legacy list, older than RTX 20): not supported" '! nvidia_present'
+check "...and reported as a legacy GPU" nvidia_legacy_gpu
+echo 0x2c02 > "$T/drm/card1/device/device"; check "RTX 5080 is not a legacy GPU" '! nvidia_legacy_gpu'
+printf '2c02\n' > "$T/chwd/nvidia-580.ids"; check "a card id that is on a legacy list is skipped, whatever it is" '! nvidia_present'
+printf '1c03\n' > "$T/chwd/nvidia-580.ids"
 FAKE_DRIVER=0; check "skips when the driver isn't installed" '! nvidia_present'
 FAKE_DRIVER=1; NVIDIA_DRM_DIR="$T/none"; check "skips without an NVIDIA GPU" '! nvidia_present'
 NVIDIA_DRM_DIR="$T/drm"
