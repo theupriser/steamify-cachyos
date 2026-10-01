@@ -10,11 +10,13 @@
 NVIDIA_PARAMS="nvidia-drm.modeset=1 nvidia-drm.fbdev=1"
 NVIDIA_INITRAMFS_CONF=/etc/mkinitcpio.conf.d/90-steamify-nvidia.conf
 NVIDIA_MARK="# steamify-nvidia"
+# The DRM devices in sysfs; the tests point this at a fake tree.
+NVIDIA_DRM_DIR=${NVIDIA_DRM_DIR:-/sys/class/drm}
 
 nvidia_present() {
     # An NVIDIA GPU (PCI vendor 0x10de, display class) and its kernel driver.
     local d
-    for d in /sys/class/drm/card[0-9]*/device; do
+    for d in "$NVIDIA_DRM_DIR"/card[0-9]*/device; do
         [[ "$(cat "$d/vendor" 2>/dev/null)" == 0x10de ]] || continue
         [[ "$(cat "$d/class" 2>/dev/null)" == 0x03* ]] && modinfo nvidia_drm >/dev/null 2>&1 && return 0
     done
@@ -65,11 +67,11 @@ nvidia_enable() {
             info "NVIDIA GPU found: adding $NVIDIA_PARAMS to the kernel command line (fixes a corrupted screen in gaming mode)..."
             backup_file "$f"
             case "$f" in
-                /etc/default/limine)
+                */limine)
                     printf 'KERNEL_CMDLINE[default]+=" %s" %s\n' "$NVIDIA_PARAMS" "$NVIDIA_MARK" | sudo tee -a "$f" >/dev/null ;;
-                /etc/sdboot-manage.conf)
+                */sdboot-manage.conf)
                     sudo sed -i -E "s/^(LINUX_OPTIONS=\"[^\"]*)\"/\1 $NVIDIA_PARAMS\"/" "$f" ;;
-                /etc/default/grub)
+                */grub)
                     sudo sed -i -E "s/^(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*)\"/\1 $NVIDIA_PARAMS\"/" "$f" ;;
             esac
             changed=1
@@ -91,7 +93,7 @@ nvidia_disable() {
     local f changed=0; f="$(nvidia_boot_file)"
     if [[ -n "$f" ]] && grep -q "$NVIDIA_PARAMS" "$f" 2>/dev/null; then
         case "$f" in
-            /etc/default/limine) sudo sed -i "/$NVIDIA_MARK\$/d" "$f" ;;
+            */limine) sudo sed -i "/$NVIDIA_MARK\$/d" "$f" ;;
             *) sudo sed -i "s/ \?$NVIDIA_PARAMS//" "$f" ;;
         esac
         changed=1

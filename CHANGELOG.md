@@ -8,6 +8,7 @@ one per merged pull request.
 ## 2.9.7 - 2026-10-01
 
 - **feat: the SteamOS conversion fixes a corrupted gaming mode screen with an NVIDIA GPU: nvidia-drm.modeset=1 and fbdev=1 on the kernel command line, NVIDIA modules in the initramfs (lib/nvidia.sh)**
+- **test: tests/nvidia-test.sh runs the NVIDIA fix against a fake RTX 5080 beside an iGPU, a stub modinfo and temp copies of the Limine, systemd-boot and GRUB files (no root, VM or hardware); NVIDIA_DRM_DIR points detection at a fake sysfs tree**
 
 ## 2.9.6 - 2026-09-30
 
