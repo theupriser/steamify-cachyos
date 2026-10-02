@@ -8,6 +8,7 @@ one per merged pull request.
 ## 2.11.0 - 2026-10-01
 
 - `5da1833` **feat: "Start Steam silently" sub-option: under the SteamOS conversion (`silent`, opt-in now: it was always on before; an existing one is moved from its systemd unit to the autostart entry by the "update") and under Gaming on NVIDIA (`nvsilent`, opt-in, not together with Big Picture); the SteamOS one is called "Start Steam silently in desktop mode" and is always shown, also on a Steam Machine; it is Steam's own autostart entry (`~/.config/autostart/steam.desktop`), so Steam's setting "Run Steam when my computer starts" follows it**
+- **feat: `STEAMIFY_NO_DOWNLOAD` (the ISO's `steamify.nodownload` kernel parameter): the installed system's first login runs the Steamify bundle of the ISO instead of downloading the newest release (to test an unreleased Steamify)**
 - **fix: the SteamOS theme no longer leaves a blank Discover pin in the taskbar (Plasma's default taskbar pins Discover, which CachyOS doesn't install); the taskbar gets CachyOS's own pins (System Settings, files, browser), also on the ISO's first login**
 - **feat: "Steam Deck/Machine icons" (`glyphs`) is a sub-option of the SteamOS conversion, like "Start Steam silently in desktop mode": it only changes gaming mode**
 

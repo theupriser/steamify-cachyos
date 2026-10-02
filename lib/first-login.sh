@@ -7,13 +7,24 @@
 
 FIRST_LOGIN_ENTRY="${XDG_CONFIG_HOME:-$HOME/.config}/autostart/steamify-first-login.desktop"
 FIRST_LOGIN_SCRIPT="$STEAMIFY_BIN/first-login"
+FIRST_LOGIN_BUNDLE="$STEAMIFY_BIN/first-login-steamify.sh"
 
 first_login_schedule() {
+    # The newest release's Steamify runs at the first login. STEAMIFY_NO_DOWNLOAD (the ISO was started with
+    # steamify.nodownload, to test an unreleased Steamify): this very bundle runs instead.
+    local run
+    if [[ -n "${STEAMIFY_NO_DOWNLOAD:-}" && -f "$SCRIPT_DIR/steamify.sh" && ! -d "$SCRIPT_DIR/lib" ]]; then
+        install_executable "$FIRST_LOGIN_BUNDLE" 755 < "$SCRIPT_DIR/steamify.sh"
+        run="bash \"$FIRST_LOGIN_BUNDLE\" --first-login; rm -f \"$FIRST_LOGIN_BUNDLE\""
+    else
+        run="curl -fsSL --max-time 30 \"$WIZARD_URL\" | bash -s -- --first-login"
+    fi
     install_executable "$FIRST_LOGIN_SCRIPT" 755 << EOF2
 #!/bin/bash
 # Installed by Steamify CachyOS: runs once, at the first desktop login.
 set -o pipefail
-curl -fsSL --max-time 30 "$WIZARD_URL" | bash -s -- --first-login
+mkdir -p ~/.cache
+{ $run; } > ~/.cache/steamify-first-login.log 2>&1
 rm -f "$FIRST_LOGIN_ENTRY" "\$0"
 [[ -x "$WIZARD_APP_LAUNCHER" ]] && exec "$WIZARD_APP_LAUNCHER"
 EOF2
