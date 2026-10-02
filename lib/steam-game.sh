@@ -56,7 +56,7 @@ steamgame_steam_busy() {
 
 steamgame_edit() {
     # steamgame_edit <function>: runs it with Steam closed, then starts Steam
-    # again if it was running (through our autostart unit when that's there).
+    # again if it was running (silently, in the tray).
     local was_running=false i
     if pgrep -x steam >/dev/null; then
         steamgame_steam_busy && return 1
@@ -72,11 +72,7 @@ steamgame_edit() {
     fi
     "$1"; local rc=$?
     if [[ "$was_running" == true ]]; then
-        if user_systemctl is-enabled -q steam-desktop-autostart.service 2>/dev/null; then
-            user_systemctl start steam-desktop-autostart.service
-        else
-            systemd-run --user --collect -q steam -silent >/dev/null 2>&1
-        fi
+        systemd-run --user --collect -q steam -silent >/dev/null 2>&1
         info "Steam is starting again."
     fi
     return "$rc"

@@ -16,34 +16,49 @@ steam_enable() {
 }
 
 # Sub-option of the SteamOS conversion: Steam starts silently (in the tray,
-# no window) on the Plasma desktop.
+# no window) on the Plasma desktop. It is Steam's own autostart entry, the file
+# Steam's setting "Run Steam when my computer starts" creates and removes, so
+# that setting shows what Steamify did (and the other way around). Steam's copy
+# is the system steam.desktop; ours has -silent in its Exec line.
+STEAM_AUTOSTART="${XDG_CONFIG_HOME:-$HOME/.config}/autostart/steam.desktop"
+STEAM_SYSTEM_DESKTOP=/usr/share/applications/steam.desktop
+
 silent_status() {
-    [[ -f "$HOME/.config/systemd/user/steam-desktop-autostart.service" ]]
+    grep -qs '^Exec=.*-silent' "$STEAM_AUTOSTART"
+}
+
+silent_old_unit_remove() {
+    # Before 2.11.0 the option was a systemd user unit: it would start Steam a second time.
+    local unit="$HOME/.config/systemd/user/steam-desktop-autostart.service"
+    [[ -f "$unit" ]] || return 0
+    user_systemctl disable --now steam-desktop-autostart.service 2>/dev/null
+    rm -f "$unit"
+    user_systemctl daemon-reload
 }
 
 silent_enable() {
-    local systemd_user_dir="$HOME/.config/systemd/user"
-    mkdir -p "$systemd_user_dir"
-    service_file steam-desktop-autostart.service > "$systemd_user_dir/steam-desktop-autostart.service"
-    # Clean out old .desktop shortcut so they don't fight
-    rm -f "$HOME/.config/autostart/steam.desktop"
-    user_systemctl daemon-reload
-    user_systemctl enable --now steam-desktop-autostart.service
-    ok "Steam starts silently on the desktop."
+    silent_old_unit_remove
+    mkdir -p "$(dirname "$STEAM_AUTOSTART")"
+    if [[ -f "$STEAM_SYSTEM_DESKTOP" ]]; then
+        sed 's|^Exec=/usr/bin/steam %U$|Exec=/usr/bin/steam -silent %U|' "$STEAM_SYSTEM_DESKTOP" > "$STEAM_AUTOSTART"
+    fi
+    silent_status || printf '%s\n' '[Desktop Entry]' 'Name=Steam' 'Exec=/usr/bin/steam -silent %U' \
+        'Icon=steam' 'Terminal=false' 'Type=Application' 'Categories=Network;FileTransfer;Game;' > "$STEAM_AUTOSTART"
+    ok "Steam starts silently on the desktop from the next login."
 }
 
 silent_disable() {
-    user_systemctl disable --now steam-desktop-autostart.service 2>/dev/null
-    rm -f "$HOME/.config/systemd/user/steam-desktop-autostart.service"
-    user_systemctl daemon-reload
+    silent_old_unit_remove
+    silent_status && rm -f "$STEAM_AUTOSTART"
     ok "Steam no longer starts by itself on the desktop."
 }
 
 steam_disable() {
     info "Removing Steam desktop settings..."
-    # The autostart unit is the `silent` option's: removed with it, and here
+    # The autostart entry is the `silent` option's: removed with it, and here
     # too for when the conversion goes off by itself.
     silent_status && silent_disable
+    silent_old_unit_remove
     rm -f "$HOME/.config/environment.d/99-kde-virtual-keyboard.conf"
     ok "Steam desktop settings removed (takes full effect at next login)."
 }

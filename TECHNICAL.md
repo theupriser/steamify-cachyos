@@ -109,8 +109,10 @@ tools write to the conf.d fragment into the base config.
   installs `/usr/local/bin/sync-steamos-session.sh` plus
   `sync-steamos-session.path`/`.service`;
 - `KWIN_IM_SHOW_ALWAYS=1` for the virtual keyboard; the sub-option `silent`
-  ("Start Steam silently in desktop mode", on by default, always shown) adds a `steam-desktop-autostart`
-  systemd user service that starts Steam silently in Plasma only;
+  ("Start Steam silently in desktop mode", on by default, always shown) writes
+  `~/.config/autostart/steam.desktop` (the system steam.desktop with `-silent` in its Exec line). That is the
+  file Steam's own setting "Run Steam when my computer starts" creates and removes, so the setting shows it. An older
+  `steam-desktop-autostart` user unit is removed;
 - the **Return to Gaming Mode** shortcut; on plasma-login-manager with a
   narrow sudoers rule (`/etc/sudoers.d/gamescope-session-switch`) so it can
   restart the login manager without a password prompt.
@@ -344,8 +346,7 @@ desktop through its desktop layout (A = Enter, B = Esc, Y = Space, X =
 Steam's keyboard), in gaming mode as a gamepad.
 
 Steam reads the list only at startup and writes it back on exit, so Steam is
-closed (`steam -shutdown`) for the edit and started again (through
-`steam-desktop-autostart.service` when it's there). That's refused in gaming
+closed (`steam -shutdown`) for the edit and started again (`steam -silent`). That's refused in gaming
 mode and when Steamify itself was started from Steam (`SteamGameId`), since
 closing Steam would end it. An entry for the start script that's already
 there (added by hand, or with the path from before 2.5.0) is updated, not
@@ -490,7 +491,8 @@ In the home folder, everything is under `steamify`:
 | `~/.local/share/steamify/bin/` | The shortcut's start scripts (`run-app`, `run-wizard`) and `steamify-notifier` |
 | `~/.local/share/icons/hicolor/scalable/apps/steamify.svg` | The shortcut's icon |
 | `~/.local/share/applications/steamify-*.desktop` | The launcher entries |
-| `~/.config/systemd/user/` | `steamify-update-check.*`, `steam-desktop-autostart.service` |
+| `~/.config/autostart/steam.desktop` | the `silent` option (Steam's "Run Steam when my computer starts") |
+| `~/.config/systemd/user/` | `steamify-update-check.*` |
 
 System-wide: `/usr/local/lib/steamify/` (kernel headers script),
 `/usr/src/steamify-*` (DKMS modules), `/var/cache/steamify/kernel` (the old

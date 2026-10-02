@@ -7,7 +7,7 @@ one per merged pull request.
 
 ## 2.11.0 - 2026-10-01
 
-- `5da1833` **feat: "Start Steam silently" sub-option: under the SteamOS conversion (`silent`, on by default, as before) and under Gaming on NVIDIA (`nvsilent`, opt-in, not together with Big Picture); the SteamOS one is called "Start Steam silently in desktop mode" and is always shown, also on a Steam Machine**
+- `5da1833` **feat: "Start Steam silently" sub-option: under the SteamOS conversion (`silent`, on by default, as before) and under Gaming on NVIDIA (`nvsilent`, opt-in, not together with Big Picture); the SteamOS one is called "Start Steam silently in desktop mode" and is always shown, also on a Steam Machine; it is Steam's own autostart entry (`~/.config/autostart/steam.desktop`), so Steam's setting "Run Steam when my computer starts" follows it**
 
 ## 2.10.0 - 2026-10-01
 
