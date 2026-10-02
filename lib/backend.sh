@@ -50,7 +50,7 @@ backend_status() {
         items+="${items:+,}{\"id\":$(json_str "$c"),\"label\":$(json_str "${LABEL[$c]%%:*}")"
         items+=",\"hint\":$(json_str "$( [[ "${LABEL[$c]}" == *:* ]] && echo "${LABEL[$c]#*: }")")"
         items+=",\"kind\":\"$kind\",\"parent\":$(json_str "$parent")"
-        items+=",\"needs\":$(json_str "$([[ "$c" == silent ]] && silent_needs_boot && echo boot)")"
+        items+=",\"needs\":\"\""
         items+=",\"on\":$( [[ "$now" == 1 ]] && echo true || echo false)"
         items+=",\"wanted\":$( [[ "${WANTED[$c]:-0}" == 1 ]] && echo true || echo false)"
         items+=",\"update\":$(feature_outdated "$c" && echo true || echo false)"
@@ -167,7 +167,6 @@ backend_apply() {
     # Retired: only ever removed.
     WANTED[hdmi]=0
     case "$boot" in desktop) WANTED[boot]=1; WANTED[gaming]=1 ;; gamescope) WANTED[boot]=0 ;; esac
-    silent_normalize
 
     REAPPLY=$reapply
     plan_changes

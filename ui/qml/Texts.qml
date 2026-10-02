@@ -10,7 +10,7 @@ QtObject {
         boot: { label: "Boot into", hint: "Where the PC starts",
                 body: "Where the PC starts after a restart. Switching back and forth works the same either way.",
                 changes: ["Desktop: the Plasma session is set before login", "Gaming: the SteamOS default"] },
-        silent: { label: "Start Steam silently", hint: "In the tray at login on the desktop, no window",
+        silent: { label: "Start Steam silently in desktop mode", hint: "In the tray at login on the desktop, no window",
                   body: "Steam starts by itself when you log in to the Plasma desktop, in the tray without a window. Gaming mode starts its own Steam.",
                   changes: ["Steam is started with -silent (a systemd user service, desktop only)", "Off: the service is removed again"] },
         nvidia: { label: "Gaming on NVIDIA", hint: "Steam on the desktop, started at login",

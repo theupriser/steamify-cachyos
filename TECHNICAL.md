@@ -109,7 +109,7 @@ tools write to the conf.d fragment into the base config.
   installs `/usr/local/bin/sync-steamos-session.sh` plus
   `sync-steamos-session.path`/`.service`;
 - `KWIN_IM_SHOW_ALWAYS=1` for the virtual keyboard; the sub-option `silent`
-  ("Start Steam silently", on by default) adds a `steam-desktop-autostart`
+  ("Start Steam silently in desktop mode", on by default, always shown) adds a `steam-desktop-autostart`
   systemd user service that starts Steam silently in Plasma only;
 - the **Return to Gaming Mode** shortcut; on plasma-login-manager with a
   narrow sudoers rule (`/etc/sudoers.d/gamescope-session-switch`) so it can

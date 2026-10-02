@@ -38,8 +38,8 @@ Item {
 
     readonly property var status: backend.status || ({})
     readonly property var items: status.items || []
-    // Hidden: Big Picture excludes a silent start; on a Steam Machine a silent start needs "Boot into" desktop.
-    function hidden(i) { return (i.id === "nvsilent" && want.bigpicture) || (i.needs === "boot" && boot !== "desktop"); }
+    // Hidden: Big Picture excludes a silent start.
+    function hidden(i) { return i.id === "nvsilent" && want.bigpicture; }
     readonly property var rows: items.filter(function (i) { return (!i.parent || want[i.parent]) && !hidden(i); })
     readonly property var bios: status.bios || null
 

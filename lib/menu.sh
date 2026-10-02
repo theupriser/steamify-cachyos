@@ -35,7 +35,7 @@ declare -A LABEL=(
     [gaming]="SteamOS conversion: boot into gaming mode, Steam on the desktop"
     [boot]="Boot into the desktop instead of gaming mode"
     [nvidia]="Gaming on NVIDIA: Steam on the desktop, started at login"
-    [silent]="Start Steam silently: in the tray at login on the desktop, no window"
+    [silent]="Start Steam silently in desktop mode: in the tray at login on the desktop, no window"
     [nvsilent]="Start Steam silently: in the tray at login, no window (untick: Steam's normal window)"
     [bigpicture]="Steam starts in Big Picture: the controller-friendly Steam (untick: Steam's normal window)"
     [theme]="Install SteamOS theme: Vapor look (cachyos-vapor)"
@@ -81,25 +81,12 @@ boot_mode() {
     if [[ "$1" == 1 ]]; then echo desktop; else echo gamescope; fi
 }
 
-silent_needs_boot() {
-    # On a Steam Machine, silent start only makes sense when it boots into
-    # the desktop (gaming mode starts its own Steam): the option is hidden,
-    # and off, while "Boot into" is gaming mode.
-    machine_available
-}
-
-silent_normalize() {
-    silent_needs_boot && [[ "${WANTED[boot]:-0}" != 1 ]] && WANTED[silent]=0
-    return 0
-}
-
 menu_visible() {
     # Shown in the menu. A sub-option ("Boot into", the kernel pin) only
     # while its parent is ticked.
     component_available "$1" || return 1
     # Silent start is hidden while Steam starts in Big Picture.
     [[ "$1" == nvsilent && "${WANTED[bigpicture]:-0}" == 1 ]] && return 1
-    [[ "$1" == silent ]] && silent_needs_boot && [[ "${WANTED[boot]:-0}" != 1 ]] && return 1
     [[ -z "${PARENT[$1]:-}" || "${WANTED[${PARENT[$1]}]:-0}" == 1 ]]
 }
 
@@ -220,7 +207,6 @@ detect_components() {
         done
         machine_available && WANTED[cec]=1
     fi
-    silent_normalize
 }
 
 defaults_options() {
@@ -277,7 +263,6 @@ defaults_options() {
             WANTED[boot]=1 ;;
         gamescope) WANTED[boot]=0 ;;
     esac
-    silent_normalize
     return 0
 }
 
@@ -301,7 +286,7 @@ defaults_list() {
         [[ "$c" == cec ]] && machine_available && on=true
         items+="${items:+,}{\"id\":$(json_str "$c"),\"label\":$(json_str "${LABEL[$c]%%:*}")"
         items+=",\"hint\":$(json_str "$( [[ "${LABEL[$c]}" == *:* ]] && echo "${LABEL[$c]#*: }")")"
-        items+=",\"kind\":\"$kind\",\"parent\":$(json_str "${PARENT[$c]:-}"),\"needs\":$(json_str "$([[ "$c" == silent ]] && silent_needs_boot && echo boot)"),\"hideWhen\":$(json_str "$([[ "$c" == nvsilent ]] && echo bigpicture)"),\"on\":$on,\"selectable\":$sel}"
+        items+=",\"kind\":\"$kind\",\"parent\":$(json_str "${PARENT[$c]:-}"),\"needs\":\"\",\"hideWhen\":$(json_str "$([[ "$c" == nvsilent ]] && echo bigpicture)"),\"on\":$on,\"selectable\":$sel}"
     done
     printf '[%s]\n' "$items"
 }
@@ -324,7 +309,6 @@ toggle_component() {
     if [[ "$c" == nvidia && "${WANTED[nvidia]}" == 0 ]]; then WANTED[nvsilent]=0; fi
     if [[ "$c" == gaming && "${WANTED[gaming]}" == 0 ]]; then WANTED[silent]=0; fi
     if [[ "$c" == silent && "${WANTED[silent]}" == 1 ]]; then WANTED[gaming]=1; fi
-    silent_normalize
     # The power-off fix is opt-out: ticked along with Steam Machine support.
     if [[ "$c" == machine ]]; then WANTED[poweroff]=${WANTED[machine]}; fi
     if [[ "$c" == poweroff && "${WANTED[poweroff]}" == 1 ]]; then WANTED[machine]=1; fi
