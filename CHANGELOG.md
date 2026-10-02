@@ -7,6 +7,7 @@ one per merged pull request.
 
 ## 2.11.1 - 2026-10-02
 
+- **docs: new README screenshots of the app (2.11 menu) on a Steam Machine and on an NVIDIA PC, and the README names the opt-in "Start Steam silently in desktop mode" and the icons as an option of the conversion**
 ## 2.11.0 - 2026-10-01
 
 - `2e51d1d`, `3494924`, `fbdad5a`, `079e725`, `188799e` **feat: "Start Steam silently" sub-option: under the SteamOS conversion (`silent`, opt-in now: it was always on before; an existing one is moved from its systemd unit to the autostart entry by the "update") and under Gaming on NVIDIA (`nvsilent`, opt-in, not together with Big Picture); the SteamOS one is called "Start Steam silently in desktop mode" and is always shown, also on a Steam Machine; it is Steam's own autostart entry (`~/.config/autostart/steam.desktop`), so Steam's setting "Run Steam when my computer starts" follows it**
