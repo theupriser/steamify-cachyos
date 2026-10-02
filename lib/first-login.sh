@@ -31,10 +31,9 @@ first_login_run() {
         [[ -n "$(plasma_applets org.kde.plasma.kickoff)" ]] && break
         sleep 2
     done
-    if single_status; then
-        stop_plasmashell_for_edit
-        single_launcher
-        restart_plasmashell_if_stopped
-    fi
+    stop_plasmashell_for_edit
+    taskbar_drop_discover
+    single_status && single_launcher
+    restart_plasmashell_if_stopped
     return 0
 }

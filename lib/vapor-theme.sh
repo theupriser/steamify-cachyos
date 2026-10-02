@@ -106,15 +106,30 @@ theme_enable() {
     # SteamOS panel, launcher icon and wallpaper. It needs plasmashell up.
     lookandfeeltool -a "$VAPOR_LOOKANDFEEL" --resetLayout >/dev/null 2>&1 ||
         { err "lookandfeeltool failed."; return 1; }
-    # The new layout has a new launcher, without single user's settings.
-    if single_status; then
-        sleep 3
-        stop_plasmashell_for_edit
-        single_launcher
-        restart_plasmashell_if_stopped
-    fi
+    # The new layout has a new launcher, without single user's settings, and the default taskbar pins.
+    sleep 3
+    stop_plasmashell_for_edit
+    taskbar_drop_discover
+    single_status && single_launcher
+    restart_plasmashell_if_stopped
     extras_enable || warn "SteamOS desktop extras not installed (see above); the theme itself is on."
     ok "Vapor theme active."
+}
+
+taskbar_drop_discover() {
+    # Plasma's default taskbar pins Discover, which CachyOS doesn't install: the pin shows as a
+    # blank icon. Pin what CachyOS's own layout pins (/etc/skel) instead. Not when Discover is
+    # installed, and only on a taskbar that still has the default pins (no launchers key).
+    # Edit only while plasmashell is stopped.
+    [[ -e /usr/share/applications/org.kde.discover.desktop ]] && return 0
+    local applet grp
+    for applet in $(plasma_applets org.kde.plasma.icontasks); do
+        grp="Containments|${applet%%:*}|Applets|${applet#*:}|Configuration|General"
+        [[ -n "$(kreadconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group Containments --group "${applet%%:*}" \
+            --group Applets --group "${applet#*:}" --group Configuration --group General --key launchers)" ]] && continue
+        kset theme plasma-org.kde.plasma.desktop-appletsrc "$grp" launchers \
+            'applications:systemsettings.desktop,preferred://filemanager,preferred://browser'
+    done
 }
 
 theme_disable() {

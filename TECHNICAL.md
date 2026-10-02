@@ -539,7 +539,9 @@ steamify.sh --defaults --list                           # what --defaults can se
 item this PC can't use (e.g. `vram` without a VRAM region) is left off with
 a warning. `--boot desktop` needs `gaming`. Unknown options, ids, `boot` or
 `bios` in the list: exit code 1 before anything changes. What needs a
-Plasma session waits for the first login (`lib/first-login.sh`).
+Plasma session waits for the first login (`lib/first-login.sh`). The same step (and the online theme path) replaces Plasma's default taskbar pins, which include Discover
+(not installed on CachyOS: a blank icon), by CachyOS's own (`taskbar_drop_discover` in `lib/vapor-theme.sh`; skipped when Discover is
+installed or the taskbar already has its own `launchers`).
 
 With `Relogin=true`, a gamescope session that fails to start is restarted
 immediately, which can turn into a loop - see
