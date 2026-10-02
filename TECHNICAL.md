@@ -108,9 +108,11 @@ tools write to the conf.d fragment into the base config.
   (never `zz-steamos-autologin.conf`, which CachyOS's tools own), and
   installs `/usr/local/bin/sync-steamos-session.sh` plus
   `sync-steamos-session.path`/`.service`;
-- `KWIN_IM_SHOW_ALWAYS=1` for the virtual keyboard and a
-  `steam-desktop-autostart` systemd user service that starts Steam silently
-  in Plasma only;
+- `KWIN_IM_SHOW_ALWAYS=1` for the virtual keyboard; the sub-option `silent`
+  ("Start Steam silently in desktop mode", opt-in, always shown) writes
+  `~/.config/autostart/steam.desktop` (the system steam.desktop with `-silent` in its Exec line). That is the
+  file Steam's own setting "Run Steam when my computer starts" creates and removes, so the setting shows it. An older
+  `steam-desktop-autostart` user unit is removed;
 - the **Return to Gaming Mode** shortcut; on plasma-login-manager with a
   narrow sudoers rule (`/etc/sudoers.d/gamescope-session-switch`) so it can
   restart the login manager without a password prompt.
@@ -124,7 +126,8 @@ The conversion also sets what Steam's System settings show, see
 
 **Steam Deck/Machine icons:** `STEAM_GAMEPADUI_ARGS="-gamepadui -steamos3"`
 in `~/.config/environment.d/` (and gamescope-session's own environment
-file), which makes Steam show Steam Deck button glyphs in gaming mode.
+file), which makes Steam show Steam Deck button glyphs in gaming mode. It is a sub-option of the SteamOS conversion (`gaming`):
+it does nothing without gaming mode, ticking it ticks the conversion and turning the conversion off turns it off.
 
 ## SteamOS desktop look
 
@@ -242,7 +245,8 @@ Steam at login): it installs `steam` when missing (recorded in state `nvidia`, r
 unit `steamify-steam-autostart.service` (`services/`, `ExecStart=/usr/bin/steam @ARGS@`, Plasma only). Its sub-option
 `bigpicture` ("Steam starts in Big Picture", ticked along with it) rewrites the unit with `-gamepadui` and sets
 `ksmserverrc [General] loginMode=emptySession` (`kset`, undone with `krevert bigpicture`), so windows of the last session
-(Discord, a browser) aren't restored on top of Big Picture; unticked, Steam starts in its normal window. The PC always boots into the desktop: there is no gamescope session. Takes effect at the next
+(Discord, a browser) aren't restored on top of Big Picture; unticked, Steam starts in its normal window. The opt-in sub-option `nvsilent` ("Start Steam silently") rewrites the unit with `-silent`
+(tray only); it and `bigpicture` exclude each other. The PC always boots into the desktop: there is no gamescope session. Takes effect at the next
 login.
 
 On a supported card (RTX 20 series or newer: not on chwd's legacy lists `/var/lib/chwd/ids/nvidia-*.ids`, the VRAM booster's
@@ -343,8 +347,7 @@ desktop through its desktop layout (A = Enter, B = Esc, Y = Space, X =
 Steam's keyboard), in gaming mode as a gamepad.
 
 Steam reads the list only at startup and writes it back on exit, so Steam is
-closed (`steam -shutdown`) for the edit and started again (through
-`steam-desktop-autostart.service` when it's there). That's refused in gaming
+closed (`steam -shutdown`) for the edit and started again (`steam -silent`). That's refused in gaming
 mode and when Steamify itself was started from Steam (`SteamGameId`), since
 closing Steam would end it. An entry for the start script that's already
 there (added by hand, or with the path from before 2.5.0) is updated, not
@@ -489,7 +492,8 @@ In the home folder, everything is under `steamify`:
 | `~/.local/share/steamify/bin/` | The shortcut's start scripts (`run-app`, `run-wizard`) and `steamify-notifier` |
 | `~/.local/share/icons/hicolor/scalable/apps/steamify.svg` | The shortcut's icon |
 | `~/.local/share/applications/steamify-*.desktop` | The launcher entries |
-| `~/.config/systemd/user/` | `steamify-update-check.*`, `steam-desktop-autostart.service` |
+| `~/.config/autostart/steam.desktop` | the `silent` option (Steam's "Run Steam when my computer starts") |
+| `~/.config/systemd/user/` | `steamify-update-check.*` |
 
 System-wide: `/usr/local/lib/steamify/` (kernel headers script),
 `/usr/src/steamify-*` (DKMS modules), `/var/cache/steamify/kernel` (the old
@@ -535,7 +539,9 @@ steamify.sh --defaults --list                           # what --defaults can se
 item this PC can't use (e.g. `vram` without a VRAM region) is left off with
 a warning. `--boot desktop` needs `gaming`. Unknown options, ids, `boot` or
 `bios` in the list: exit code 1 before anything changes. What needs a
-Plasma session waits for the first login (`lib/first-login.sh`).
+Plasma session waits for the first login (`lib/first-login.sh`). The same step (and the online theme path) replaces Plasma's default taskbar pins, which include Discover
+(not installed on CachyOS: a blank icon), by CachyOS's own (`taskbar_drop_discover` in `lib/vapor-theme.sh`; skipped when Discover is
+installed or the taskbar already has its own `launchers`).
 
 With `Relogin=true`, a gamescope session that fails to start is restarted
 immediately, which can turn into a loop - see

@@ -57,7 +57,8 @@ nvidia_enable() {
         state_set nvidia installed_pkgs steam
     fi
     # Keeps what the Big Picture option set up; a first run starts Steam normally.
-    local unit_args=""; bigpicture_status && unit_args=-gamepadui
+    local unit_args=""
+    if bigpicture_status; then unit_args=-gamepadui; elif nvsilent_status; then unit_args=-silent; fi
     nvidia_write_unit "$unit_args" || return 1
     user_systemctl enable "$NVIDIA_UNIT" >/dev/null 2>&1 || { err "Enabling $NVIDIA_UNIT failed."; return 1; }
     nvidia_kernel_enable || return 1
@@ -93,6 +94,23 @@ bigpicture_enable() {
 bigpicture_disable() {
     krevert bigpicture
     [[ -f "$(nvidia_unit_file)" ]] || return 0
+    nvidia_write_unit "" && ok "Steam starts in its normal window at your next login."
+}
+
+# Sub-option: Steam starts silently (tray only, no window). Big Picture and
+# a silent start exclude each other (the menus untick one when the other is
+# ticked); a first run with both gets Big Picture.
+nvsilent_status() { grep -qs -- '-silent' "$(nvidia_unit_file)"; }
+
+nvsilent_enable() {
+    [[ -f "$(nvidia_unit_file)" ]] || return 0
+    bigpicture_status && return 0
+    nvidia_write_unit -silent || return 1
+    ok "Steam starts silently at your next login."
+}
+
+nvsilent_disable() {
+    nvsilent_status || return 0
     nvidia_write_unit "" && ok "Steam starts in its normal window at your next login."
 }
 

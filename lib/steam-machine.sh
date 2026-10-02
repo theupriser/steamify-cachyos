@@ -407,9 +407,12 @@ wifi_backend_disable() {
 
 serial_enable() {
     printf '%s\n' "# Written by Steamify: Steam shows the serial number, like on SteamOS." \
-        'z /sys/class/dmi/id/product_serial 0444 - - -' | sudo tee "$SERIAL_TMPFILES" > /dev/null &&
-        sudo systemd-tmpfiles --create "$SERIAL_TMPFILES" ||
+        'z /sys/class/dmi/id/product_serial 0444 - - -' | sudo tee "$SERIAL_TMPFILES" > /dev/null ||
         { err "Making the serial number readable for Steam failed."; return 1; }
+    # The file applies at every boot; now too, unless /sys is read-only (the ISO's installer runs in a chroot).
+    sudo systemd-tmpfiles --create "$SERIAL_TMPFILES" 2>/dev/null ||
+        info "The serial number becomes readable for Steam at the next boot."
+    return 0
 }
 
 serial_disable() {

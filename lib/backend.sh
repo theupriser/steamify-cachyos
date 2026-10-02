@@ -50,6 +50,7 @@ backend_status() {
         items+="${items:+,}{\"id\":$(json_str "$c"),\"label\":$(json_str "${LABEL[$c]%%:*}")"
         items+=",\"hint\":$(json_str "$( [[ "${LABEL[$c]}" == *:* ]] && echo "${LABEL[$c]#*: }")")"
         items+=",\"kind\":\"$kind\",\"parent\":$(json_str "$parent")"
+        items+=",\"needs\":\"\""
         items+=",\"on\":$( [[ "$now" == 1 ]] && echo true || echo false)"
         items+=",\"wanted\":$( [[ "${WANTED[$c]:-0}" == 1 ]] && echo true || echo false)"
         items+=",\"update\":$(feature_outdated "$c" && echo true || echo false)"
@@ -154,7 +155,11 @@ backend_apply() {
         WANTED[boot]=0
     fi
     [[ "${WANTED[bigpicture]:-0}" == 1 ]] && WANTED[nvidia]=1
-    [[ "${WANTED[nvidia]:-0}" == 0 ]] && WANTED[bigpicture]=0
+    [[ "${WANTED[nvsilent]:-0}" == 1 ]] && WANTED[nvidia]=1
+    [[ "${WANTED[bigpicture]:-0}" == 1 ]] && WANTED[nvsilent]=0
+    [[ "${WANTED[nvidia]:-0}" == 0 ]] && { WANTED[bigpicture]=0; WANTED[nvsilent]=0; }
+    [[ "${WANTED[silent]:-0}" == 1 || "${WANTED[glyphs]:-0}" == 1 ]] && component_available gaming && WANTED[gaming]=1
+    [[ "${WANTED[gaming]:-0}" == 0 ]] && { WANTED[silent]=0; WANTED[glyphs]=0; }
     [[ "${WANTED[poweroff]:-0}" == 1 ]] && WANTED[machine]=1
     [[ "${WANTED[machine]:-0}" == 0 ]] && WANTED[poweroff]=0
     [[ "${WANTED[kpin]:-0}" == 1 ]] && WANTED[machine]=1
