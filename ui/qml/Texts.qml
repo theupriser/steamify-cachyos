@@ -6,7 +6,7 @@ QtObject {
     readonly property var items: ({
         gaming: { label: "SteamOS conversion", hint: "Boot into gaming mode, Steam on the desktop",
                   body: "Boots straight into gaming mode. Switch to Desktop in Steam works, and Return to Gaming Mode on the desktop brings you back.",
-                  changes: ["Autologin into gamescope", "Return to Gaming Mode shortcut", "Steam starts silently on the desktop"] },
+                  changes: ["Autologin into gamescope", "Return to Gaming Mode shortcut"] },
         boot: { label: "Boot into", hint: "Where the PC starts",
                 body: "Where the PC starts after a restart. Switching back and forth works the same either way.",
                 changes: ["Desktop: the Plasma session is set before login", "Gaming: the SteamOS default"] },
