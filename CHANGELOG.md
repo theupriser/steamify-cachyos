@@ -5,6 +5,8 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.11.1 - 2026-10-02
+
 ## 2.11.0 - 2026-10-01
 
 - `2e51d1d`, `3494924`, `fbdad5a`, `079e725`, `188799e` **feat: "Start Steam silently" sub-option: under the SteamOS conversion (`silent`, opt-in now: it was always on before; an existing one is moved from its systemd unit to the autostart entry by the "update") and under Gaming on NVIDIA (`nvsilent`, opt-in, not together with Big Picture); the SteamOS one is called "Start Steam silently in desktop mode" and is always shown, also on a Steam Machine; it is Steam's own autostart entry (`~/.config/autostart/steam.desktop`), so Steam's setting "Run Steam when my computer starts" follows it**
