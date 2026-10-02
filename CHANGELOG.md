@@ -5,6 +5,15 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.11.0 - 2026-10-01
+
+- `2e51d1d`, `3494924`, `fbdad5a`, `079e725`, `188799e` **feat: "Start Steam silently" sub-option: under the SteamOS conversion (`silent`, opt-in now: it was always on before; an existing one is moved from its systemd unit to the autostart entry by the "update") and under Gaming on NVIDIA (`nvsilent`, opt-in, not together with Big Picture); the SteamOS one is called "Start Steam silently in desktop mode" and is always shown, also on a Steam Machine; it is Steam's own autostart entry (`~/.config/autostart/steam.desktop`), so Steam's setting "Run Steam when my computer starts" follows it**
+- `2f7b53f` **fix: the Steam Machine's serial number step no longer fails inside the ISO's installer (`/sys` is read-only in its chroot; the tmpfiles.d file applies at the next boot anyway), which made `machine` report an error and the install log end with `exit: 1`**
+- `45a23af`, `bd8f387` **feat: `STEAMIFY_NO_DOWNLOAD` (the ISO's `steamify.nodownload` kernel parameter): the installed system's first login runs the Steamify bundle of the ISO instead of downloading the newest release (to test an unreleased Steamify)**
+- `f3810a9` **fix: the SteamOS theme no longer leaves a blank Discover pin in the taskbar (Plasma's default taskbar pins Discover, which CachyOS doesn't install); the taskbar gets CachyOS's own pins (System Settings, files, browser), also on the ISO's first login**
+- `7869b47` **feat: "Steam Deck/Machine icons" (`glyphs`) is a sub-option of the SteamOS conversion, like "Start Steam silently in desktop mode": it only changes gaming mode**
+- `4d387b2` **chore: the Steamify unit tests (`controllers-test.sh`, `nvidia-test.sh`) and the NVIDIA hardware test live in steamify-cachyos-dev (`tests/`) now; `tests/` is removed here**
+
 ## 2.10.0 - 2026-10-01
 
 - `d6db4f6` **feat: "Gaming on NVIDIA" (nvidia) replaces the SteamOS conversion on PCs with an NVIDIA GPU, where gamescope's gaming mode shows a corrupted picture (NVIDIA bug 5240452): Steam is installed when missing and starts at login on the Plasma desktop; the sub-option "Steam starts in Big Picture" (bigpicture) starts it in Big Picture, unticked in its normal window, on an empty Plasma session so windows of the last session don't cover it. On a supported card (RTX 20 series or newer) it also sets the NVIDIA kernel parameters and early modules. The conversion and its options are hidden there unless already on**

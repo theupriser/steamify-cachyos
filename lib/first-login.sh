@@ -7,13 +7,25 @@
 
 FIRST_LOGIN_ENTRY="${XDG_CONFIG_HOME:-$HOME/.config}/autostart/steamify-first-login.desktop"
 FIRST_LOGIN_SCRIPT="$STEAMIFY_BIN/first-login"
+FIRST_LOGIN_BUNDLE="$STEAMIFY_BIN/first-login-steamify.sh"
 
 first_login_schedule() {
+    # The newest release's Steamify runs at the first login. STEAMIFY_NO_DOWNLOAD (the ISO was started with
+    # steamify.nodownload, to test an unreleased Steamify): this very bundle runs instead.
+    # (Only a single-file bundle can be copied; SCRIPT_DIR doesn't exist in one.)
+    local run self="${BASH_SOURCE[0]:-}"
+    if [[ -n "${STEAMIFY_NO_DOWNLOAD:-}" && -f "$self" ]] && grep -q '^# Single-file build' "$self"; then
+        install_executable "$FIRST_LOGIN_BUNDLE" 755 < "$self"
+        run="bash \"$FIRST_LOGIN_BUNDLE\" --first-login; rm -f \"$FIRST_LOGIN_BUNDLE\""
+    else
+        run="curl -fsSL --max-time 30 \"$WIZARD_URL\" | bash -s -- --first-login"
+    fi
     install_executable "$FIRST_LOGIN_SCRIPT" 755 << EOF2
 #!/bin/bash
 # Installed by Steamify CachyOS: runs once, at the first desktop login.
 set -o pipefail
-curl -fsSL --max-time 30 "$WIZARD_URL" | bash -s -- --first-login
+mkdir -p ~/.cache
+{ $run; } > ~/.cache/steamify-first-login.log 2>&1
 rm -f "$FIRST_LOGIN_ENTRY" "\$0"
 [[ -x "$WIZARD_APP_LAUNCHER" ]] && exec "$WIZARD_APP_LAUNCHER"
 EOF2
@@ -31,10 +43,9 @@ first_login_run() {
         [[ -n "$(plasma_applets org.kde.plasma.kickoff)" ]] && break
         sleep 2
     done
-    if single_status; then
-        stop_plasmashell_for_edit
-        single_launcher
-        restart_plasmashell_if_stopped
-    fi
+    stop_plasmashell_for_edit
+    taskbar_drop_discover
+    single_status && single_launcher
+    restart_plasmashell_if_stopped
     return 0
 }
