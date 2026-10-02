@@ -227,7 +227,7 @@ DKMS modules, built for every installed kernel, so `install_kernel_headers` (`li
 headers first. A PC that already has the AUR's `xone-dkms-git` keeps it: it provides the same driver and conflicts with the repo's
 `xone-dkms`. Status is the three packages being installed. Off removes only what Steamify installed (state
 `extended_controller_support`, `installed_pkgs`); the headers stay. The drivers load when the device shows up: the dongle is
-plugged in again, or the controller reconnected. `tests/controllers-test.sh` tests it with a stub `pacman`.
+plugged in again, or the controller reconnected. Its test is in steamify-cachyos-dev (`tests/controllers-test.sh`).
 
 ## Gaming on NVIDIA
 
@@ -259,7 +259,7 @@ and boot entries are rebuilt and checked for the parameters. The early-load drop
 has the NVIDIA modules (mkinitcpio fails on a missing module, and `limine-mkinitcpio` then skips that kernel's boot entry):
 a pacman hook (`/etc/pacman.d/hooks/85-steamify-nvidia-initramfs.hook`, after DKMS, before the initramfs is built) runs
 `/usr/local/libexec/steamify-nvidia-initramfs` at every kernel or driver change and decides again. Turning it off removes
-all of it. `tests/nvidia-hardware-test.sh check|apply|visual` is for a real NVIDIA PC (writes `~/steamify-nvidia-report.txt`). `tests/nvidia-test.sh` tests it against a fake GPU, a stub `pacman` and `systemctl`, and a temp home.
+all of it. The tests are in steamify-cachyos-dev: `tests/nvidia-test.sh` (a fake GPU, a stub `pacman` and `systemctl`, a temp home) and `tests/nvidia-hardware-test.sh` (a real NVIDIA PC).
 
 Tried and dropped (notes in steamify-cachyos-dev, `nvidia/HARDWARE-RESULTS.md`): a gamescope session that opens Big Picture in Plasma (it needed the `start-gamescope-session`
 command shadowed in `/usr/local/bin`, and showed the desktop for a few seconds, then a Steam window with a black border);
