@@ -27,6 +27,10 @@ Steam Machine.
    on the desktop too.
    - **Boot into: gamescope / desktop** - where the PC starts. Gaming mode is
      the default.
+   - **Start Steam silently in desktop mode** (off by default) - Steam starts
+     at login on the desktop, in the tray without a window. It is Steam's own
+     autostart entry, so Steam's setting "Run Steam when my computer starts"
+     follows it (the Linux Steam client has no silent option of its own).
    - Steam's **System** settings show the SteamOS release Steamify follows
      as OS Version (e.g. `steamos-3.9`), `steam-machine` as OS Codename and
      Steamify's version as OS Variant. The OS name stays CachyOS
@@ -40,7 +44,7 @@ Steam Machine.
 2. **SteamOS theme** - the Vapor look of SteamOS for the desktop, with
    **Add to Steam** in right-click menus
    ([details](TECHNICAL.md#steamos-desktop-look)).
-3. **Steam Deck/Machine icons** - Steam Deck button icons in gaming mode.
+3. **Steam Deck/Machine icons** - Steam Deck button icons in gaming mode (an option of the SteamOS conversion).
 4. **Single user mode** - like SteamOS: never a login or lock screen, and no
    KDE wallet password prompts (e.g. from Brave). Typing a password with a
    controller is no fun
