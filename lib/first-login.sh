@@ -12,9 +12,10 @@ FIRST_LOGIN_BUNDLE="$STEAMIFY_BIN/first-login-steamify.sh"
 first_login_schedule() {
     # The newest release's Steamify runs at the first login. STEAMIFY_NO_DOWNLOAD (the ISO was started with
     # steamify.nodownload, to test an unreleased Steamify): this very bundle runs instead.
-    local run
-    if [[ -n "${STEAMIFY_NO_DOWNLOAD:-}" && -f "$SCRIPT_DIR/steamify.sh" && ! -d "$SCRIPT_DIR/lib" ]]; then
-        install_executable "$FIRST_LOGIN_BUNDLE" 755 < "$SCRIPT_DIR/steamify.sh"
+    # (Only a single-file bundle can be copied; SCRIPT_DIR doesn't exist in one.)
+    local run self="${BASH_SOURCE[0]:-}"
+    if [[ -n "${STEAMIFY_NO_DOWNLOAD:-}" && -f "$self" ]] && grep -q '^# Single-file build' "$self"; then
+        install_executable "$FIRST_LOGIN_BUNDLE" 755 < "$self"
         run="bash \"$FIRST_LOGIN_BUNDLE\" --first-login; rm -f \"$FIRST_LOGIN_BUNDLE\""
     else
         run="curl -fsSL --max-time 30 \"$WIZARD_URL\" | bash -s -- --first-login"
