@@ -17,7 +17,7 @@ declare -A PARENT=([boot]=gaming [silent]=gaming [glyphs]=gaming [bigpicture]=nv
 # which has CEC like on SteamOS. HDMI refresh boost needs someone at the
 # screen to confirm each step. Extended controller support builds kernel modules for
 # every installed kernel: opt-in.
-NO_PRESELECT=(boot nvsilent cec kpin hdmi extended_controller_support)
+NO_PRESELECT=(boot silent nvsilent cec kpin hdmi extended_controller_support)
 # Feature versions: the Steamify version in which what a component's enable
 # sets up last changed; set it to the new VERSION whenever you change one.
 # Each successful run records it (state "features"); a component that's on
@@ -26,7 +26,7 @@ NO_PRESELECT=(boot nvsilent cec kpin hdmi extended_controller_support)
 # FEATURE_BASELINE.
 FEATURE_BASELINE=2.1.0
 declare -A FEATURE_VERSION=(
-    [gaming]=2.9.0 [boot]=2.1.0 [silent]=2.1.0 [nvidia]=2.10.0 [bigpicture]=2.10.0 [nvsilent]=2.11.0 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.1.0
+    [gaming]=2.9.0 [boot]=2.1.0 [silent]=2.11.0 [nvidia]=2.10.0 [bigpicture]=2.10.0 [nvsilent]=2.11.0 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.1.0
     [launcher]=2.1.0 [cec]=2.7.0 [machine]=2.9.0 [poweroff]=2.2.0 [vram]=2.3.0 [notify]=2.5.0 [steamgame]=2.5.1 [extended_controller_support]=2.10.0
     [kpin]=2.1.0 [hdmi]=2.1.0
 )

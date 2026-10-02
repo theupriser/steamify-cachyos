@@ -24,7 +24,9 @@ STEAM_AUTOSTART="${XDG_CONFIG_HOME:-$HOME/.config}/autostart/steam.desktop"
 STEAM_SYSTEM_DESKTOP=/usr/share/applications/steam.desktop
 
 silent_status() {
-    grep -qs '^Exec=.*-silent' "$STEAM_AUTOSTART"
+    # The old systemd unit counts as on too (until it is migrated by an update of this option).
+    grep -qs '^Exec=.*-silent' "$STEAM_AUTOSTART" ||
+        [[ -f "$HOME/.config/systemd/user/steam-desktop-autostart.service" ]]
 }
 
 silent_old_unit_remove() {
