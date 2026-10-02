@@ -126,7 +126,8 @@ The conversion also sets what Steam's System settings show, see
 
 **Steam Deck/Machine icons:** `STEAM_GAMEPADUI_ARGS="-gamepadui -steamos3"`
 in `~/.config/environment.d/` (and gamescope-session's own environment
-file), which makes Steam show Steam Deck button glyphs in gaming mode.
+file), which makes Steam show Steam Deck button glyphs in gaming mode. It is a sub-option of the SteamOS conversion (`gaming`):
+it does nothing without gaming mode, ticking it ticks the conversion and turning the conversion off turns it off.
 
 ## SteamOS desktop look
 

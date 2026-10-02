@@ -78,13 +78,14 @@ Item {
         w[id] = !w[id];
         // The same rules as the terminal menu (toggle_component).
         var hasGaming = items.some(function (i) { return i.id === "gaming"; });
-        if (id === "gaming" && !w.gaming) { w.single = false; w.silent = false; }
+        if (id === "gaming" && !w.gaming) { w.single = false; w.silent = false; w.glyphs = false; }
         if (id === "single" && w.single && hasGaming) w.gaming = true;
         if (id === "nvidia") w.bigpicture = w.nvidia;
         if (id === "bigpicture" && w.bigpicture) { w.nvidia = true; w.nvsilent = false; }
         if (id === "nvsilent" && w.nvsilent) { w.nvidia = true; w.bigpicture = false; }
         if (id === "nvidia" && !w.nvidia) w.nvsilent = false;
         if (id === "silent" && w.silent) w.gaming = true;
+        if (id === "glyphs" && w.glyphs) w.gaming = true;
         if (id === "machine") w.poweroff = w.machine;
         if (id === "poweroff" && w.poweroff) w.machine = true;
         if (id === "machine" && !w.machine) w.kpin = false;
