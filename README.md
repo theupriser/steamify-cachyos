@@ -187,6 +187,16 @@ Contributing (or an AI agent)? Read [AGENTS.md](AGENTS.md).
 
 MIT - do whatever you want with it. See [LICENSE.md](LICENSE.md).
 
+### Code from other projects
+
+Some files in `patches/` are not MIT. They keep their own license, and each file says where it comes from:
+
+| File | What | License and source |
+|---|---|---|
+| `steamify-fremont-poweroff.c` | Kernel module for the Steam Machine's power-off fix. It does what Valve's Steam Machine kernel does for this (clears the S4 wake bit of GPIO pin 18 at probe), but at power-off, for kernels without Valve's change. Valve's kernel: [evlaV/linux-integration](https://github.com/evlaV/linux-integration). | GPL-2.0, like the Linux kernel it is built into |
+| `cros-ec-cec.c` | Valve's Steam Machine HDMI-CEC driver (ChromeOS EC CEC, Copyright BayLibre; Valve's version of it), at a pinned commit of [evlaV/linux-integration](https://github.com/evlaV/linux-integration). Used when it can't be downloaded. | GPL-2.0+, unmodified (Steamify's `cros-ec-cec-single-port.patch` is applied when it is built) |
+| `gamescope-gbm-scanout.patch` | GBM scan-out for gamescope on NVIDIA: nine commits of [farnoy/gamescope](https://github.com/farnoy/gamescope) on [ValveSoftware/gamescope](https://github.com/ValveSoftware/gamescope). | gamescope's license (BSD-2-Clause) |
+
 ## Disclaimer
 
 Steamify CachyOS is an unofficial community project. It is not affiliated

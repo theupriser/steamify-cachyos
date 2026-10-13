@@ -7,6 +7,11 @@
  * leaves set on GPIO pin 18 (_SB.PCI0.GPP6) stays set, and the machine starts again right after powering off.
  * Valve's kernel clears that bit at probe on Fremont (not for upstream);
  * this does the same right before power-off, for kernels without it.
+ *
+ * What it does follows Valve's Steam Machine kernel
+ * (https://github.com/evlaV/linux-integration, GPL-2.0 like the rest of the
+ * Linux kernel); this module is Steamify's own implementation of it, also
+ * GPL-2.0. Not affiliated with or endorsed by Valve Corporation.
  */
 #include <linux/acpi.h>
 #include <linux/bits.h>
