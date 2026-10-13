@@ -7,6 +7,8 @@ one per merged pull request.
 
 ## 2.11.2 - 2026-10-13
 
+- **fix: a PC that keeps `python-hidapi` (liquidctl needs it) can use the SteamOS conversion: jupiter-hw-support, which gamescope-session-cachyos depends on, wants `python-hid`, which conflicts with it and stopped the package install. Steamify builds and installs an empty placeholder package that provides `python-hid` first (`patches/python-hid-shim.PKGBUILD`); only the Steam Deck controller firmware updater uses it**
+
 - **feat: the patched gamescope is downloaded as the newest release of steamify-gamescope-nvidia (checked against that release's `.sha256`), a newer one than the installed package shows the SteamOS conversion as an update, and what this Steamify was tested with is the fallback: the pinned package (sha256 in Steamify), the copy the ISO leaves, a build here; the repository's workflow builds each release in CachyOS's container**
 
 - `124b424`, `f234c72` **fix: HDMI-CEC on the Steam Machine no longer needs GitHub: when downloading Valve's CEC driver fails, Steamify uses the copy it carries (`patches/cros-ec-cec.c`), checked against the same pinned sha256**

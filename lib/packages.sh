@@ -58,6 +58,30 @@ bootstrap_yay() {
     fi
 }
 
+python_hid_shim_ensure() {
+    # jupiter-hw-support (a dependency of gamescope-session-cachyos) wants python-hid, which conflicts with python-hidapi, and
+    # a PC can need python-hidapi (liquidctl does). Only Valve's Steam Deck controller firmware updater uses python-hid, which
+    # a PC doesn't run: so a placeholder package that provides python-hid keeps python-hidapi and satisfies the dependency
+    # (also at later updates, which a one-time --assume-installed wouldn't). It stays when the conversion goes off:
+    # jupiter-hw-support, which stays, depends on it.
+    pacman -Q python-hidapi >/dev/null 2>&1 || return 0
+    pacman -Q python-hid steamify-python-hid-shim >/dev/null 2>&1 && return 0
+    local dir pkg cache="${XDG_CACHE_HOME:-$HOME/.cache}/steamify"
+    warn "python-hidapi is installed (liquidctl and others need it) and conflicts with python-hid, which Steam Deck's tools ask for: keeping python-hidapi, with a small placeholder package for python-hid."
+    sudo pacman -S --needed --noconfirm base-devel >/dev/null || { err "Installing the build tools failed."; return 1; }
+    mkdir -p "$cache" && dir="$(mktemp -d -p "$cache" hid-shim.XXXXXX)" || return 1
+    patch_file python-hid-shim.PKGBUILD > "$dir/PKGBUILD" || { rm -rf "$dir"; return 1; }
+    if ! (cd "$dir" && makepkg -f --noconfirm >/dev/null) ||
+        ! pkg="$(ls "$dir"/steamify-python-hid-shim-*.pkg.tar.* 2>/dev/null | head -1)" ||
+        ! sudo pacman -U --noconfirm "$pkg"; then
+        rm -rf "$dir"
+        err "Couldn't set up the python-hid placeholder: python-hidapi and python-hid conflict, so the packages can't be installed."
+        return 1
+    fi
+    rm -rf "$dir"
+    ok "python-hidapi kept; python-hid is covered by a placeholder."
+}
+
 install_required_packages() {
     # Step 2: gamescope/Steam and the desktop helpers the rest of the setup uses.
     local -a MISSING
@@ -65,6 +89,7 @@ install_required_packages() {
     mapfile -t MISSING < <(pacman -T gamescope-session-cachyos steam mangohud xterm ttf-liberation wqy-zenhei plasma-keyboard)
 
     if [[ ${#MISSING[@]} -gt 0 ]]; then
+        python_hid_shim_ensure || return 1
         info "Installing missing packages: ${MISSING[*]}"
         sudo pacman -S --needed --noconfirm "${MISSING[@]}" || { err "Package installation failed."; return 1; }
     else
