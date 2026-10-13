@@ -7,6 +7,8 @@ one per merged pull request.
 
 ## 2.11.2 - 2026-10-13
 
+- **feat: on NVIDIA the gaming session runs on the display's own mode and Steam's interface at its size: a second gamescope patch (`gamescope-ui-native.patch`, release `3.16.31-2` of steamify-gamescope-nvidia, now the pin) keeps Steam's UI X server at the output size when Steam (with `-steamos3`) asks for 1920x1080, and a wrapper (`gamescope-display-wrapper.sh`, set up by the conversion with a drop-in of `gamescope-session.service`) starts gamescope on the mode KDE has saved for the connected display, else the biggest mode at the highest refresh rate: before, gaming mode ran at the display's preferred mode (60 Hz on many monitors) with a 1080p Steam UI. Tested on an RTX 5080, 3440x1440@175: widescreen, sharp, a Proton game starts**
+
 - **fix: on an NVIDIA PC that had single user mode on before the SteamOS conversion, "Return to Gaming Mode" and the boot choice work again: single user mode's desktop autologin (`zzz-steamify-autologin.conf`, read last) pinned the Plasma session; the conversion removes it, and turning the conversion off sets it up again**
 
 - **fix: when an option fails, its sub-options are not applied any more (a failed conversion used to leave its "Boot into the desktop", silent start and icons on without it)**

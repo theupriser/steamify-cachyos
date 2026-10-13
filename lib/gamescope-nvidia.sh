@@ -20,8 +20,8 @@ GSN_PKG=steamify-gamescope-nvidia
 GSN_RELEASES="${GSN_RELEASES:-https://github.com/theupriser/steamify-gamescope-nvidia/releases}"
 # The package this Steamify release was tested with (patches/gamescope-nvidia.PKGBUILD names the same version): the
 # fallback. A new pin: the release's tag, the package's sha256, and the PKGBUILD's pkgver/pkgrel.
-GSN_VERSION=3.16.31-1
-GSN_SHA256=9f20e5243866d1ddeb9ba0c6828bc7be1945f623f9a5d8094391f0df043002e1
+GSN_VERSION=3.16.31-2
+GSN_SHA256=3b981bed4dfdac383d22b8c22feaef191c2f2863bccf5676d1ec959c2c5ee3a3
 # Where the ISO leaves a copy of the pinned package, for installs without GitHub.
 GSN_BACKUP_DIR="${GSN_BACKUP_DIR:-/usr/local/share/steamify/gamescope}"
 # How long a look at GitHub for a newer release counts (seconds), so opening the menu doesn't ask every time.
@@ -123,7 +123,8 @@ gsn_build_package() {
     # On disk, not /tmp: the installer's chroot has a tmpfs there (RAM), and the build is 1-2 GB.
     mkdir -p "$cache" && dir="$(mktemp -d -p "$cache" gamescope-build.XXXXXX)" || return 1
     patch_file gamescope-nvidia.PKGBUILD > "$dir/PKGBUILD" &&
-        patch_file gamescope-gbm-scanout.patch > "$dir/gamescope-gbm-scanout.patch" || {
+        patch_file gamescope-gbm-scanout.patch > "$dir/gamescope-gbm-scanout.patch" &&
+        patch_file gamescope-ui-native.patch > "$dir/gamescope-ui-native.patch" || {
         err "Couldn't write the build files." >&2
         rm -rf "$dir"; return 1
     }
@@ -179,6 +180,43 @@ gsn_env_disable() {
     return 0
 }
 
+# --- The session starts gamescope on the display's own mode
+#
+# gamescope-session starts gamescope without a size or a refresh rate, so it takes the display's *preferred* mode, which
+# many monitors declare as 60 Hz while the desktop runs them at their highest. patches/gamescope-display-wrapper.sh (put
+# first in the gaming session's PATH by a drop-in of gamescope-session.service) starts it on the mode KDE has saved for
+# the connected display, else the biggest mode at the highest refresh rate, read at every session start.
+GSN_DISPLAY_WRAPPER="${GSN_DISPLAY_WRAPPER:-$STEAMIFY_BIN/gamescope}"
+GSN_DISPLAY_DROPIN="${GSN_DISPLAY_DROPIN:-$HOME/.config/systemd/user/gamescope-session.service.d/steamify-display.conf}"
+
+gsn_display_status() { [[ -x "$GSN_DISPLAY_WRAPPER" && -f "$GSN_DISPLAY_DROPIN" ]]; }
+
+gsn_display_pending() {
+    # The patched gamescope is in use but the session still starts it on the display's preferred mode: a normal run sets it up.
+    gsn_package_installed && gsn_env_set && ! gsn_display_status
+}
+
+gsn_display_enable() {
+    patch_file gamescope-display-wrapper.sh | install_executable "$GSN_DISPLAY_WRAPPER" 755 || return 1
+    mkdir -p "$(dirname "$GSN_DISPLAY_DROPIN")"
+    cat > "$GSN_DISPLAY_DROPIN" << EOF
+# Steamify: the gaming session starts gamescope on the display's own mode (see lib/gamescope-nvidia.sh). Turning the
+# SteamOS conversion off removes this file.
+[Service]
+ExecStart=
+ExecStart=/usr/bin/bash -c 'PATH="$(dirname "$GSN_DISPLAY_WRAPPER"):\$PATH" exec /usr/lib/steamos/gamescope-session'
+EOF
+    user_systemctl daemon-reload
+}
+
+gsn_display_disable() {
+    # Only our own files: the wrapper is recognised by its first comment line.
+    grep -qs "^# Steamify: gamescope-session starts gamescope" "$GSN_DISPLAY_WRAPPER" && rm -f "$GSN_DISPLAY_WRAPPER"
+    [[ -f "$GSN_DISPLAY_DROPIN" ]] && rm -f "$GSN_DISPLAY_DROPIN" && rmdir "$(dirname "$GSN_DISPLAY_DROPIN")" 2>/dev/null
+    user_systemctl daemon-reload
+    return 0
+}
+
 gsn_enable() {
     # Only on a supported NVIDIA card; elsewhere the stock gamescope is right.
     nvidia_present || return 0
@@ -191,6 +229,7 @@ gsn_enable() {
     nvidia_extras_enable || return 1
     gsn_install_package || return 1
     gsn_env_enable
+    gsn_display_enable || warn "Couldn't set up the display mode for gaming mode: gamescope takes the display's preferred mode."
     ok "gamescope draws NVIDIA's picture through GBM (gamescope_drm_gbm_scanout=1) from the next gaming mode start."
 }
 
@@ -198,6 +237,7 @@ gsn_disable() {
     # The setting goes, and what nvidia_*_enable added; the packages stay (patched gamescope, 32-bit libraries), like
     # the other packages of the conversion (steam, gamescope-session-cachyos).
     gsn_env_disable
+    gsn_display_disable
     nvidia_present || return 0
     nvidia_extras_disable
     nvidia_kernel_disable
