@@ -238,6 +238,18 @@ no fix known). The kernel parameters `nvidia-drm.modeset=1`/`fbdev=1` and loadin
 window straight to the display. What does work on an RTX 5080: Steam's Big Picture (`steam -gamepadui`) as a normal window of
 the Plasma desktop session, smooth and clean.
 
+Since 2.11.2 there is a second way: gamescope with GBM-allocated scan-out buffers (`lib/gamescope-nvidia.sh`). On an RTX 5080
+(driver 615.78.08, 3440x1440@175) Steam's gaming UI in gamescope's DRM session is clean with it and shows artifacts everywhere
+without. The patch is nine commits of [farnoy/gamescope](https://github.com/farnoy/gamescope) (`nvidia-gbm-wayland`), kept in
+[steamify-gamescope-nvidia](https://github.com/theupriser/steamify-gamescope-nvidia) with its PKGBUILD; `gsn_install_package` clones
+that repository, builds the package as the user (`makepkg -sf`) and installs it with `pacman -U --ask 4` (the package provides and
+conflicts with `gamescope`). It is opt-in inside gamescope: `gamescope_drm_gbm_scanout=1` in
+`~/.config/gamescope-session/environment` and `~/.config/environment.d/99-steamify-gamescope-nvidia.conf`. The SteamOS conversion
+(`gaming_enable`) does this on a supported card (`nvidia_supported`), so on those PCs it is offered next to "Gaming on NVIDIA"
+and the two exclude each other (`toggle_component`, `backend.sh`, `AppState.qml`); single user mode works with either. Turning the
+conversion off removes the setting and keeps the package. The package is pinned to the gamescope release the patch was made for
+(`UPSTREAM_VERSION` in that repository): pacman does not update it, and Steamify does not rebuild it yet.
+
 So with an NVIDIA GPU (PCI vendor 0x10de, display class, its driver providing `nvidia_drm`: `nvidia_present`) the SteamOS
 conversion (`gaming`, and its options `boot`, `single`, `glyphs`) isn't offered, unless it is already on (so it can be turned
 off). `nvidia` ("Gaming on NVIDIA", `lib/nvidia.sh`) takes its place, hidden while the conversion is on (both would start

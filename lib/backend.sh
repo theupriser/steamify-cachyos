@@ -147,10 +147,15 @@ backend_apply() {
         for id in "${want[@]}"; do [[ "$id" == "$c" ]] && WANTED[$c]=1; done
     done
     # The same rules as the menu's toggles.
-    # (Single user mode only needs the conversion where it is offered: not on NVIDIA PCs.)
-    [[ "${WANTED[single]:-0}" == 1 ]] && component_available gaming && WANTED[gaming]=1
+    # (Single user mode only needs the conversion where it is offered: not on NVIDIA PCs, where it works without it.)
+    [[ "${WANTED[single]:-0}" == 1 ]] && component_available gaming && ! nvidia_present && WANTED[gaming]=1
+    # On NVIDIA the conversion and "Gaming on NVIDIA" exclude each other: the one that is not on yet wins.
+    if nvidia_present && [[ "${WANTED[gaming]:-0}" == 1 && "${WANTED[nvidia]:-0}" == 1 ]]; then
+        if [[ "${CURRENT[gaming]:-0}" == 1 ]]; then WANTED[gaming]=0; WANTED[boot]=0; WANTED[silent]=0; WANTED[glyphs]=0
+        else WANTED[nvidia]=0; WANTED[bigpicture]=0; WANTED[nvsilent]=0; fi
+    fi
     if component_available gaming; then
-        [[ "${WANTED[gaming]:-0}" == 0 ]] && { WANTED[single]=0; WANTED[boot]=0; }
+        [[ "${WANTED[gaming]:-0}" == 0 ]] && { nvidia_present || WANTED[single]=0; WANTED[boot]=0; }
     else
         WANTED[boot]=0
     fi

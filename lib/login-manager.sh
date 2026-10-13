@@ -94,6 +94,8 @@ gaming_enable() {
     # LOGIN_MANAGER (sddm with single user, else plasmalogin) is set by the
     # menu. Re-running with the other value switches over cleanly.
     install_required_packages || return 1
+    # NVIDIA: gamescope's picture is corrupted unless it is the patched one (no-op elsewhere).
+    gsn_enable || return 1
     case "$LOGIN_MANAGER" in
         sddm)
             switch_to_sddm || return 1
@@ -122,6 +124,7 @@ gaming_disable() {
     switch_to_plasmalogin
     remove_desktop_shortcut
     steam_disable
+    gsn_disable
     krevert gaming
     os_name_disable
     ok "The PC boots to the normal login screen again (from the next boot)."

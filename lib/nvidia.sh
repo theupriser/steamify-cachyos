@@ -37,9 +37,9 @@ nvidia_present() {
     return 1
 }
 
-# Shown on NVIDIA PCs, unless the SteamOS conversion is already on there (it
-# has to be turned off first: both would start Steam at login).
-nvidia_available() { nvidia_present && ! gaming_status 2>/dev/null; }
+# Shown on NVIDIA PCs. It and the SteamOS conversion exclude each other (both
+# would start Steam at login): the menu unticks one when the other is ticked.
+nvidia_available() { nvidia_present; }
 bigpicture_available() { nvidia_available; }
 
 nvidia_status() {
