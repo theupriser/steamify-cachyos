@@ -238,7 +238,7 @@ no fix known). The kernel parameters `nvidia-drm.modeset=1`/`fbdev=1` and loadin
 window straight to the display. What does work on an RTX 5080: Steam's Big Picture (`steam -gamepadui`) as a normal window of
 the Plasma desktop session, smooth and clean.
 
-Since 2.11.2 there is a second way: gamescope with GBM-allocated scan-out buffers (`lib/gamescope-nvidia.sh`). On an RTX 5080
+Since 2.12.0 there is a second way: gamescope with GBM-allocated scan-out buffers (`lib/gamescope-nvidia.sh`). On an RTX 5080
 (driver 615.78.08, 3440x1440@175) Steam's gaming UI in gamescope's DRM session is clean with it and shows artifacts everywhere
 without. The patch is nine commits of [farnoy/gamescope](https://github.com/farnoy/gamescope) (`nvidia-gbm-wayland`), carried in
 `patches/` (`gamescope-gbm-scanout.patch` and the recipe `gamescope-nvidia.PKGBUILD`, kept in sync with
@@ -260,7 +260,7 @@ newer, Turing and later): the kernel parameters, the early modules, suspend memo
 offered any more (`nvidia_available`); a PC that had it on keeps it until the conversion is turned on, which turns it off
 (`nvidia_swap_out`). Turning the conversion off removes the setting and those settings, and keeps the packages. Tested on an RTX 5080 only.
 
-Before 2.11.2, with an NVIDIA GPU the SteamOS conversion (`gaming`, and its options `boot`, `single`, `glyphs`) wasn't offered, unless
+Before 2.12.0, with an NVIDIA GPU the SteamOS conversion (`gaming`, and its options `boot`, `single`, `glyphs`) wasn't offered, unless
 it was already on. `nvidia` ("Gaming on NVIDIA", `lib/nvidia.sh`) took its place (both would start Steam at login): it installs `steam` when missing (recorded in state `nvidia`, removed again only then) and enables the user
 unit `steamify-steam-autostart.service` (`services/`, `ExecStart=/usr/bin/steam @ARGS@`, Plasma only). Its sub-option
 `bigpicture` ("Steam starts in Big Picture", ticked along with it) rewrites the unit with `-gamepadui` and sets

@@ -1,14 +1,9 @@
 # Steamify CachyOS
 
-The Steamify app's menu. On a Steam Machine (or any PC with an AMD or Intel
-graphics card) it offers the full SteamOS conversion, on the left. On a PC with
-an NVIDIA graphics card gamescope's gaming mode shows a corrupted picture, so the
-menu offers **Gaming on NVIDIA** instead (Steam on the desktop, started at login,
-optionally in Big Picture), on the right.
+The Steamify app's menu, on a Steam Machine. On a PC with an NVIDIA graphics card (GTX 16 / RTX 20 series or
+newer) the same SteamOS conversion is offered; Steamify installs a patched gamescope for it.
 
-| On a Steam Machine | On a PC with an NVIDIA graphics card |
-|---|---|
-| ![The Steamify app's menu on a Steam Machine](assets/screenshot-menu-steam-machine.png) | ![The Steamify app's menu on a PC with an NVIDIA graphics card](assets/screenshot-menu-nvidia.png) |
+![The Steamify app's menu on a Steam Machine](assets/screenshot-menu-steam-machine.png)
 
 Turn a CachyOS desktop PC into a SteamOS-style console: it boots straight
 into Steam's Big Picture (gamescope), and you can switch to the KDE Plasma

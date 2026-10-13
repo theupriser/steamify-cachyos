@@ -48,7 +48,7 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `<id>_available` is checked via `component_available` (e.g. `machine`
   only on Fremont). Turn-on order is `COMPONENTS` order, turn-off reverse;
   `gaming` must stay first. Dependencies live in `toggle_component`.
-- **NVIDIA** (`lib/gamescope-nvidia.sh`, `lib/nvidia.sh`): since 2.11.2 the SteamOS conversion (`gaming` and its options) runs on
+- **NVIDIA** (`lib/gamescope-nvidia.sh`, `lib/nvidia.sh`): since 2.12.0 the SteamOS conversion (`gaming` and its options) runs on
   NVIDIA PCs with a patched gamescope (GBM scan-out: gamescope#2309; Steam's UI kept at the display's size), downloaded as the
   newest release of theupriser/steamify-gamescope-nvidia, with the pinned package (`GSN_VERSION`, `GSN_SHA256`), the copy the ISO
   leaves, and a build here (`patches/gamescope-nvidia.PKGBUILD` + the two patches) as the fallback. "Gaming on NVIDIA" (`nvidia`,
@@ -160,9 +160,8 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
     a warning when `VERSION` is a version that's already released (so a
     release branch that forgot its bump shows it on every PR).
   - A release that adds, removes or renames a menu row also retakes the
-    README screenshots (`assets/screenshot-menu-steam-machine.png` and
-    `assets/screenshot-menu-nvidia.png`, side by side in the README): the app from the branch on a Steam Machine and on a PC
-    with an NVIDIA card, every row visible and each window only as tall as its options need, the header showing the new
+    README screenshot (`assets/screenshot-menu-steam-machine.png`; NVIDIA PCs get the same menu, so there is no separate
+    one): the app from the branch on a Steam Machine, every row visible and the window only as tall as its options need, the header showing the new
     `VERSION`, 1600 px wide. Size the window with a KWin script (match the `steamify-ui` class exactly: a title match also hits
     Konsole and editor windows) and crop the full-screen capture to the client rectangle; mind the display scale (the Steam
     Machine runs at 1.75).

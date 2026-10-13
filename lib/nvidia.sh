@@ -37,12 +37,12 @@ nvidia_present() {
     return 1
 }
 
-# Not offered any more (2.11.2): the SteamOS conversion with the patched gamescope (lib/gamescope-nvidia.sh) covers NVIDIA PCs.
+# Not offered any more (2.12.0): the SteamOS conversion with the patched gamescope (lib/gamescope-nvidia.sh) covers NVIDIA PCs.
 # A PC that has this on keeps it until the conversion is turned on, which calls nvidia_swap_out.
 nvidia_available() { return 1; }
 
 nvidia_migration_pending() {
-    # "Gaming on NVIDIA" is on (set up before 2.11.2) and the SteamOS conversion that replaces it isn't: the menu ticks the
+    # "Gaming on NVIDIA" is on (set up before 2.12.0) and the SteamOS conversion that replaces it isn't: the menu ticks the
     # conversion and shows it as an update, so a normal run moves the PC over (nvidia_swap_out in gsn_enable).
     nvidia_present && nvidia_status && ! gaming_status 2>/dev/null
 }
