@@ -73,11 +73,16 @@ cec_driver_enable() {
         cp "$CEC_DRIVER_CACHE" "$tmp/cros-ec-cec.c"
     else
         info "Downloading Valve's Steam Machine CEC driver..."
-        if ! curl -fsL --retry 2 "$CEC_DRIVER_URL" -o "$tmp/cros-ec-cec.c" ||
+        if ! curl -fsL --retry 2 --max-time 60 "$CEC_DRIVER_URL" -o "$tmp/cros-ec-cec.c" ||
             ! echo "$CEC_DRIVER_SHA256  $tmp/cros-ec-cec.c" | sha256sum -c --quiet -; then
-            rm -rf "$tmp"
-            err "Downloading Valve's CEC driver failed (or its checksum didn't match)."
-            return 1
+            # GitHub is down, rate-limits us, or sent something else: Steamify carries the same file (checked the same way).
+            warn "Downloading Valve's CEC driver failed (or its checksum didn't match): using the copy Steamify carries."
+            patch_file cros-ec-cec.c > "$tmp/cros-ec-cec.c"
+            if ! echo "$CEC_DRIVER_SHA256  $tmp/cros-ec-cec.c" | sha256sum -c --quiet -; then
+                rm -rf "$tmp"
+                err "Steamify's own copy of Valve's CEC driver doesn't match the pinned checksum (a new pin needs a new copy in patches/)."
+                return 1
+            fi
         fi
         # The name carries the checksum: a newer pin gets its own file, the old one goes.
         sudo find "${CEC_DRIVER_CACHE%/*}" -maxdepth 1 -name 'cros-ec-cec-*.c' ! -name "${CEC_DRIVER_CACHE##*/}" -delete 2>/dev/null
