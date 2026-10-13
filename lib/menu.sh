@@ -206,8 +206,6 @@ detect_components() {
             component_available "$c" && component_selectable "$c" && ! is_action "$c" &&
                 [[ " ${NO_PRESELECT[*]} " != *" $c "* ]] && WANTED[$c]=1
         done
-        # On NVIDIA "Gaming on NVIDIA" is the default; the conversion (a patched gamescope, built here) is a choice.
-        nvidia_present && WANTED[gaming]=0 WANTED[glyphs]=0
         machine_available && WANTED[cec]=1
     fi
 }
@@ -286,8 +284,6 @@ defaults_list() {
         sel=false; component_selectable "$c" && sel=true
         on=false
         [[ "$sel" == true && " ${NO_PRESELECT[*]} " != *" $c "* ]] && on=true
-        # (On NVIDIA the conversion is a choice: "Gaming on NVIDIA" is preselected, see show_menu's first run.)
-        [[ "$c" == gaming || "$c" == glyphs ]] && nvidia_present && on=false
         [[ "$c" == cec ]] && machine_available && on=true
         items+="${items:+,}{\"id\":$(json_str "$c"),\"label\":$(json_str "${LABEL[$c]%%:*}")"
         items+=",\"hint\":$(json_str "$( [[ "${LABEL[$c]}" == *:* ]] && echo "${LABEL[$c]#*: }")")"

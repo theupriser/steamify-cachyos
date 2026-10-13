@@ -61,12 +61,20 @@ gsn_env_disable() {
 gsn_enable() {
     # Only on a supported NVIDIA card; elsewhere the stock gamescope is right.
     nvidia_supported || return 0
+    # What NVIDIA's DRM stack wants (lib/nvidia.sh): modeset/fbdev on the kernel command line, the modules in the
+    # initramfs, video memory kept over suspend, the 32-bit libraries. Takes effect at the next boot, like the session.
+    nvidia_kernel_enable || return 1
+    nvidia_extras_enable || return 1
     gsn_install_package || return 1
     gsn_env_enable
     ok "gamescope draws NVIDIA's picture through GBM (gamescope_drm_gbm_scanout=1) from the next gaming mode start."
 }
 
 gsn_disable() {
-    # The setting goes; the patched package stays, like the other packages (steam, gamescope-session-cachyos).
+    # The setting goes, and what nvidia_*_enable added; the packages stay (patched gamescope, 32-bit libraries), like
+    # the other packages of the conversion (steam, gamescope-session-cachyos).
     gsn_env_disable
+    nvidia_supported || return 0
+    nvidia_extras_disable
+    nvidia_kernel_disable
 }

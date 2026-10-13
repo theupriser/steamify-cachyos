@@ -37,9 +37,11 @@ nvidia_present() {
     return 1
 }
 
-# Shown on NVIDIA PCs. It and the SteamOS conversion exclude each other (both
-# would start Steam at login): the menu unticks one when the other is ticked.
-nvidia_available() { nvidia_present; }
+# The SteamOS conversion with the patched gamescope (lib/gamescope-nvidia.sh) replaces this on a supported card, so
+# this is for older NVIDIA cards, and for a PC where it is already on (so it can be turned off, or swapped for the
+# conversion). It and the conversion exclude each other (both would start Steam at login): the menu unticks one when
+# the other is ticked.
+nvidia_available() { nvidia_present && { ! nvidia_supported || nvidia_status; }; }
 bigpicture_available() { nvidia_available; }
 
 nvidia_status() {
@@ -76,14 +78,19 @@ nvidia_disable() {
     user_systemctl disable --now "$NVIDIA_UNIT" >/dev/null 2>&1
     rm -f "$unit"
     user_systemctl daemon-reload
-    nvidia_extras_disable
+    # Swapped for the SteamOS conversion (turned on first, in the same run): it needs the same settings, they stay.
+    gaming_status 2>/dev/null || nvidia_extras_disable
     pkgs="$(state_get nvidia installed_pkgs)"
+    if gaming_status 2>/dev/null; then
+        local p; pkgs=" $pkgs "
+        for p in $NVIDIA_LIB32_PKGS; do pkgs="${pkgs// $p / }"; done
+    fi
     # Only what Steamify installed; games and the Steam folder stay.
     # shellcheck disable=SC2086 # a list of package names
     [[ -n "$pkgs" ]] && sudo pacman -Rns --noconfirm $pkgs >/dev/null 2>&1
     state_clear nvidia
     krevert bigpicture
-    nvidia_kernel_disable
+    gaming_status 2>/dev/null || nvidia_kernel_disable
     ok "Steam no longer starts at login."
 }
 

@@ -245,16 +245,18 @@ without. The patch is nine commits of [farnoy/gamescope](https://github.com/farn
 that repository, builds the package as the user (`makepkg -sf`) and installs it with `pacman -U --ask 4` (the package provides and
 conflicts with `gamescope`). It is opt-in inside gamescope: `gamescope_drm_gbm_scanout=1` in
 `~/.config/gamescope-session/environment` and `~/.config/environment.d/99-steamify-gamescope-nvidia.conf`. The SteamOS conversion
-(`gaming_enable`) does this on a supported card (`nvidia_supported`), so on those PCs it is offered next to "Gaming on NVIDIA"
-and the two exclude each other (`toggle_component`, `backend.sh`, `AppState.qml`); single user mode works with either. Turning the
-conversion off removes the setting and keeps the package. The package is pinned to the gamescope release the patch was made for
+(`gaming_enable`) does this on a supported card (`nvidia_supported`), together with what "Gaming on NVIDIA" sets up there (the kernel
+parameters, the early modules, suspend memory, the 32-bit libraries: `nvidia_kernel_enable`, `nvidia_extras_enable`). So on a
+supported card the conversion replaces "Gaming on NVIDIA": that one is only offered on older NVIDIA cards, or while it is already on
+(to turn it off, or swap it for the conversion; the two exclude each other: `toggle_component`, `backend.sh`, `AppState.qml`).
+Single user mode works with either. Turning the conversion off removes the setting and those settings, and keeps the packages. The package is pinned to the gamescope release the patch was made for
 (`UPSTREAM_VERSION` in that repository): pacman does not update it, and Steamify does not rebuild it yet.
 
 So with an NVIDIA GPU (PCI vendor 0x10de, display class, its driver providing `nvidia_drm`: `nvidia_present`) the SteamOS
 conversion (`gaming`, and its options `boot`, `single`, `glyphs`) is only offered on a supported card (GTX 16 / RTX 20 series or newer, Turing and later,
 `nvidia_supported`) with the patched gamescope described below, or when it is already on (so it can be turned off).
-`nvidia` ("Gaming on NVIDIA", `lib/nvidia.sh`) is the alternative, and excludes the conversion (both would start
-Steam at login): it installs `steam` when missing (recorded in state `nvidia`, removed again only then) and enables the user
+`nvidia` ("Gaming on NVIDIA", `lib/nvidia.sh`) is for older NVIDIA cards (and for PCs where it is already on), and excludes the
+conversion (both would start Steam at login): it installs `steam` when missing (recorded in state `nvidia`, removed again only then) and enables the user
 unit `steamify-steam-autostart.service` (`services/`, `ExecStart=/usr/bin/steam @ARGS@`, Plasma only). Its sub-option
 `bigpicture` ("Steam starts in Big Picture", ticked along with it) rewrites the unit with `-gamepadui` and sets
 `ksmserverrc [General] loginMode=emptySession` (`kset`, undone with `krevert bigpicture`), so windows of the last session
