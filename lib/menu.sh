@@ -57,12 +57,9 @@ declare -A CURRENT WANTED
 
 component_available() {
     case "$1" in
-        # gamescope's own session shows a corrupted picture on NVIDIA unless it is the patched one (lib/gamescope-nvidia.sh,
-        # installed with the conversion on a supported card); "Gaming on NVIDIA" is the alternative there. Older NVIDIA
-        # cards only get the alternative (the conversion is shown anyway when it's already on, so it can be turned off).
-        gaming|boot|silent|glyphs) ! nvidia_present || gaming_status || nvidia_supported ;;
-        nvidia) nvidia_available ;;
-        bigpicture|nvsilent) bigpicture_available ;;
+        # The SteamOS conversion is offered on NVIDIA PCs too: it installs the patched gamescope there (lib/gamescope-nvidia.sh)
+        # and turns off "Gaming on NVIDIA" (lib/nvidia.sh), which is not offered any more (nvidia_available).
+        nvidia|bigpicture|nvsilent) nvidia_available ;;
         machine|poweroff) machine_available ;;
         vram) vram_available ;;
         # Steamify in the Steam library is for gaming mode's controller: not needed for Big Picture on the desktop (NVIDIA PCs;
@@ -297,9 +294,8 @@ toggle_component() {
     component_selectable "$c" || return 1
     WANTED[$c]=$(( 1 - WANTED[$c] ))
     # Single user mode only makes sense on top of the SteamOS conversion.
-    # (On NVIDIA the conversion isn't offered: single user mode logs in by itself, see lib/single-user.sh.)
-    if [[ "$c" == single && "${WANTED[single]}" == 1 ]] && component_available gaming && ! nvidia_present; then WANTED[gaming]=1; fi
-    if [[ "$c" == gaming && "${WANTED[gaming]}" == 0 ]]; then nvidia_present || WANTED[single]=0; WANTED[boot]=0; fi
+    if [[ "$c" == single && "${WANTED[single]}" == 1 ]] && component_available gaming; then WANTED[gaming]=1; fi
+    if [[ "$c" == gaming && "${WANTED[gaming]}" == 0 ]]; then WANTED[single]=0; WANTED[boot]=0; fi
     # Where to boot to is part of the conversion, too.
     if [[ "$c" == boot && "${WANTED[boot]}" == 1 ]]; then WANTED[gaming]=1; fi
     # Big Picture is opt-out: ticked along with "Gaming on NVIDIA".
@@ -311,15 +307,6 @@ toggle_component() {
     if [[ "$c" == gaming && "${WANTED[gaming]}" == 0 ]]; then WANTED[silent]=0; WANTED[glyphs]=0; fi
     if [[ "$c" == silent && "${WANTED[silent]}" == 1 ]]; then WANTED[gaming]=1; fi
     if [[ "$c" == glyphs && "${WANTED[glyphs]}" == 1 ]]; then WANTED[gaming]=1; fi
-    # On NVIDIA the SteamOS conversion and "Gaming on NVIDIA" exclude each other (both would start Steam at login);
-    # single user mode works with either.
-    if nvidia_present; then
-        if [[ "$c" == nvidia && "${WANTED[nvidia]}" == 1 ]]; then
-            WANTED[gaming]=0; WANTED[boot]=0; WANTED[silent]=0; WANTED[glyphs]=0
-        elif [[ "$c" =~ ^(gaming|boot|silent|glyphs)$ && "${WANTED[$c]}" == 1 && "${WANTED[gaming]}" == 1 ]]; then
-            WANTED[nvidia]=0; WANTED[bigpicture]=0; WANTED[nvsilent]=0
-        fi
-    fi
     # The power-off fix is opt-out: ticked along with Steam Machine support.
     if [[ "$c" == machine ]]; then WANTED[poweroff]=${WANTED[machine]}; fi
     if [[ "$c" == poweroff && "${WANTED[poweroff]}" == 1 ]]; then WANTED[machine]=1; fi

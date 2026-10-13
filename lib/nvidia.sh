@@ -37,11 +37,21 @@ nvidia_present() {
     return 1
 }
 
-# The SteamOS conversion with the patched gamescope (lib/gamescope-nvidia.sh) replaces this on a supported card, so
-# this is for older NVIDIA cards, and for a PC where it is already on (so it can be turned off, or swapped for the
-# conversion). It and the conversion exclude each other (both would start Steam at login): the menu unticks one when
-# the other is ticked.
-nvidia_available() { nvidia_present && { ! nvidia_supported || nvidia_status; }; }
+# Not offered any more (2.11.2): the SteamOS conversion with the patched gamescope (lib/gamescope-nvidia.sh) covers NVIDIA PCs.
+# A PC that has this on keeps it until the conversion is turned on, which calls nvidia_swap_out.
+nvidia_available() { return 1; }
+
+nvidia_swap_out() {
+    # The conversion takes over: Steam no longer starts by itself on the desktop at login (both would start it). Steam, the
+    # packages and the NVIDIA settings stay: the conversion needs them too. The state stays for the conversion's own disable.
+    nvidia_status || return 0
+    info "Gaming on NVIDIA is replaced by the SteamOS conversion: Steam no longer starts on the desktop at login."
+    user_systemctl disable --now "$NVIDIA_UNIT" >/dev/null 2>&1
+    rm -f "$(nvidia_unit_file)"
+    user_systemctl daemon-reload
+    krevert bigpicture
+    return 0
+}
 bigpicture_available() { nvidia_available; }
 
 nvidia_status() {

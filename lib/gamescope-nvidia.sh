@@ -4,8 +4,9 @@
 # https://github.com/theupriser/steamify-gamescope-nvidia; the package `steamify-gamescope-nvidia` is built here, on the PC,
 # and replaces `gamescope` (it provides it). The patch is opt-in: gamescope reads `gamescope_drm_gbm_scanout=1` from its
 # environment, which is set for the gaming session (gamescope-session's environment file, and environment.d).
-# Used by the SteamOS conversion (`gaming_enable`/`gaming_disable`) on a supported NVIDIA card (`nvidia_supported`):
-# GTX 16 / RTX 20 series or newer (Turing and later, what NVIDIA's open kernel driver supports).
+# Used by the SteamOS conversion (`gaming_enable`/`gaming_disable`) on every NVIDIA PC (`nvidia_present`); the kernel
+# parameters and the rest of lib/nvidia.sh's setup only on a supported card (`nvidia_supported`): GTX 16 / RTX 20 series or
+# newer (Turing and later, what NVIDIA's open kernel driver supports). Tested on an RTX 5080 only.
 # Sourced by steamify.sh; not meant to be run on its own.
 
 GSN_PKG=steamify-gamescope-nvidia
@@ -60,9 +61,12 @@ gsn_env_disable() {
 
 gsn_enable() {
     # Only on a supported NVIDIA card; elsewhere the stock gamescope is right.
-    nvidia_supported || return 0
-    # What NVIDIA's DRM stack wants (lib/nvidia.sh): modeset/fbdev on the kernel command line, the modules in the
-    # initramfs, video memory kept over suspend, the 32-bit libraries. Takes effect at the next boot, like the session.
+    nvidia_present || return 0
+    # A PC that had "Gaming on NVIDIA" on: Steam must not also start on the desktop.
+    nvidia_swap_out
+    # What NVIDIA's DRM stack wants (lib/nvidia.sh; a supported card only, the functions check): modeset/fbdev on the
+    # kernel command line, the modules in the initramfs, video memory kept over suspend, the 32-bit libraries. Takes
+    # effect at the next boot, like the session.
     nvidia_kernel_enable || return 1
     nvidia_extras_enable || return 1
     gsn_install_package || return 1
@@ -74,7 +78,7 @@ gsn_disable() {
     # The setting goes, and what nvidia_*_enable added; the packages stay (patched gamescope, 32-bit libraries), like
     # the other packages of the conversion (steam, gamescope-session-cachyos).
     gsn_env_disable
-    nvidia_supported || return 0
+    nvidia_present || return 0
     nvidia_extras_disable
     nvidia_kernel_disable
 }
