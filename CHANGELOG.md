@@ -5,6 +5,25 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
+## 2.12.0 - 2026-10-13
+
+- **feat: the patched gamescope comes in one build per CPU level, like CachyOS's repositories (generic, x86-64-v3, v4, znver4): Steamify picks the best one this CPU can run (`gsn_cpu_variant`), falls back to generic, and starts the installed gamescope once headless (`gsn_smoke_test`): a build that doesn't start is replaced by the generic one. CI compiles each with an explicit `-march` (a `-march=native` build died with SIGILL on a Ryzen) and checks the binary for instructions beyond its level.**
+- **feat: on NVIDIA the gaming session runs on the display's own mode and Steam's interface at its size: a second gamescope patch (`gamescope-ui-native.patch`, release `3.16.31-3` of steamify-gamescope-nvidia, now the pin; built once per CPU level, see below) keeps Steam's UI X server at the output size when Steam (with `-steamos3`) asks for 1920x1080, and a wrapper (`gamescope-display-wrapper.sh`, set up by the conversion with a drop-in of `gamescope-session.service`) starts gamescope on the mode KDE has saved for the connected display, else the biggest mode at the highest refresh rate: before, gaming mode ran at the display's preferred mode (60 Hz on many monitors) with a 1080p Steam UI. Tested on an RTX 5080, 3440x1440@175: widescreen, sharp, a Proton game starts**
+
+- **fix: on an NVIDIA PC that had single user mode on before the SteamOS conversion, "Return to Gaming Mode" and the boot choice work again: single user mode's desktop autologin (`zzz-steamify-autologin.conf`, read last) pinned the Plasma session; the conversion removes it, and turning the conversion off sets it up again**
+
+- **fix: when an option fails, its sub-options are not applied any more (a failed conversion used to leave its "Boot into the desktop", silent start and icons on without it)**
+
+- **fix: a PC that keeps `python-hidapi` (liquidctl needs it) can use the SteamOS conversion: jupiter-hw-support, which gamescope-session-cachyos depends on, wants `python-hid`, which conflicts with it and stopped the package install. Steamify builds and installs an empty placeholder package that provides `python-hid` first (`patches/python-hid-shim.PKGBUILD`); only the Steam Deck controller firmware updater uses it**
+
+- **feat: the patched gamescope is downloaded as the newest release of steamify-gamescope-nvidia (checked against that release's `.sha256`), a newer one than the installed package shows the SteamOS conversion as an update, and what this Steamify was tested with is the fallback: the pinned package (sha256 in Steamify), the copy the ISO leaves, a build here; the repository's workflow builds each release in CachyOS's container**
+
+- `124b424`, `f234c72` **fix: HDMI-CEC on the Steam Machine no longer needs GitHub: when downloading Valve's CEC driver fails, Steamify uses the copy it carries (`patches/cros-ec-cec.c`), checked against the same pinned sha256**
+
+- `127b8cf`, `2811ecc`, `f3cd053`, `4325d80`, `03f9e87`, `5b5181f`, `06ffc8b`, `4d60dd2`, `0ba94b2` **feat: the SteamOS conversion is offered on NVIDIA PCs again (GTX 16 / RTX 20 series or newer: Turing and later, the cards NVIDIA's open kernel driver supports): it builds and installs a patched gamescope from the recipe and patch Steamify carries (`patches/`, prepared in [steamify-gamescope-nvidia](https://github.com/theupriser/steamify-gamescope-nvidia); gamescope 3.16.31, so a Steamify release builds the version it was tested with) (GBM-allocated scan-out buffers, NVIDIA's corrupted gaming-mode picture, gamescope#2309; a few minutes to build) and sets `gamescope_drm_gbm_scanout=1` for the session (`lib/gamescope-nvidia.sh`). It replaces "Gaming on NVIDIA", which is not offered any more (the kernel parameters, early modules, suspend memory and the 32-bit libraries come with the conversion on a supported card; a PC that had "Gaming on NVIDIA" on has it turned off when the conversion is turned on). Tested on an RTX 5080 (driver 615.78.08): Steam's gaming UI is clean with it and shows artifacts without. The package is pinned to one gamescope release: updating it is not automatic yet**
+
+- `ce4bc67` **feat: "Gaming on NVIDIA" also keeps video memory over suspend (`NVreg_PreserveVideoMemoryAllocations=1` in `/etc/modprobe.d/90-steamify-nvidia.conf`, the initramfs is rebuilt), enables `nvidia-suspend`/`nvidia-resume`/`nvidia-hibernate`, and installs `lib32-nvidia-utils` and `lib32-libxkbcommon` (32-bit games, the 32-bit MangoHud preload) on a supported card; off removes only what Steamify added. Untested on hardware yet**
+
 ## 2.11.1 - 2026-10-02
 
 - `d70aeb8` **docs: new README screenshots of the app (2.11 menu) on a Steam Machine and on an NVIDIA PC, and the README names the opt-in "Start Steam silently in desktop mode" and the icons as an option of the conversion**

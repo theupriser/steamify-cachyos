@@ -65,7 +65,8 @@ Item {
         var w = {};
         for (var i = 0; i < items.length; i++) w[items[i].id] = items[i].kind === "action" ? false : items[i].wanted;
         want = w;
-        boot = nowOn("boot") ? "desktop" : "gamescope";
+        // (What the PC has, or what the backend ticked: "Gaming on NVIDIA" moving to the conversion keeps how Steam started.)
+        boot = want.boot ? "desktop" : "gamescope";
         if (sel > rows.length) sel = 0;
     }
     Connections { target: backend; function onStatusChanged() { if (app.screen === "menu" || app.screen === "done") app.syncFromStatus(); } }
@@ -101,7 +102,8 @@ Item {
             if (it.kind !== "toggle") continue;
             if (hidden(it)) { if (it.on) p.push({ id: it.id, action: "off" }); continue; }
             if (it.parent && !want[it.parent]) { if (it.on) p.push({ id: it.id, action: "off" }); continue; }
-            if (want[it.id] && !it.on) p.push({ id: it.id, action: "on", isNew: !!it["new"] });
+            // (An item that is off but flagged "update" replaces what the PC has: the conversion for "Gaming on NVIDIA".)
+            if (want[it.id] && !it.on) p.push({ id: it.id, action: it.update ? "update" : "on", isNew: !!it["new"] });
             else if (!want[it.id] && it.on) p.push({ id: it.id, action: "off" });
             else if (want[it.id] && (reapply || it.update)) p.push({ id: it.id, action: reapply ? "again" : "update" });
         }

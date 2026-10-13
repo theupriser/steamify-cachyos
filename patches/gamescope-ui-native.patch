@@ -1,0 +1,39 @@
+Keeps Steam's UI X server (server 0) at the output size when Steam asks for a smaller one.
+
+With -steamos3 (what gamescope-session-cachyos passes) Steam sets its UI to 1920x1080 right after it starts
+(GAMESCOPE_XWAYLAND_MODE_CONTROL), so on a bigger display, and on one that isn't 16:9, the whole interface is a scaled-up
+1080p picture. Games already run at the display's size. With this the server stays at the output size and Steam draws its
+window to match; Steam's SteamOS features (settings pages, game launching) keep working. Written for Steamify on an NVIDIA
+PC (RTX 5080, 3440x1440@175, tested with Steam's UI and a Proton game); not part of the farnoy patch. On by default; the
+setting gamescope_xwayland_ui_native=0 (in gamescope's environment) turns it off.
+Applies with `git apply` after gamescope-gbm-scanout.patch (it ignores these lines).
+
+diff --git a/src/steamcompmgr.cpp b/src/steamcompmgr.cpp
+index 2cb5eb5..ce14c8d 100644
+--- a/src/steamcompmgr.cpp
++++ b/src/steamcompmgr.cpp
+@@ -129,6 +129,8 @@ LogScope g_WaitableLog("waitable");
+ 
+ gamescope::ConVar<bool> cv_overlay_unmultiplied_alpha{ "overlay_unmultiplied_alpha", false };
+ 
++gamescope::ConVar<bool> cv_xwayland_ui_native( "xwayland_ui_native", true, "Keep the Steam UI X server (server 0) at the output size when Steam asks for a smaller one." );
++
+ gamescope::ConVar<bool> cv_vr_show_forwarded_overlays{ "vr_show_forwarded_overlays", false };
+ 
+ std::string *g_pVROverlayKey = nullptr;
+@@ -7240,6 +7242,15 @@ handle_property_notify(xwayland_ctx_t *ctx, XPropertyEvent *ev)
+ 				height = std::min<int>(height, currentOutputHeight);
+ 			}
+ 
++			// Steam asks for a smaller size for its own UI (server 0, 1920x1080 with -steamos3), which makes the whole
++			// interface a scaled-up picture on a bigger display, and on one that isn't 16:9 as well. The UI server
++			// stays at the output size: Steam sizes its window to the server.
++			if ( server_idx == 0 && cv_xwayland_ui_native )
++			{
++				width = currentOutputWidth;
++				height = currentOutputHeight;
++			}
++
+ 			gamescope_xwayland_server_t *server = wlserver_get_xwayland_server( server_idx );
+ 			if ( server )
+ 			{

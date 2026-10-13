@@ -147,7 +147,6 @@ backend_apply() {
         for id in "${want[@]}"; do [[ "$id" == "$c" ]] && WANTED[$c]=1; done
     done
     # The same rules as the menu's toggles.
-    # (Single user mode only needs the conversion where it is offered: not on NVIDIA PCs.)
     [[ "${WANTED[single]:-0}" == 1 ]] && component_available gaming && WANTED[gaming]=1
     if component_available gaming; then
         [[ "${WANTED[gaming]:-0}" == 0 ]] && { WANTED[single]=0; WANTED[boot]=0; }
@@ -186,6 +185,12 @@ backend_apply() {
         if backend_run_component "$c" disable; then feature_record "$c" disable; else failed+=("$c"); fi
     done
     for c in "${TO_ENABLE[@]}"; do
+        # A sub-option of something that just failed isn't applied: it would be left on without its parent.
+        if [[ -n "${PARENT[$c]:-}" && " ${failed[*]:-} " == *" ${PARENT[$c]} "* ]]; then
+            backend_event log "\"id\":$(json_str "$c"),\"line\":$(json_str "Skipped: ${LABEL[${PARENT[$c]}]%%:*} didn't work.")"
+            failed+=("$c")
+            continue
+        fi
         if backend_run_component "$c" enable; then is_action "$c" || feature_record "$c" enable; else failed+=("$c"); fi
     done
     feature_record_unticked

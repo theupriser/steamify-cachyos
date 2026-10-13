@@ -26,7 +26,7 @@ NO_PRESELECT=(boot silent nvsilent cec kpin hdmi extended_controller_support)
 # FEATURE_BASELINE.
 FEATURE_BASELINE=2.1.0
 declare -A FEATURE_VERSION=(
-    [gaming]=2.9.0 [boot]=2.1.0 [silent]=2.11.0 [nvidia]=2.10.0 [bigpicture]=2.10.0 [nvsilent]=2.11.0 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.1.0
+    [gaming]=2.9.0 [boot]=2.1.0 [silent]=2.11.0 [nvidia]=2.12.0 [bigpicture]=2.10.0 [nvsilent]=2.11.0 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.1.0
     [launcher]=2.1.0 [cec]=2.7.0 [machine]=2.9.0 [poweroff]=2.2.0 [vram]=2.3.0 [notify]=2.5.0 [steamgame]=2.5.1 [extended_controller_support]=2.10.0
     [kpin]=2.1.0 [hdmi]=2.1.0
 )
@@ -57,11 +57,9 @@ declare -A CURRENT WANTED
 
 component_available() {
     case "$1" in
-        # gamescope's own session is broken on NVIDIA: the conversion is replaced by "Gaming on NVIDIA" there (shown
-        # anyway when it's already on, so it can be turned off).
-        gaming|boot|silent|glyphs) ! nvidia_present || gaming_status ;;
-        nvidia) nvidia_available ;;
-        bigpicture|nvsilent) bigpicture_available ;;
+        # The SteamOS conversion is offered on NVIDIA PCs too: it installs the patched gamescope there (lib/gamescope-nvidia.sh)
+        # and turns off "Gaming on NVIDIA" (lib/nvidia.sh), which is not offered any more (nvidia_available).
+        nvidia|bigpicture|nvsilent) nvidia_available ;;
         machine|poweroff) machine_available ;;
         vram) vram_available ;;
         # Steamify in the Steam library is for gaming mode's controller: not needed for Big Picture on the desktop (NVIDIA PCs;
@@ -115,7 +113,11 @@ feature_outdated() {
     # On, but set up by an older version of that feature (compared as
     # versions: 2.10.0 is newer than 2.9.0).
     local have want
+    # "Gaming on NVIDIA" is on: the SteamOS conversion replaces it, as an update of what the PC has (lib/nvidia.sh).
+    [[ "$1" == gaming ]] && nvidia_migration_pending && return 0
     [[ "${CURRENT[$1]:-0}" == 1 ]] || return 1
+    # NVIDIA: a newer patched gamescope is out (lib/gamescope-nvidia.sh): a normal run installs it.
+    [[ "$1" == gaming ]] && nvidia_present && { gsn_update_pending || gsn_display_pending; } && return 0
     have="$(state_get features "$1" "$FEATURE_BASELINE")"
     [[ "$have" == off ]] && have="$FEATURE_BASELINE"
     want="${FEATURE_VERSION[$1]:-$FEATURE_BASELINE}"
@@ -184,6 +186,17 @@ detect_components() {
         component_available "$c" || continue
         { feature_outdated "$c" || feature_new "$c"; } && WANTED[$c]=1
     done
+    # "Gaming on NVIDIA" was on: its replacement, the SteamOS conversion, comes with the defaults of a first run, and the
+    # PC starts the way it did: Steam in Big Picture at login becomes booting into gaming mode, any other Steam start
+    # (a normal window, or silent in the tray) becomes booting into the desktop, with the silent start kept.
+    if nvidia_migration_pending; then
+        WANTED[glyphs]=1
+        if bigpicture_status; then WANTED[boot]=0
+        else
+            WANTED[boot]=1
+            nvsilent_status && WANTED[silent]=1
+        fi
+    fi
     # The kernel pin is no longer needed (the power-off fix), and HDMI
     # refresh boost needed the pin: whatever is left of either is unticked,
     # so a normal run removes it.
@@ -296,7 +309,6 @@ toggle_component() {
     component_selectable "$c" || return 1
     WANTED[$c]=$(( 1 - WANTED[$c] ))
     # Single user mode only makes sense on top of the SteamOS conversion.
-    # (On NVIDIA the conversion isn't offered: single user mode logs in by itself, see lib/single-user.sh.)
     if [[ "$c" == single && "${WANTED[single]}" == 1 ]] && component_available gaming; then WANTED[gaming]=1; fi
     if [[ "$c" == gaming && "${WANTED[gaming]}" == 0 ]]; then WANTED[single]=0; WANTED[boot]=0; fi
     # Where to boot to is part of the conversion, too.
@@ -325,6 +337,7 @@ toggle_component() {
 show_menu() {
     local i=0 c now want
     echo
+    gsn_fail_note
     printf "  ${c_bold}%-3s %-6s %-6s %s${c_reset}\n" "#" "Now" "Want" "Component"
     MENU_ITEMS=()
     for c in "${COMPONENTS[@]}"; do
@@ -499,6 +512,11 @@ apply_changes() {
         if "${c}_disable"; then feature_record "$c" disable; else failed+=("$c"); fi
     done
     for c in "${TO_ENABLE[@]}"; do
+        # A sub-option of something that just failed isn't applied: it would be left on without its parent.
+        if [[ -n "${PARENT[$c]:-}" && " ${failed[*]:-} " == *" ${PARENT[$c]} "* ]]; then
+            warn "Skipping ${LABEL[$c]%%:*}: ${LABEL[${PARENT[$c]}]%%:*} didn't work."
+            continue
+        fi
         if [[ "$c" == boot ]]; then echo; echo -e "${c_bold}Boot into: desktop${c_reset}"
         elif is_action "$c"; then echo; echo -e "${c_bold}Running: ${LABEL[$c]%%:*}${c_reset}"
         else echo; echo -e "${c_bold}Turning on: ${LABEL[$c]}${c_reset}"; fi

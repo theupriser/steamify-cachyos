@@ -48,11 +48,15 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   `<id>_available` is checked via `component_available` (e.g. `machine`
   only on Fremont). Turn-on order is `COMPONENTS` order, turn-off reverse;
   `gaming` must stay first. Dependencies live in `toggle_component`.
-- **NVIDIA** (`lib/nvidia.sh`): gamescope's session is broken on NVIDIA, so the SteamOS conversion (`gaming`, `boot`, `single`,
-  `glyphs`) is hidden there (unless already on) and `nvidia` + its sub-option `bigpicture` ("Gaming on NVIDIA") replace it:
-  Steam on the Plasma desktop, started at login. Never reintroduce a gamescope session for NVIDIA without re-testing on the
-  hardware (notes: steamify-cachyos-dev, `nvidia/`). It can't be tested without the hardware: keep the branch behind
-  `.no-release-yet` until it was.
+- **NVIDIA** (`lib/gamescope-nvidia.sh`, `lib/nvidia.sh`): since 2.12.0 the SteamOS conversion (`gaming` and its options) runs on
+  NVIDIA PCs with a patched gamescope (GBM scan-out: gamescope#2309; Steam's UI kept at the display's size), downloaded as the
+  newest release of theupriser/steamify-gamescope-nvidia, with the pinned package (`GSN_VERSION`, `GSN_SHA256`), the copy the ISO
+  leaves, and a build here (`patches/gamescope-nvidia.PKGBUILD` + the two patches) as the fallback. "Gaming on NVIDIA" (`nvidia`,
+  `bigpicture`, `nvsilent`) isn't offered any more (`nvidia_available`); turning the conversion on turns it off (`nvidia_swap_out`).
+  Builds exist per CPU level (`gsn_cpu_variant`: znver4, v4, v3, generic; `GSN_SHA256` is a map; the installed one must pass `gsn_smoke_test`, else generic). A new pin = the release's tag + each variant's sha256 (from `SHA256SUMS`) in `lib/gamescope-nvidia.sh` and the PKGBUILD's pkgver/pkgrel, copied from the
+  repository (the patches in `patches/` must stay identical to that repository's). Steam must keep running with `-steamos3`
+  (without it games don't launch in gaming mode and the settings pages go): never "fix" the UI size by dropping flags or by
+  `XWAYLAND_COUNT`. Tested on an RTX 5080 only; keep the branch behind `.no-release-yet` until the whole flow ran on hardware.
 - **Feature versions.** Set `FEATURE_VERSION[<id>]` (`lib/menu.sh`) to the new
   `VERSION` whenever what `<id>_enable` sets up changes (a new component gets
   one too): installs recorded with an older version
@@ -156,9 +160,8 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
     a warning when `VERSION` is a version that's already released (so a
     release branch that forgot its bump shows it on every PR).
   - A release that adds, removes or renames a menu row also retakes the
-    README screenshots (`assets/screenshot-menu-steam-machine.png` and
-    `assets/screenshot-menu-nvidia.png`, side by side in the README): the app from the branch on a Steam Machine and on a PC
-    with an NVIDIA card, every row visible and each window only as tall as its options need, the header showing the new
+    README screenshot (`assets/screenshot-menu-steam-machine.png`; NVIDIA PCs get the same menu, so there is no separate
+    one): the app from the branch on a Steam Machine, every row visible and the window only as tall as its options need, the header showing the new
     `VERSION`, 1600 px wide. Size the window with a KWin script (match the `steamify-ui` class exactly: a title match also hits
     Konsole and editor windows) and crop the full-screen capture to the client rectangle; mind the display scale (the Steam
     Machine runs at 1.75).

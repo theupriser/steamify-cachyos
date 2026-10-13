@@ -238,10 +238,30 @@ no fix known). The kernel parameters `nvidia-drm.modeset=1`/`fbdev=1` and loadin
 window straight to the display. What does work on an RTX 5080: Steam's Big Picture (`steam -gamepadui`) as a normal window of
 the Plasma desktop session, smooth and clean.
 
-So with an NVIDIA GPU (PCI vendor 0x10de, display class, its driver providing `nvidia_drm`: `nvidia_present`) the SteamOS
-conversion (`gaming`, and its options `boot`, `single`, `glyphs`) isn't offered, unless it is already on (so it can be turned
-off). `nvidia` ("Gaming on NVIDIA", `lib/nvidia.sh`) takes its place, hidden while the conversion is on (both would start
-Steam at login): it installs `steam` when missing (recorded in state `nvidia`, removed again only then) and enables the user
+Since 2.12.0 there is a second way: gamescope with GBM-allocated scan-out buffers (`lib/gamescope-nvidia.sh`). On an RTX 5080
+(driver 615.78.08, 3440x1440@175) Steam's gaming UI in gamescope's DRM session is clean with it and shows artifacts everywhere
+without. The patch is nine commits of [farnoy/gamescope](https://github.com/farnoy/gamescope) (`nvidia-gbm-wayland`), carried in
+`patches/` (`gamescope-gbm-scanout.patch` and the recipe `gamescope-nvidia.PKGBUILD`, kept in sync with
+[steamify-gamescope-nvidia](https://github.com/theupriser/steamify-gamescope-nvidia), where new gamescope versions are
+prepared). gamescope changes every few weeks, so the package is downloaded, not carried: `gsn_install_package` takes the
+**newest release** of that repository (CI builds it in CachyOS's container, once per CPU level: generic, v3, v4, znver4, each checked for instructions beyond its level; a person merges the version bump). `gsn_cpu_variant` picks the build for this CPU (the dynamic loader's x86-64 level; AMD with `avx512_bf16` is znver4), generic is the fallback, and `gsn_smoke_test` runs the installed gamescope headless and swaps in generic when it doesn't start. The package is checked against the pinned hash
+or the release's `.sha256`, and installed with `pacman -U --ask 4` (the package provides and conflicts with `gamescope`). What
+this Steamify release was tested with is the fallback, in this order: the pinned package (`GSN_VERSION`, `GSN_SHA256`: from GitHub, the
+cache, or the copy the ISO leaves in `/usr/local/share/steamify/gamescope`), then a build here from the recipe and patch in `patches/`
+(`makepkg -sf` as the user, in `~/.cache/steamify`; no checksums on gamescope's own sources). A package that downloaded fine but
+doesn't install goes on to the next step; nothing changes before one of them is installed. A newer release than the installed package
+shows the conversion as an update (`gsn_update_pending`, looked up at most every six hours, quiet offline). Simple files that don't
+change (the power-off module, small patches) stay in `patches/` as they are. It is opt-in inside gamescope: `gamescope_drm_gbm_scanout=1` in
+`~/.config/gamescope-session/environment` and `~/.config/environment.d/99-steamify-gamescope-nvidia.conf`. The SteamOS conversion
+(`gaming_enable`) does this on every NVIDIA PC (`nvidia_present`: PCI vendor 0x10de, display class, its driver providing
+`nvidia_drm`), together with what "Gaming on NVIDIA" set up (on a supported card, `nvidia_supported`: GTX 16 / RTX 20 series or
+newer, Turing and later): the kernel parameters, the early modules, suspend memory, the 32-bit libraries (`nvidia_kernel_enable`,
+`nvidia_extras_enable`). So the SteamOS conversion is the one gaming option on NVIDIA now, and "Gaming on NVIDIA" (below) is not
+offered any more (`nvidia_available`); a PC that had it on keeps it until the conversion is turned on, which turns it off
+(`nvidia_swap_out`). Turning the conversion off removes the setting and those settings, and keeps the packages. Tested on an RTX 5080 only.
+
+Before 2.12.0, with an NVIDIA GPU the SteamOS conversion (`gaming`, and its options `boot`, `single`, `glyphs`) wasn't offered, unless
+it was already on. `nvidia` ("Gaming on NVIDIA", `lib/nvidia.sh`) took its place (both would start Steam at login): it installs `steam` when missing (recorded in state `nvidia`, removed again only then) and enables the user
 unit `steamify-steam-autostart.service` (`services/`, `ExecStart=/usr/bin/steam @ARGS@`, Plasma only). Its sub-option
 `bigpicture` ("Steam starts in Big Picture", ticked along with it) rewrites the unit with `-gamepadui` and sets
 `ksmserverrc [General] loginMode=emptySession` (`kset`, undone with `krevert bigpicture`), so windows of the last session
@@ -572,6 +592,7 @@ immediately, which can turn into a loop - see
 | `lib/update-notifier.sh` | Update notifications: the notifier from `patches/` and its user timer |
 | `lib/first-login.sh` | `--defaults` without a session (the Steam Machine ISO's installer): the one-time first-login step that sets up single user's launcher on Plasma's new layout and opens the app |
 | `lib/controllers.sh` | Extended controller support: Xbox wireless dongle (xone) and Xbox Bluetooth (xpadneo) from the CachyOS repo |
+| `lib/gamescope-nvidia.sh` | gamescope on NVIDIA: builds and installs the patched gamescope (GBM scan-out) from steamify-gamescope-nvidia and sets `gamescope_drm_gbm_scanout=1` for the SteamOS conversion |
 | `lib/nvidia.sh` | Gaming on NVIDIA: Steam on the desktop, started at login, optionally in Big Picture (replaces the SteamOS conversion there) |
 | `lib/vram-booster.sh` | VRAM booster (`dmemcg-booster`, `plasma-foreground-booster`) |
 | `services/` | The systemd units the scripts install (`service_file`, `@KEY@` placeholders); see its README |
