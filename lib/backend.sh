@@ -187,7 +187,8 @@ backend_apply() {
     for c in "${TO_ENABLE[@]}"; do
         # A sub-option of something that just failed isn't applied: it would be left on without its parent.
         if [[ -n "${PARENT[$c]:-}" && " ${failed[*]:-} " == *" ${PARENT[$c]} "* ]]; then
-            warn "Skipping ${LABEL[$c]%%:*}: ${LABEL[${PARENT[$c]}]%%:*} didn't work."
+            backend_event log "\"id\":$(json_str "$c"),\"line\":$(json_str "Skipped: ${LABEL[${PARENT[$c]}]%%:*} didn't work.")"
+            failed+=("$c")
             continue
         fi
         if backend_run_component "$c" enable; then is_action "$c" || feature_record "$c" enable; else failed+=("$c"); fi
