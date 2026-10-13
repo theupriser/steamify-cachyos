@@ -28,8 +28,9 @@ gsn_install_package() {
     gsn_package_installed && return 0
     info "Building the patched gamescope for NVIDIA (a few minutes)..."
     sudo pacman -S --needed --noconfirm base-devel git || { err "Installing the build tools failed."; return 1; }
-    local dir pkg
-    dir="$(mktemp -d)" || return 1
+    local dir pkg cache="${XDG_CACHE_HOME:-$HOME/.cache}/steamify"
+    # On disk, not /tmp: the installer's chroot has a tmpfs there (RAM), and the build is 1-2 GB.
+    mkdir -p "$cache" && dir="$(mktemp -d -p "$cache" gamescope-build.XXXXXX)" || return 1
     patch_file gamescope-nvidia.PKGBUILD > "$dir/PKGBUILD" &&
         patch_file gamescope-gbm-scanout.patch > "$dir/gamescope-gbm-scanout.patch" || {
         err "Couldn't write the build files."
