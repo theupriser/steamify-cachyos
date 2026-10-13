@@ -184,8 +184,17 @@ detect_components() {
         component_available "$c" || continue
         { feature_outdated "$c" || feature_new "$c"; } && WANTED[$c]=1
     done
-    # "Gaming on NVIDIA" was on: its replacement, the SteamOS conversion, comes with the defaults of a first run.
-    nvidia_migration_pending && WANTED[glyphs]=1
+    # "Gaming on NVIDIA" was on: its replacement, the SteamOS conversion, comes with the defaults of a first run, and the
+    # PC starts the way it did: Steam in Big Picture at login becomes booting into gaming mode, any other Steam start
+    # (a normal window, or silent in the tray) becomes booting into the desktop, with the silent start kept.
+    if nvidia_migration_pending; then
+        WANTED[glyphs]=1
+        if bigpicture_status; then WANTED[boot]=0
+        else
+            WANTED[boot]=1
+            nvsilent_status && WANTED[silent]=1
+        fi
+    fi
     # The kernel pin is no longer needed (the power-off fix), and HDMI
     # refresh boost needed the pin: whatever is left of either is unticked,
     # so a normal run removes it.
