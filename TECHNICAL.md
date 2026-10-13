@@ -243,19 +243,22 @@ Since 2.11.2 there is a second way: gamescope with GBM-allocated scan-out buffer
 without. The patch is nine commits of [farnoy/gamescope](https://github.com/farnoy/gamescope) (`nvidia-gbm-wayland`), carried in
 `patches/` (`gamescope-gbm-scanout.patch` and the recipe `gamescope-nvidia.PKGBUILD`, kept in sync with
 [steamify-gamescope-nvidia](https://github.com/theupriser/steamify-gamescope-nvidia), where new gamescope versions are
-prepared). `gsn_install_package` writes both into a temporary folder, builds the package there as the user (`makepkg -sf`: it
-downloads Valve's gamescope at the PKGBUILD's `pkgver`, the version the patch was tested with, and its submodules; no checksums) and
-installs it with `pacman -U --ask 4` (the package provides and conflicts with `gamescope`). A Steamify release therefore always
-builds the gamescope version it was tested with. It is opt-in inside gamescope: `gamescope_drm_gbm_scanout=1` in
+prepared). gamescope changes every few weeks, so the package is downloaded, not carried: `gsn_install_package` takes the
+**newest release** of that repository (CI builds it in CachyOS's container; a person merges the version bump), checked against the
+`.sha256` of the same release, and installs it with `pacman -U --ask 4` (the package provides and conflicts with `gamescope`). What
+this Steamify release was tested with is the fallback, in this order: the pinned package (`GSN_VERSION`, `GSN_SHA256`: from GitHub, the
+cache, or the copy the ISO leaves in `/usr/local/share/steamify/gamescope`), then a build here from the recipe and patch in `patches/`
+(`makepkg -sf` as the user, in `~/.cache/steamify`; no checksums on gamescope's own sources). A package that downloaded fine but
+doesn't install goes on to the next step; nothing changes before one of them is installed. A newer release than the installed package
+shows the conversion as an update (`gsn_update_pending`, looked up at most every six hours, quiet offline). Simple files that don't
+change (the power-off module, small patches) stay in `patches/` as they are. It is opt-in inside gamescope: `gamescope_drm_gbm_scanout=1` in
 `~/.config/gamescope-session/environment` and `~/.config/environment.d/99-steamify-gamescope-nvidia.conf`. The SteamOS conversion
 (`gaming_enable`) does this on every NVIDIA PC (`nvidia_present`: PCI vendor 0x10de, display class, its driver providing
 `nvidia_drm`), together with what "Gaming on NVIDIA" set up (on a supported card, `nvidia_supported`: GTX 16 / RTX 20 series or
 newer, Turing and later): the kernel parameters, the early modules, suspend memory, the 32-bit libraries (`nvidia_kernel_enable`,
 `nvidia_extras_enable`). So the SteamOS conversion is the one gaming option on NVIDIA now, and "Gaming on NVIDIA" (below) is not
 offered any more (`nvidia_available`); a PC that had it on keeps it until the conversion is turned on, which turns it off
-(`nvidia_swap_out`). Turning the conversion off removes the setting and those settings, and keeps the packages. The package is
-pinned to the gamescope release in the PKGBUILD: pacman does not update it, a newer one comes with a newer Steamify
-(the bump is prepared in the repository above), and Steamify does not rebuild it by itself yet. Tested on an RTX 5080 only.
+(`nvidia_swap_out`). Turning the conversion off removes the setting and those settings, and keeps the packages. Tested on an RTX 5080 only.
 
 Before 2.11.2, with an NVIDIA GPU the SteamOS conversion (`gaming`, and its options `boot`, `single`, `glyphs`) wasn't offered, unless
 it was already on. `nvidia` ("Gaming on NVIDIA", `lib/nvidia.sh`) took its place (both would start Steam at login): it installs `steam` when missing (recorded in state `nvidia`, removed again only then) and enables the user

@@ -1,68 +1,122 @@
 #!/bin/bash
 # gamescope's own gaming mode on NVIDIA: a patched gamescope that allocates its scan-out buffers with GBM, which cures
-# the corrupted picture (https://github.com/ValveSoftware/gamescope/issues/2309). The patch and the build recipe are in
-# patches/ (kept in sync with https://github.com/theupriser/steamify-gamescope-nvidia, where new gamescope versions are
-# prepared); the package `steamify-gamescope-nvidia` is built here, on the PC, and replaces `gamescope` (it provides it). The patch is opt-in: gamescope reads `gamescope_drm_gbm_scanout=1` from its
-# environment, which is set for the gaming session (gamescope-session's environment file, and environment.d).
+# the corrupted picture (https://github.com/ValveSoftware/gamescope/issues/2309). The patch is opt-in: gamescope reads
+# `gamescope_drm_gbm_scanout=1` from its environment, which is set for the gaming session (gamescope-session's
+# environment file, and environment.d).
+#
+# gamescope changes every few weeks, so the package is not carried but downloaded: the newest release of
+# https://github.com/theupriser/steamify-gamescope-nvidia (CI builds it in CachyOS's container, a person merges the
+# version bump), and a newer one than the installed package shows as an update of the SteamOS conversion
+# (`gsn_update_pending`). What this Steamify release was tested with is the fallback: the pinned package (sha256 below),
+# a copy that came with the ISO, and last a build here from the recipe and patch in patches/. Simple files that don't change
+# stay in patches/ and are used as they are.
+#
 # Used by the SteamOS conversion (`gaming_enable`/`gaming_disable`) on every NVIDIA PC (`nvidia_present`); the kernel
 # parameters and the rest of lib/nvidia.sh's setup only on a supported card (`nvidia_supported`): GTX 16 / RTX 20 series or
 # newer (Turing and later, what NVIDIA's open kernel driver supports). Tested on an RTX 5080 only.
 # Sourced by steamify.sh; not meant to be run on its own.
 
 GSN_PKG=steamify-gamescope-nvidia
-# The package this Steamify release was tested with (the recipe in patches/ names the same version): built by CI in
-# CachyOS's container and published as a release of steamify-gamescope-nvidia. A new pin: the release, its sha256, and
-# patches/gamescope-nvidia.PKGBUILD's pkgver/pkgrel.
+GSN_RELEASES="${GSN_RELEASES:-https://github.com/theupriser/steamify-gamescope-nvidia/releases}"
+# The package this Steamify release was tested with (patches/gamescope-nvidia.PKGBUILD names the same version): the
+# fallback. A new pin: the release's tag, the package's sha256, and the PKGBUILD's pkgver/pkgrel.
 GSN_VERSION=3.16.31-1
 GSN_SHA256=9f20e5243866d1ddeb9ba0c6828bc7be1945f623f9a5d8094391f0df043002e1
-GSN_URL="${GSN_URL:-https://github.com/theupriser/steamify-gamescope-nvidia/releases/download/$GSN_VERSION}"
-# Where the ISO leaves a copy of the same package, for installs without GitHub.
+# Where the ISO leaves a copy of the pinned package, for installs without GitHub.
 GSN_BACKUP_DIR="${GSN_BACKUP_DIR:-/usr/local/share/steamify/gamescope}"
+# How long a look at GitHub for a newer release counts (seconds), so opening the menu doesn't ask every time.
+GSN_CHECK_EVERY="${GSN_CHECK_EVERY:-21600}"
 GSN_ENV_LINE='gamescope_drm_gbm_scanout=1'
 GSN_ENV_D="${GSN_ENV_D:-$HOME/.config/environment.d/99-steamify-gamescope-nvidia.conf}"
 GSN_SESSION_ENV="${GSN_SESSION_ENV:-$HOME/.config/gamescope-session/environment}"
 
 gsn_package_installed() { pacman -Q "$GSN_PKG" >/dev/null 2>&1; }
 
+gsn_installed_version() { pacman -Q "$GSN_PKG" 2>/dev/null | awk '{print $2}'; }
+
 gsn_env_set() { [[ -f "$GSN_ENV_D" ]] && grep -qsx "$GSN_ENV_LINE" "$GSN_SESSION_ENV"; }
 
 gsn_status() { gsn_package_installed && gsn_env_set; }
 
-gsn_package_current() {
-    # The pinned version is installed (a newer Steamify pins a newer one, which then installs over it).
-    [[ "$(pacman -Q "$GSN_PKG" 2>/dev/null | awk '{print $2}')" == "$GSN_VERSION" ]]
+gsn_newer() {
+    # gsn_newer <a> <b>: version a is newer than b (pacman's own comparison).
+    [[ "$(vercmp "$1" "$2" 2>/dev/null)" == 1 ]]
 }
 
-gsn_sha_ok() { echo "$GSN_SHA256  $1" | sha256sum -c --quiet - >/dev/null 2>&1; }
+gsn_latest_tag() {
+    # The newest release's tag (<gamescope version>-<package release>), from GitHub; nothing when it can't be reached or
+    # there is no release. Follows the redirect of /releases/latest: no API, no rate limit, no JSON. gsn_latest_tag [seconds]
+    local url
+    url="$(curl -fsL --connect-timeout 4 --max-time "${1:-10}" -o /dev/null -w '%{url_effective}' "$GSN_RELEASES/latest" 2>/dev/null)" || return 1
+    url="${url##*/}"
+    [[ "$url" =~ ^[0-9][0-9A-Za-z._]*-[0-9]+$ ]] || return 1
+    echo "$url"
+}
+
+gsn_update_pending() {
+    # The patched gamescope is installed and GitHub has a newer release: the menu shows the conversion as an update.
+    # Looked up at most every GSN_CHECK_EVERY seconds (the answer is kept in the state), quickly, and silently when
+    # offline: no network is never a reason to show or hide anything.
+    gsn_package_installed || return 1
+    local now checked latest
+    now="$(date +%s)"; checked="$(state_get gamescope_nvidia checked 0)"
+    if (( now - ${checked:-0} > GSN_CHECK_EVERY )); then
+        state_set gamescope_nvidia checked "$now"
+        latest="$(gsn_latest_tag 5)" && state_set gamescope_nvidia latest "$latest"
+    fi
+    latest="$(state_get gamescope_nvidia latest)"
+    [[ -n "$latest" ]] && gsn_newer "$latest" "$(gsn_installed_version)"
+}
+
+gsn_sha_of() {
+    # The hash a release file is expected to have: the pinned one for the pinned version, else the .sha256 next to the
+    # package in the same release (it shows the download wasn't damaged, not who made it).
+    local tag="$1" file="$2"
+    if [[ "$tag" == "$GSN_VERSION" ]]; then echo "$GSN_SHA256"; return 0; fi
+    curl -fsL --connect-timeout 10 --max-time 30 "$GSN_RELEASES/download/$tag/$file.sha256" 2>/dev/null | awk 'NR==1 {print $1}'
+}
+
+gsn_download() {
+    # gsn_download <tag>: the release's package, verified, in the cache; prints its path.
+    local tag="$1" cache="${XDG_CACHE_HOME:-$HOME/.cache}/steamify" file want got
+    file="$GSN_PKG-$tag-x86_64.pkg.tar.zst"
+    mkdir -p "$cache" || return 1
+    want="$(gsn_sha_of "$tag" "$file")"
+    [[ "$want" =~ ^[0-9a-f]{64}$ ]] || return 1
+    if [[ -f "$cache/$file" ]] && [[ "$(sha256sum "$cache/$file" | awk '{print $1}')" == "$want" ]]; then echo "$cache/$file"; return 0; fi
+    curl -fsL --retry 2 --connect-timeout 15 --max-time 300 -o "$cache/$file.part" "$GSN_RELEASES/download/$tag/$file" || { rm -f "$cache/$file.part"; return 1; }
+    got="$(sha256sum "$cache/$file.part" | awk '{print $1}')"
+    if [[ "$got" != "$want" ]]; then rm -f "$cache/$file.part"; return 1; fi
+    mv -f "$cache/$file.part" "$cache/$file"
+    echo "$cache/$file"
+}
 
 gsn_fetch_package() {
-    # The pinned, verified package, on stdout as a path: first from GitHub (built by CI in CachyOS's container), else the
-    # copy that came with the ISO. Both only count when their sha256 is the one pinned here: a Steamify release names
-    # exactly the package it was tested with, so an unchanged or swapped file is refused.
-    local cache="${XDG_CACHE_HOME:-$HOME/.cache}/steamify" file="$GSN_PKG-$GSN_VERSION-x86_64.pkg.tar.zst" backup
-    mkdir -p "$cache" || return 1
-    if [[ -f "$cache/$file" ]] && gsn_sha_ok "$cache/$file"; then echo "$cache/$file"; return 0; fi
-    info "Downloading the patched gamescope (GitHub release $GSN_VERSION)..." >&2
-    if curl -fsL --retry 2 --connect-timeout 15 --max-time 300 -o "$cache/$file.part" "$GSN_URL/$file" &&
-        gsn_sha_ok "$cache/$file.part"; then
-        mv -f "$cache/$file.part" "$cache/$file"
-        echo "$cache/$file"; return 0
+    # The package to install, as a path, newest first: the newest release on GitHub (not older than the pinned one), else
+    # the pinned package (GitHub, the cache, or the copy that came with the ISO). Only files with the expected sha256 count.
+    local tag pkg cache="${XDG_CACHE_HOME:-$HOME/.cache}/steamify" file="$GSN_PKG-$GSN_VERSION-x86_64.pkg.tar.zst" copy
+    tag="$(gsn_latest_tag)" || tag=""
+    if [[ -n "$tag" && "$tag" != "$GSN_VERSION" ]] && gsn_newer "$tag" "$GSN_VERSION"; then
+        info "Downloading the newest patched gamescope ($tag)..." >&2
+        if pkg="$(gsn_download "$tag")"; then echo "$pkg"; return 0; fi
+        warn "Downloading the newest patched gamescope ($tag) failed: using the version this Steamify was tested with ($GSN_VERSION)." >&2
     fi
-    rm -f "$cache/$file.part"
+    info "Downloading the patched gamescope ($GSN_VERSION)..." >&2
+    if pkg="$(gsn_download "$GSN_VERSION")"; then echo "$pkg"; return 0; fi
     warn "Downloading the patched gamescope failed (or its checksum didn't match)." >&2
-    for backup in "$GSN_BACKUP_DIR/$file" "$cache/$file"; do
-        if [[ -f "$backup" ]] && gsn_sha_ok "$backup"; then
-            info "Using the copy that came with Steamify: $backup" >&2
-            echo "$backup"; return 0
+    for copy in "$GSN_BACKUP_DIR/$file" "$cache/$file"; do
+        if [[ -f "$copy" ]] && [[ "$(sha256sum "$copy" | awk '{print $1}')" == "$GSN_SHA256" ]]; then
+            info "Using the copy that came with Steamify: $copy" >&2
+            echo "$copy"; return 0
         fi
     done
     return 1
 }
 
 gsn_build_package() {
-    # Last resort: builds the package from the recipe and patch Steamify carries (patches/), as the user. It downloads
-    # gamescope's sources (Valve's repository at the PKGBUILD's pkgver, and its submodules) and compiles them: a few
-    # minutes. Prints the package's path.
+    # Last resort: builds the pinned package from the recipe and patch Steamify carries (patches/), as the user. It
+    # downloads gamescope's sources (Valve's repository at the PKGBUILD's pkgver, and its submodules) and compiles them: a
+    # few minutes. Prints the package's path.
     local dir cache="${XDG_CACHE_HOME:-$HOME/.cache}/steamify"
     info "Building the patched gamescope here instead (a few minutes)..." >&2
     sudo pacman -S --needed --noconfirm base-devel git >&2 || { err "Installing the build tools failed." >&2; return 1; }
@@ -85,17 +139,25 @@ gsn_build_package() {
 }
 
 gsn_install_package() {
-    # The patched gamescope, in this order, each step only when the one before failed: the pinned package from GitHub, the
-    # copy that came with the ISO, a build here. A package that downloaded fine but doesn't install (its libraries differ from
-    # this PC's) goes on to the build too. Nothing else changes before one of them is installed, so a failure leaves the PC as
-    # it was, with the stock gamescope. --ask 4 lets pacman replace the stock gamescope it conflicts with.
-    gsn_package_current && return 0
-    local pkg
+    # The patched gamescope, newest first, each step only when the one before failed: the newest release from GitHub, the
+    # pinned package (GitHub, cache or the copy that came with the ISO), a build here. A package that downloaded fine but
+    # doesn't install (its libraries differ from this PC's) goes on to the next step too. Nothing else changes before one of
+    # them is installed, so a failure leaves the PC as it was, with what it had. --ask 4 lets pacman replace the stock
+    # gamescope it conflicts with, and an older patched one.
+    local pkg latest have
+    have="$(gsn_installed_version)"
+    latest="$(gsn_latest_tag)" || latest=""
+    # Already the newest (or, offline, the pinned version or newer): nothing to do.
+    if [[ -n "$have" ]]; then
+        if [[ -n "$latest" ]] && ! gsn_newer "$latest" "$have"; then return 0; fi
+        if [[ -z "$latest" ]] && ! gsn_newer "$GSN_VERSION" "$have"; then return 0; fi
+    fi
     if pkg="$(gsn_fetch_package)" && sudo pacman -U --noconfirm --ask 4 "$pkg"; then
         ok "Patched gamescope installed."
         return 0
     fi
     warn "The ready-made patched gamescope couldn't be installed."
+    [[ -n "$have" ]] && { warn "The installed one ($have) stays."; return 0; }
     if pkg="$(gsn_build_package)" && sudo pacman -U --noconfirm --ask 4 "$pkg"; then
         ok "Patched gamescope built and installed."
         return 0

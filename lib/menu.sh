@@ -116,6 +116,8 @@ feature_outdated() {
     # "Gaming on NVIDIA" is on: the SteamOS conversion replaces it, as an update of what the PC has (lib/nvidia.sh).
     [[ "$1" == gaming ]] && nvidia_migration_pending && return 0
     [[ "${CURRENT[$1]:-0}" == 1 ]] || return 1
+    # NVIDIA: a newer patched gamescope is out (lib/gamescope-nvidia.sh): a normal run installs it.
+    [[ "$1" == gaming ]] && nvidia_present && gsn_update_pending && return 0
     have="$(state_get features "$1" "$FEATURE_BASELINE")"
     [[ "$have" == off ]] && have="$FEATURE_BASELINE"
     want="${FEATURE_VERSION[$1]:-$FEATURE_BASELINE}"
