@@ -1,8 +1,8 @@
 #!/bin/bash
 # gamescope's own gaming mode on NVIDIA: a patched gamescope that allocates its scan-out buffers with GBM, which cures
-# the corrupted picture (https://github.com/ValveSoftware/gamescope/issues/2309). The patch and the build recipe live in
-# https://github.com/theupriser/steamify-gamescope-nvidia; the package `steamify-gamescope-nvidia` is built here, on the PC,
-# and replaces `gamescope` (it provides it). The patch is opt-in: gamescope reads `gamescope_drm_gbm_scanout=1` from its
+# the corrupted picture (https://github.com/ValveSoftware/gamescope/issues/2309). The patch and the build recipe are in
+# patches/ (kept in sync with https://github.com/theupriser/steamify-gamescope-nvidia, where new gamescope versions are
+# prepared); the package `steamify-gamescope-nvidia` is built here, on the PC, and replaces `gamescope` (it provides it). The patch is opt-in: gamescope reads `gamescope_drm_gbm_scanout=1` from its
 # environment, which is set for the gaming session (gamescope-session's environment file, and environment.d).
 # Used by the SteamOS conversion (`gaming_enable`/`gaming_disable`) on every NVIDIA PC (`nvidia_present`); the kernel
 # parameters and the rest of lib/nvidia.sh's setup only on a supported card (`nvidia_supported`): GTX 16 / RTX 20 series or
@@ -10,7 +10,6 @@
 # Sourced by steamify.sh; not meant to be run on its own.
 
 GSN_PKG=steamify-gamescope-nvidia
-GSN_REPO=${GSN_REPO:-https://github.com/theupriser/steamify-gamescope-nvidia.git}
 GSN_ENV_LINE='gamescope_drm_gbm_scanout=1'
 GSN_ENV_D="${GSN_ENV_D:-$HOME/.config/environment.d/99-steamify-gamescope-nvidia.conf}"
 GSN_SESSION_ENV="${GSN_SESSION_ENV:-$HOME/.config/gamescope-session/environment}"
@@ -22,22 +21,25 @@ gsn_env_set() { [[ -f "$GSN_ENV_D" ]] && grep -qsx "$GSN_ENV_LINE" "$GSN_SESSION
 gsn_status() { gsn_package_installed && gsn_env_set; }
 
 gsn_install_package() {
-    # Builds the package from the repo (makepkg runs as the user, never as root) and installs it. The build needs a few
-    # minutes: gamescope compiles from source. --ask 4 lets pacman replace the stock gamescope it conflicts with.
+    # Builds the package from the recipe and patch Steamify carries (patches/, so a Steamify release builds exactly the
+    # gamescope version it was tested with) and installs it. makepkg runs as the user, never as root, and downloads
+    # gamescope's sources (Valve's repository at the PKGBUILD's pkgver, and its submodules). The build needs a few minutes:
+    # gamescope compiles from source. --ask 4 lets pacman replace the stock gamescope it conflicts with.
     gsn_package_installed && return 0
     info "Building the patched gamescope for NVIDIA (a few minutes)..."
     sudo pacman -S --needed --noconfirm base-devel git || { err "Installing the build tools failed."; return 1; }
     local dir pkg
     dir="$(mktemp -d)" || return 1
-    if ! git clone --depth 1 "$GSN_REPO" "$dir/src"; then
-        err "Couldn't download $GSN_REPO."
+    patch_file gamescope-nvidia.PKGBUILD > "$dir/PKGBUILD" &&
+        patch_file gamescope-gbm-scanout.patch > "$dir/gamescope-gbm-scanout.patch" || {
+        err "Couldn't write the build files."
         rm -rf "$dir"; return 1
-    fi
-    if ! (cd "$dir/src" && makepkg -sf --noconfirm --nocheck); then
+    }
+    if ! (cd "$dir" && makepkg -sf --noconfirm --nocheck); then
         err "Building the patched gamescope failed (see above). The stock gamescope stays."
         rm -rf "$dir"; return 1
     fi
-    pkg="$(ls "$dir"/src/"$GSN_PKG"-*.pkg.tar.* 2>/dev/null | grep -v -- '-debug-' | head -1)"
+    pkg="$(ls "$dir"/"$GSN_PKG"-*.pkg.tar.* 2>/dev/null | grep -v -- '-debug-' | head -1)"
     if [[ -z "$pkg" ]] || ! sudo pacman -U --noconfirm --ask 4 "$pkg"; then
         err "Installing the patched gamescope failed. The stock gamescope stays."
         rm -rf "$dir"; return 1
