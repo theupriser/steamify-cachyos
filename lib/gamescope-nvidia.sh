@@ -249,9 +249,37 @@ gsn_display_disable() {
     return 0
 }
 
+gsn_preflight() {
+    # Before anything changes: what would make the install fail half way. Prints the reason and fails, or passes.
+    if [[ -e /var/lib/pacman/db.lck ]]; then
+        echo "another package manager is running (/var/lib/pacman/db.lck): finish or close it and try again"; return 1
+    fi
+    local free; free="$(df --output=avail -BM / 2>/dev/null | tail -1 | tr -dc 0-9)"
+    if [[ -n "$free" ]] && (( free < 1500 )); then
+        echo "less than 1.5 GB free on /: free some space and try again"; return 1
+    fi
+    return 0
+}
+
+gsn_fail_mark() {
+    # Remember a failed setup so the menu says so on the next start, and tell the user now (desktop notification).
+    state_set gamescope_nvidia failed "$(date '+%Y-%m-%d %H:%M'): $1"
+    command -v notify-send >/dev/null 2>&1 &&
+        notify-send -a Steamify -i dialog-warning "Steamify: gaming mode setup failed" "$1. Open Steamify and apply again." 2>/dev/null || true
+}
+
+gsn_fail_note() {
+    # The menu's reminder of a failed setup (nothing when the last one worked).
+    local f; f="$(state_get gamescope_nvidia failed)"
+    [[ -n "$f" ]] && warn "The last gaming mode setup for NVIDIA failed ($f). Apply the conversion again to retry."
+    return 0
+}
+
 gsn_enable() {
     # Only on a supported NVIDIA card; elsewhere the stock gamescope is right.
     nvidia_present || return 0
+    local why
+    if ! why="$(gsn_preflight)"; then err "Gaming mode for NVIDIA can't be set up: $why."; gsn_fail_mark "$why"; return 1; fi
     # A PC that had "Gaming on NVIDIA" on: Steam must not also start on the desktop.
     nvidia_swap_out
     # What NVIDIA's DRM stack wants (lib/nvidia.sh; a supported card only, the functions check): modeset/fbdev on the
@@ -259,7 +287,8 @@ gsn_enable() {
     # effect at the next boot, like the session.
     nvidia_kernel_enable || return 1
     nvidia_extras_enable || return 1
-    gsn_install_package || return 1
+    gsn_install_package || { gsn_fail_mark "the patched gamescope couldn't be installed"; return 1; }
+    state_set gamescope_nvidia failed ""
     gsn_env_enable
     gsn_display_enable || warn "Couldn't set up the display mode for gaming mode: gamescope takes the display's preferred mode."
     ok "gamescope draws NVIDIA's picture through GBM (gamescope_drm_gbm_scanout=1) from the next gaming mode start."

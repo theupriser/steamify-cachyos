@@ -337,6 +337,7 @@ toggle_component() {
 show_menu() {
     local i=0 c now want
     echo
+    gsn_fail_note
     printf "  ${c_bold}%-3s %-6s %-6s %s${c_reset}\n" "#" "Now" "Want" "Component"
     MENU_ITEMS=()
     for c in "${COMPONENTS[@]}"; do
