@@ -13,6 +13,11 @@ NVIDIA_INITRAMFS_CONF=${NVIDIA_INITRAMFS_CONF:-/etc/mkinitcpio.conf.d/90-steamif
 # The script and pacman hook that keep the initramfs file right at every kernel change.
 NVIDIA_SCRIPT=${NVIDIA_SCRIPT:-/usr/local/libexec/steamify-nvidia-initramfs}
 NVIDIA_HOOK=${NVIDIA_HOOK:-/etc/pacman.d/hooks/85-steamify-nvidia-initramfs.hook}
+# Keeps video memory over suspend (with the nvidia-suspend/resume services).
+NVIDIA_MODPROBE=${NVIDIA_MODPROBE:-/etc/modprobe.d/90-steamify-nvidia.conf}
+NVIDIA_SLEEP_UNITS="nvidia-suspend.service nvidia-resume.service nvidia-hibernate.service"
+# 32-bit parts Steam games and the 32-bit MangoHud preload need.
+NVIDIA_LIB32_PKGS="lib32-nvidia-utils lib32-libxkbcommon"
 # The running kernel's command line; the tests point this at a file.
 NVIDIA_CMDLINE=${NVIDIA_CMDLINE:-/proc/cmdline}
 # The DRM devices in sysfs; the tests point this at a fake tree.
@@ -62,6 +67,7 @@ nvidia_enable() {
     nvidia_write_unit "$unit_args" || return 1
     user_systemctl enable "$NVIDIA_UNIT" >/dev/null 2>&1 || { err "Enabling $NVIDIA_UNIT failed."; return 1; }
     nvidia_kernel_enable || return 1
+    nvidia_extras_enable || return 1
     ok "Steam starts at your next login."
 }
 
@@ -70,6 +76,7 @@ nvidia_disable() {
     user_systemctl disable --now "$NVIDIA_UNIT" >/dev/null 2>&1
     rm -f "$unit"
     user_systemctl daemon-reload
+    nvidia_extras_disable
     pkgs="$(state_get nvidia installed_pkgs)"
     # Only what Steamify installed; games and the Steam folder stay.
     # shellcheck disable=SC2086 # a list of package names
@@ -252,6 +259,48 @@ nvidia_kernel_enable() {
         ok "NVIDIA gaming mode fix applied; it takes effect after a reboot."
     fi
     return 0
+}
+
+nvidia_extras_enable() {
+    # Video memory kept over sleep, the matching services and the 32-bit libraries (a supported card only).
+    nvidia_supported || return 0
+    local pkg u units="" prev missing=()
+    if [[ ! -f "$NVIDIA_MODPROBE" ]]; then
+        info "Keeping video memory over suspend (NVreg_PreserveVideoMemoryAllocations=1)..."
+        printf '%s\n' '# Added by Steamify (Gaming on NVIDIA)' 'options nvidia NVreg_PreserveVideoMemoryAllocations=1' |
+            sudo tee "$NVIDIA_MODPROBE" >/dev/null || { err "Writing $NVIDIA_MODPROBE failed."; return 1; }
+        # The NVIDIA modules load from the initramfs, which carries modprobe.d.
+        nvidia_rebuild_boot || warn "Rebuilding the initramfs failed: the suspend setting applies once it is rebuilt."
+    fi
+    for u in $NVIDIA_SLEEP_UNITS; do
+        systemctl is-enabled -q "$u" 2>/dev/null && continue
+        sudo systemctl enable "$u" >/dev/null 2>&1 && units+="${units:+ }$u"
+    done
+    if [[ -n "$units" ]]; then
+        prev="$(state_get nvidia enabled_units)"
+        state_set nvidia enabled_units "${prev:+$prev }$units"
+    fi
+    for pkg in $NVIDIA_LIB32_PKGS; do pacman -Q "$pkg" >/dev/null 2>&1 || missing+=("$pkg"); done
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        info "Installing the 32-bit libraries games need: ${missing[*]}"
+        if sudo pacman -S --needed --noconfirm "${missing[@]}"; then
+            prev="$(state_get nvidia installed_pkgs)"
+            state_set nvidia installed_pkgs "${prev:+$prev }${missing[*]}"
+        else
+            warn "Installing ${missing[*]} failed (is [multilib] enabled in /etc/pacman.conf?): 32-bit games may not start."
+        fi
+    fi
+    return 0
+}
+
+nvidia_extras_disable() {
+    # Only what Steamify enabled; the 32-bit packages go with installed_pkgs.
+    local u
+    for u in $(state_get nvidia enabled_units); do sudo systemctl disable "$u" >/dev/null 2>&1; done
+    if [[ -f "$NVIDIA_MODPROBE" ]]; then
+        sudo rm -f "$NVIDIA_MODPROBE"
+        nvidia_rebuild_boot || true
+    fi
 }
 
 nvidia_kernel_disable() {
