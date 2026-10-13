@@ -244,8 +244,8 @@ without. The patch is nine commits of [farnoy/gamescope](https://github.com/farn
 `patches/` (`gamescope-gbm-scanout.patch` and the recipe `gamescope-nvidia.PKGBUILD`, kept in sync with
 [steamify-gamescope-nvidia](https://github.com/theupriser/steamify-gamescope-nvidia), where new gamescope versions are
 prepared). gamescope changes every few weeks, so the package is downloaded, not carried: `gsn_install_package` takes the
-**newest release** of that repository (CI builds it in CachyOS's container; a person merges the version bump), checked against the
-`.sha256` of the same release, and installs it with `pacman -U --ask 4` (the package provides and conflicts with `gamescope`). What
+**newest release** of that repository (CI builds it in CachyOS's container, once per CPU level: generic, v3, v4, znver4, each checked for instructions beyond its level; a person merges the version bump). `gsn_cpu_variant` picks the build for this CPU (the dynamic loader's x86-64 level; AMD with `avx512_bf16` is znver4), generic is the fallback, and `gsn_smoke_test` runs the installed gamescope headless and swaps in generic when it doesn't start. The package is checked against the pinned hash
+or the release's `.sha256`, and installed with `pacman -U --ask 4` (the package provides and conflicts with `gamescope`). What
 this Steamify release was tested with is the fallback, in this order: the pinned package (`GSN_VERSION`, `GSN_SHA256`: from GitHub, the
 cache, or the copy the ISO leaves in `/usr/local/share/steamify/gamescope`), then a build here from the recipe and patch in `patches/`
 (`makepkg -sf` as the user, in `~/.cache/steamify`; no checksums on gamescope's own sources). A package that downloaded fine but

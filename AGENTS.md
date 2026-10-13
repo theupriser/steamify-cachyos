@@ -53,7 +53,7 @@ gamescope and the Plasma desktop. Primary target: the Valve Steam Machine
   newest release of theupriser/steamify-gamescope-nvidia, with the pinned package (`GSN_VERSION`, `GSN_SHA256`), the copy the ISO
   leaves, and a build here (`patches/gamescope-nvidia.PKGBUILD` + the two patches) as the fallback. "Gaming on NVIDIA" (`nvidia`,
   `bigpicture`, `nvsilent`) isn't offered any more (`nvidia_available`); turning the conversion on turns it off (`nvidia_swap_out`).
-  A new pin = the release's tag + its sha256 in `lib/gamescope-nvidia.sh` and the PKGBUILD's pkgver/pkgrel, copied from the
+  Builds exist per CPU level (`gsn_cpu_variant`: znver4, v4, v3, generic; `GSN_SHA256` is a map; the installed one must pass `gsn_smoke_test`, else generic). A new pin = the release's tag + each variant's sha256 (from `SHA256SUMS`) in `lib/gamescope-nvidia.sh` and the PKGBUILD's pkgver/pkgrel, copied from the
   repository (the patches in `patches/` must stay identical to that repository's). Steam must keep running with `-steamos3`
   (without it games don't launch in gaming mode and the settings pages go): never "fix" the UI size by dropping flags or by
   `XWAYLAND_COUNT`. Tested on an RTX 5080 only; keep the branch behind `.no-release-yet` until the whole flow ran on hardware.
