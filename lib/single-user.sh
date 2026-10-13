@@ -140,6 +140,15 @@ EOF
     remove_sddm_base_autologin
 }
 
+single_login_release() {
+    # The SteamOS conversion logs in by itself, and picks the session (gamescope, or the desktop with "Boot into"): the
+    # desktop autologin above, which sorts last, would pin the Plasma session and "Return to Gaming Mode" would open KDE
+    # again. Called when the conversion is turned on; turning it off sets it up again (gaming_disable).
+    [[ -f "$SINGLE_AUTOLOGIN" ]] || return 0
+    info "The SteamOS conversion logs in by itself: removing the desktop autologin of single user mode."
+    sudo rm -f "$SINGLE_AUTOLOGIN"
+}
+
 single_login_disable() {
     [[ -f "$SINGLE_AUTOLOGIN" ]] || return 0
     sudo rm -f "$SINGLE_AUTOLOGIN"

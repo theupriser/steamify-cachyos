@@ -109,6 +109,8 @@ gaming_enable() {
             install_session_sync
             ;;
     esac
+    # (NVIDIA with single user mode from before the conversion: its desktop autologin would pin the Plasma session.)
+    single_login_release
     create_desktop_shortcut
     steam_enable
     os_name_enable || return 1
@@ -127,6 +129,8 @@ gaming_disable() {
     gsn_disable
     krevert gaming
     os_name_disable
+    # NVIDIA with single user mode still on: nothing else logs in by itself any more.
+    nvidia_present && single_status && single_login_enable
     ok "The PC boots to the normal login screen again (from the next boot)."
 }
 
