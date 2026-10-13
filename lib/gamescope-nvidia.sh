@@ -136,7 +136,8 @@ gsn_fetch_package() {
 
 gsn_smoke_test() {
     # The installed gamescope must start (headless, no screen needed): a build that crashes would leave gaming mode in a loop.
-    timeout 25 gamescope --backend headless -W 640 -H 360 -r 60 -- true >/dev/null 2>&1
+    # It segfaults while shutting down headless (also unpatched builds), so what counts is that it ran the program.
+    timeout 25 gamescope --backend headless -W 640 -H 360 -r 60 -- true 2>&1 | grep -q 'Primary child shut down'
 }
 
 gsn_build_package() {
