@@ -160,8 +160,11 @@ gsn_build_package() {
         rm -rf "$dir"; return 1
     fi
     # Moved out, so the build folder can go.
-    mv "$(ls "$dir"/"$GSN_PKG"-*.pkg.tar.* 2>/dev/null | grep -v -- '-debug-' | head -1)" "$cache/gamescope-local-build.pkg.tar.zst" ||
-        { rm -rf "$dir"; return 1; }
+    local f built=""
+    for f in "$dir"/"$GSN_PKG"-*.pkg.tar.*; do
+        [[ -e "$f" && "$f" != *-debug-* ]] && { built="$f"; break; }
+    done
+    [[ -n "$built" ]] && mv "$built" "$cache/gamescope-local-build.pkg.tar.zst" || { rm -rf "$dir"; return 1; }
     rm -rf "$dir"
     echo "$cache/gamescope-local-build.pkg.tar.zst"
 }
