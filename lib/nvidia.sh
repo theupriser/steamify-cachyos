@@ -125,7 +125,7 @@ nvsilent_disable() {
 
 nvidia_supported() {
     # A supported NVIDIA GPU: PCI vendor 0x10de, display class, its kernel
-    # driver installed, and not older than the RTX 20 series, decided like the
+    # driver installed, and not older than Turing (GTX 16 / RTX 20 series: the cards NVIDIA's open kernel driver supports), decided like the
     # VRAM booster does (vram_nvidia_legacy_id: chwd's legacy card lists, every
     # other card runs NVIDIA's open modules). Older cards are left alone.
     local d

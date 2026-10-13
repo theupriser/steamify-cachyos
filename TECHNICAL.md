@@ -251,7 +251,7 @@ conversion off removes the setting and keeps the package. The package is pinned 
 (`UPSTREAM_VERSION` in that repository): pacman does not update it, and Steamify does not rebuild it yet.
 
 So with an NVIDIA GPU (PCI vendor 0x10de, display class, its driver providing `nvidia_drm`: `nvidia_present`) the SteamOS
-conversion (`gaming`, and its options `boot`, `single`, `glyphs`) is only offered on a supported card (RTX 20 series or newer,
+conversion (`gaming`, and its options `boot`, `single`, `glyphs`) is only offered on a supported card (GTX 16 / RTX 20 series or newer, Turing and later,
 `nvidia_supported`) with the patched gamescope described below, or when it is already on (so it can be turned off).
 `nvidia` ("Gaming on NVIDIA", `lib/nvidia.sh`) is the alternative, and excludes the conversion (both would start
 Steam at login): it installs `steam` when missing (recorded in state `nvidia`, removed again only then) and enables the user

@@ -4,7 +4,8 @@
 # https://github.com/theupriser/steamify-gamescope-nvidia; the package `steamify-gamescope-nvidia` is built here, on the PC,
 # and replaces `gamescope` (it provides it). The patch is opt-in: gamescope reads `gamescope_drm_gbm_scanout=1` from its
 # environment, which is set for the gaming session (gamescope-session's environment file, and environment.d).
-# Used by the SteamOS conversion (`gaming_enable`/`gaming_disable`) on a supported NVIDIA card (`nvidia_supported`).
+# Used by the SteamOS conversion (`gaming_enable`/`gaming_disable`) on a supported NVIDIA card (`nvidia_supported`):
+# GTX 16 / RTX 20 series or newer (Turing and later, what NVIDIA's open kernel driver supports).
 # Sourced by steamify.sh; not meant to be run on its own.
 
 GSN_PKG=steamify-gamescope-nvidia
