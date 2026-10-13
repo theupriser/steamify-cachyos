@@ -113,6 +113,8 @@ feature_outdated() {
     # On, but set up by an older version of that feature (compared as
     # versions: 2.10.0 is newer than 2.9.0).
     local have want
+    # "Gaming on NVIDIA" is on: the SteamOS conversion replaces it, as an update of what the PC has (lib/nvidia.sh).
+    [[ "$1" == gaming ]] && nvidia_migration_pending && return 0
     [[ "${CURRENT[$1]:-0}" == 1 ]] || return 1
     have="$(state_get features "$1" "$FEATURE_BASELINE")"
     [[ "$have" == off ]] && have="$FEATURE_BASELINE"
@@ -182,6 +184,8 @@ detect_components() {
         component_available "$c" || continue
         { feature_outdated "$c" || feature_new "$c"; } && WANTED[$c]=1
     done
+    # "Gaming on NVIDIA" was on: its replacement, the SteamOS conversion, comes with the defaults of a first run.
+    nvidia_migration_pending && WANTED[glyphs]=1
     # The kernel pin is no longer needed (the power-off fix), and HDMI
     # refresh boost needed the pin: whatever is left of either is unticked,
     # so a normal run removes it.

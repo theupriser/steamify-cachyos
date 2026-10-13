@@ -41,6 +41,12 @@ nvidia_present() {
 # A PC that has this on keeps it until the conversion is turned on, which calls nvidia_swap_out.
 nvidia_available() { return 1; }
 
+nvidia_migration_pending() {
+    # "Gaming on NVIDIA" is on (set up before 2.11.2) and the SteamOS conversion that replaces it isn't: the menu ticks the
+    # conversion and shows it as an update, so a normal run moves the PC over (nvidia_swap_out in gsn_enable).
+    nvidia_present && nvidia_status && ! gaming_status 2>/dev/null
+}
+
 nvidia_swap_out() {
     # The conversion takes over: Steam no longer starts by itself on the desktop at login (both would start it). Steam, the
     # packages and the NVIDIA settings stay: the conversion needs them too. The state stays for the conversion's own disable.
