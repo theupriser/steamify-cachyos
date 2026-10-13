@@ -20,8 +20,14 @@ GSN_PKG=steamify-gamescope-nvidia
 GSN_RELEASES="${GSN_RELEASES:-https://github.com/theupriser/steamify-gamescope-nvidia/releases}"
 # The package this Steamify release was tested with (patches/gamescope-nvidia.PKGBUILD names the same version): the
 # fallback. A new pin: the release's tag, the package's sha256, and the PKGBUILD's pkgver/pkgrel.
-GSN_VERSION=3.16.31-2
-GSN_SHA256=3b981bed4dfdac383d22b8c22feaef191c2f2863bccf5676d1ec959c2c5ee3a3
+GSN_VERSION=3.16.31-3
+# One build per CPU level, like CachyOS's repositories: generic is the one every x86-64 PC can run.
+declare -A GSN_SHA256=(
+    [generic]=4c7995694d2726c356785d9aec12a11c98419b4d2e139617f03bb46c758ced56
+    [v3]=43c6928ca9fa67c063c4e1b993b686145e94e68de1bd46645782d3186779fa2d
+    [v4]=b6d4621e4b98d9aa5c600fe9a5a1cae164fef6bbf93d259fb8a6af666b098f9f
+    [znver4]=60f45da74a0b96d776219f6e6aa22c5d23e48b08233b3fa12b6c4d7aa6812dd9
+)
 # Where the ISO leaves a copy of the pinned package, for installs without GitHub.
 GSN_BACKUP_DIR="${GSN_BACKUP_DIR:-/usr/local/share/steamify/gamescope}"
 # How long a look at GitHub for a newer release counts (seconds), so opening the menu doesn't ask every time.
@@ -68,20 +74,30 @@ gsn_update_pending() {
     [[ -n "$latest" ]] && gsn_newer "$latest" "$(gsn_installed_version)"
 }
 
+gsn_cpu_variant() {
+    # The best build this CPU can run: znver4 (Ryzen 7000/9000: AMD with AVX-512 BF16), v4, v3, else generic. The
+    # dynamic loader knows the CPU level best ("x86-64-v4 (supported, searched)").
+    local help; help="$(/lib64/ld-linux-x86-64.so.2 --help 2>/dev/null)"
+    if grep -q 'x86-64-v4 (supported' <<< "$help"; then
+        if grep -q AuthenticAMD /proc/cpuinfo && grep -qw avx512_bf16 /proc/cpuinfo; then echo znver4; else echo v4; fi
+    elif grep -q 'x86-64-v3 (supported' <<< "$help"; then echo v3
+    else echo generic; fi
+}
+
 gsn_sha_of() {
     # The hash a release file is expected to have: the pinned one for the pinned version, else the .sha256 next to the
-    # package in the same release (it shows the download wasn't damaged, not who made it).
-    local tag="$1" file="$2"
-    if [[ "$tag" == "$GSN_VERSION" ]]; then echo "$GSN_SHA256"; return 0; fi
+    # package in the same release (it shows the download wasn't damaged, not who made it). gsn_sha_of <tag> <file> <variant>
+    local tag="$1" file="$2" variant="$3"
+    if [[ "$tag" == "$GSN_VERSION" ]]; then echo "${GSN_SHA256[$variant]}"; return 0; fi
     curl -fsL --connect-timeout 10 --max-time 30 "$GSN_RELEASES/download/$tag/$file.sha256" 2>/dev/null | awk 'NR==1 {print $1}'
 }
 
 gsn_download() {
-    # gsn_download <tag>: the release's package, verified, in the cache; prints its path.
-    local tag="$1" cache="${XDG_CACHE_HOME:-$HOME/.cache}/steamify" file want got
-    file="$GSN_PKG-$tag-x86_64.pkg.tar.zst"
+    # gsn_download <tag> <variant>: the release's package, verified, in the cache; prints its path.
+    local tag="$1" variant="$2" cache="${XDG_CACHE_HOME:-$HOME/.cache}/steamify" file want got
+    file="$GSN_PKG-$tag-$variant.pkg.tar.zst"
     mkdir -p "$cache" || return 1
-    want="$(gsn_sha_of "$tag" "$file")"
+    want="$(gsn_sha_of "$tag" "$file" "$variant")"
     [[ "$want" =~ ^[0-9a-f]{64}$ ]] || return 1
     if [[ -f "$cache/$file" ]] && [[ "$(sha256sum "$cache/$file" | awk '{print $1}')" == "$want" ]]; then echo "$cache/$file"; return 0; fi
     curl -fsL --retry 2 --connect-timeout 15 --max-time 300 -o "$cache/$file.part" "$GSN_RELEASES/download/$tag/$file" || { rm -f "$cache/$file.part"; return 1; }
@@ -92,25 +108,35 @@ gsn_download() {
 }
 
 gsn_fetch_package() {
-    # The package to install, as a path, newest first: the newest release on GitHub (not older than the pinned one), else
-    # the pinned package (GitHub, the cache, or the copy that came with the ISO). Only files with the expected sha256 count.
-    local tag pkg cache="${XDG_CACHE_HOME:-$HOME/.cache}/steamify" file="$GSN_PKG-$GSN_VERSION-x86_64.pkg.tar.zst" copy
+    # The package to install, as a path: the build for this CPU, then the generic one, each from the newest release on
+    # GitHub (not older than the pinned one), else the pinned release (GitHub, the cache, or the copy that came with the
+    # ISO). Only files with the expected sha256 count. gsn_fetch_package [variant]
+    local tag pkg v cache="${XDG_CACHE_HOME:-$HOME/.cache}/steamify" file copy
+    local -a variants=("${1:-$(gsn_cpu_variant)}"); [[ "${variants[0]}" == generic ]] || variants+=(generic)
     tag="$(gsn_latest_tag)" || tag=""
-    if [[ -n "$tag" && "$tag" != "$GSN_VERSION" ]] && gsn_newer "$tag" "$GSN_VERSION"; then
-        info "Downloading the newest patched gamescope ($tag)..." >&2
-        if pkg="$(gsn_download "$tag")"; then echo "$pkg"; return 0; fi
-        warn "Downloading the newest patched gamescope ($tag) failed: using the version this Steamify was tested with ($GSN_VERSION)." >&2
-    fi
-    info "Downloading the patched gamescope ($GSN_VERSION)..." >&2
-    if pkg="$(gsn_download "$GSN_VERSION")"; then echo "$pkg"; return 0; fi
-    warn "Downloading the patched gamescope failed (or its checksum didn't match)." >&2
-    for copy in "$GSN_BACKUP_DIR/$file" "$cache/$file"; do
-        if [[ -f "$copy" ]] && [[ "$(sha256sum "$copy" | awk '{print $1}')" == "$GSN_SHA256" ]]; then
-            info "Using the copy that came with Steamify: $copy" >&2
-            echo "$copy"; return 0
+    for v in "${variants[@]}"; do
+        if [[ -n "$tag" && "$tag" != "$GSN_VERSION" ]] && gsn_newer "$tag" "$GSN_VERSION"; then
+            info "Downloading the newest patched gamescope ($tag, $v)..." >&2
+            if pkg="$(gsn_download "$tag" "$v")"; then echo "$pkg"; return 0; fi
+            warn "Downloading the newest patched gamescope ($tag, $v) failed: trying the version this Steamify was tested with ($GSN_VERSION)." >&2
         fi
+        info "Downloading the patched gamescope ($GSN_VERSION, $v)..." >&2
+        if pkg="$(gsn_download "$GSN_VERSION" "$v")"; then echo "$pkg"; return 0; fi
+        file="$GSN_PKG-$GSN_VERSION-$v.pkg.tar.zst"
+        for copy in "$GSN_BACKUP_DIR/$file" "$cache/$file"; do
+            if [[ -f "$copy" ]] && [[ "$(sha256sum "$copy" | awk '{print $1}')" == "${GSN_SHA256[$v]}" ]]; then
+                info "Using the copy that came with Steamify: $copy" >&2
+                echo "$copy"; return 0
+            fi
+        done
     done
+    warn "Downloading the patched gamescope failed (or its checksum didn't match)." >&2
     return 1
+}
+
+gsn_smoke_test() {
+    # The installed gamescope must start (headless, no screen needed): a build that crashes would leave gaming mode in a loop.
+    timeout 25 gamescope --backend headless -W 640 -H 360 -r 60 -- true >/dev/null 2>&1
 }
 
 gsn_build_package() {
@@ -154,6 +180,11 @@ gsn_install_package() {
         if [[ -z "$latest" ]] && ! gsn_newer "$GSN_VERSION" "$have"; then return 0; fi
     fi
     if pkg="$(gsn_fetch_package)" && sudo pacman -U --noconfirm --ask 4 "$pkg"; then
+        if ! gsn_smoke_test; then
+            warn "The patched gamescope for this CPU doesn't start: installing the generic build instead."
+            pkg="$(gsn_fetch_package generic)" && sudo pacman -U --noconfirm --ask 4 "$pkg" && gsn_smoke_test ||
+                { err "The patched gamescope doesn't start on this PC."; return 1; }
+        fi
         ok "Patched gamescope installed."
         return 0
     fi

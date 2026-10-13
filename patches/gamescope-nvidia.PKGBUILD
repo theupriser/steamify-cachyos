@@ -4,12 +4,12 @@
 # gamescope with GBM-allocated scan-out buffers for NVIDIA (opt-in: gamescope_drm_gbm_scanout=1).
 # The patches are gamescope-gbm-scanout.patch and gamescope-ui-native.patch (next to this file, applied in this order); see the
 # README for where they come from.
-# UPSTREAM_VERSION (next to this file) names the gamescope tag the patch is made for.
+# UPSTREAM_VERSION (next to this file) names the gamescope tag the patches are made for.
 
 pkgname=steamify-gamescope-nvidia
 _srcname=gamescope
 pkgver=3.16.31
-pkgrel=2
+pkgrel=3
 pkgdesc='SteamOS session compositing window manager, with GBM scan-out for NVIDIA (opt-in: gamescope_drm_gbm_scanout=1)'
 arch=(x86_64)
 url=https://github.com/theupriser/steamify-gamescope-nvidia
