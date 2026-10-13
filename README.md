@@ -30,12 +30,16 @@ Steam Machine.
      as OS Version (e.g. `steamos-3.9`), `steam-machine` as OS Codename and
      Steamify's version as OS Variant. The OS name stays CachyOS
      ([details](TECHNICAL.md#what-steams-system-settings-show)).
-   - **NVIDIA graphics cards:** gamescope's gaming mode shows a corrupted
-     picture there (an open NVIDIA driver bug), so the conversion isn't
-     offered. **Gaming on NVIDIA** takes its place: Steam on the desktop,
-     installed if it's missing and started at login, in **Big Picture** or its
-     normal window as you choose
-     ([details](TECHNICAL.md#gaming-on-nvidia)).
+   - **NVIDIA graphics cards** (GTX 16 / RTX 20 series or newer): stock gamescope shows a corrupted
+     picture on them (an open NVIDIA driver bug), so on an NVIDIA PC Steamify installs a **patched gamescope**
+     (GBM scan-out, from [steamify-gamescope-nvidia](https://github.com/theupriser/steamify-gamescope-nvidia))
+     and sets up the rest: the gaming session starts on the monitor's own resolution and refresh rate, with
+     Steam's interface at that size. It is the same conversion as everywhere else, with one extra step.
+     The newest patched build for your CPU is downloaded from GitHub (checked, with a built-in fallback if GitHub
+     can't be reached), and a newer one shows up as an **Update** in the menu. Tested on an RTX 5080 only
+     ([details](TECHNICAL.md#nvidia-graphics-cards)).
+     The old **Gaming on NVIDIA** option (Steam on the desktop) is gone: a PC that had it on is moved to the
+     conversion, and keeps starting Steam in Big Picture if that was on.
 2. **SteamOS theme** - the Vapor look of SteamOS for the desktop, with
    **Add to Steam** in right-click menus
    ([details](TECHNICAL.md#steamos-desktop-look)).
@@ -50,7 +54,7 @@ Steam Machine.
    With **Add as non-Steam game** (on by default) it's in your Steam library
    too: started from Steam it gets your controller (a Steam Controller only
    talks to Steam), in gaming mode as well. Steam closes for a moment while
-   it's added, so that's done from the desktop. Not offered on PCs with an NVIDIA graphics card, which have no gaming mode.
+   it's added, so that's done from the desktop. Not offered on PCs with an NVIDIA graphics card yet (not tested there).
 6. **Update notifications** - on by default: a notification and a tray icon
    when there's a new Steamify, with Open Steamify and Skip this version. It
    never updates anything by itself
@@ -191,6 +195,8 @@ Some files in `patches/` are not MIT. They keep their own license, and each file
 | `steamify-fremont-poweroff.c` | Kernel module for the Steam Machine's power-off fix. It does what Valve's Steam Machine kernel does for this (clears the S4 wake bit of GPIO pin 18 at probe), but at power-off, for kernels without Valve's change. Valve's kernel: [evlaV/linux-integration](https://github.com/evlaV/linux-integration). | GPL-2.0, like the Linux kernel it is built into |
 | `cros-ec-cec.c` | Valve's Steam Machine HDMI-CEC driver (ChromeOS EC CEC, Copyright BayLibre; Valve's version of it), at a pinned commit of [evlaV/linux-integration](https://github.com/evlaV/linux-integration). Used when it can't be downloaded. | GPL-2.0+, unmodified (Steamify's `cros-ec-cec-single-port.patch` is applied when it is built) |
 | `gamescope-gbm-scanout.patch` | GBM scan-out for gamescope on NVIDIA: nine commits of [farnoy/gamescope](https://github.com/farnoy/gamescope) on [ValveSoftware/gamescope](https://github.com/ValveSoftware/gamescope). | gamescope's license (BSD-2-Clause) |
+| `gamescope-ui-native.patch` | Keeps Steam's interface at the display's size in gamescope on NVIDIA (a small patch after the one above). | gamescope's license (BSD-2-Clause) |
+| `gamescope-nvidia.PKGBUILD` | The recipe for the patched gamescope package, used only when it can't be downloaded. | MIT, like Steamify |
 
 ## Disclaimer
 
