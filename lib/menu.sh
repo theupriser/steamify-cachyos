@@ -511,6 +511,11 @@ apply_changes() {
         if "${c}_disable"; then feature_record "$c" disable; else failed+=("$c"); fi
     done
     for c in "${TO_ENABLE[@]}"; do
+        # A sub-option of something that just failed isn't applied: it would be left on without its parent.
+        if [[ -n "${PARENT[$c]:-}" && " ${failed[*]:-} " == *" ${PARENT[$c]} "* ]]; then
+            warn "Skipping ${LABEL[$c]%%:*}: ${LABEL[${PARENT[$c]}]%%:*} didn't work."
+            continue
+        fi
         if [[ "$c" == boot ]]; then echo; echo -e "${c_bold}Boot into: desktop${c_reset}"
         elif is_action "$c"; then echo; echo -e "${c_bold}Running: ${LABEL[$c]%%:*}${c_reset}"
         else echo; echo -e "${c_bold}Turning on: ${LABEL[$c]}${c_reset}"; fi
