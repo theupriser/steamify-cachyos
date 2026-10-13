@@ -251,8 +251,9 @@ conversion off removes the setting and keeps the package. The package is pinned 
 (`UPSTREAM_VERSION` in that repository): pacman does not update it, and Steamify does not rebuild it yet.
 
 So with an NVIDIA GPU (PCI vendor 0x10de, display class, its driver providing `nvidia_drm`: `nvidia_present`) the SteamOS
-conversion (`gaming`, and its options `boot`, `single`, `glyphs`) isn't offered, unless it is already on (so it can be turned
-off). `nvidia` ("Gaming on NVIDIA", `lib/nvidia.sh`) takes its place, hidden while the conversion is on (both would start
+conversion (`gaming`, and its options `boot`, `single`, `glyphs`) is only offered on a supported card (RTX 20 series or newer,
+`nvidia_supported`) with the patched gamescope described below, or when it is already on (so it can be turned off).
+`nvidia` ("Gaming on NVIDIA", `lib/nvidia.sh`) is the alternative, and excludes the conversion (both would start
 Steam at login): it installs `steam` when missing (recorded in state `nvidia`, removed again only then) and enables the user
 unit `steamify-steam-autostart.service` (`services/`, `ExecStart=/usr/bin/steam @ARGS@`, Plasma only). Its sub-option
 `bigpicture` ("Steam starts in Big Picture", ticked along with it) rewrites the unit with `-gamepadui` and sets
@@ -584,6 +585,7 @@ immediately, which can turn into a loop - see
 | `lib/update-notifier.sh` | Update notifications: the notifier from `patches/` and its user timer |
 | `lib/first-login.sh` | `--defaults` without a session (the Steam Machine ISO's installer): the one-time first-login step that sets up single user's launcher on Plasma's new layout and opens the app |
 | `lib/controllers.sh` | Extended controller support: Xbox wireless dongle (xone) and Xbox Bluetooth (xpadneo) from the CachyOS repo |
+| `lib/gamescope-nvidia.sh` | gamescope on NVIDIA: builds and installs the patched gamescope (GBM scan-out) from steamify-gamescope-nvidia and sets `gamescope_drm_gbm_scanout=1` for the SteamOS conversion |
 | `lib/nvidia.sh` | Gaming on NVIDIA: Steam on the desktop, started at login, optionally in Big Picture (replaces the SteamOS conversion there) |
 | `lib/vram-booster.sh` | VRAM booster (`dmemcg-booster`, `plasma-foreground-booster`) |
 | `services/` | The systemd units the scripts install (`service_file`, `@KEY@` placeholders); see its README |
