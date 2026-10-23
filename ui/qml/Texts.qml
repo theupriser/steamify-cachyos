@@ -21,7 +21,7 @@ QtObject {
                       changes: ["Steam is started with -gamepadui", "Plasma starts with an empty session, so old windows don't cover Big Picture", "Off: Steam starts in its normal window"] },
         nvsilent: { label: "Start Steam silently", hint: "In the tray at login, no window",
                     body: "Steam starts in the tray at login without a window. Not together with Big Picture: ticking one unticks the other.",
-                    changes: ["Steam is started with -silent", "Off: Steam starts in its normal window"] },
+                    changes: ["Steam is started with -steamdeck -silent", "Off: Steam starts in its normal window"] },
         theme: { label: "SteamOS theme", hint: "Vapor look for the desktop, Add to Steam",
                  body: "The Vapor look of SteamOS for the desktop, with its panel, launcher icon and wallpaper.",
                  changes: ["cachyos-vapor global theme", "Add to Steam in right-click menus", "Nested Desktop, Steam keyboard window rule"] },

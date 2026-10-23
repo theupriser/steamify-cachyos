@@ -19,7 +19,9 @@ steam_enable() {
 # no window) on the Plasma desktop. It is Steam's own autostart entry, the file
 # Steam's setting "Run Steam when my computer starts" creates and removes, so
 # that setting shows what Steamify did (and the other way around). Steam's copy
-# is the system steam.desktop; ours has -silent in its Exec line.
+# is the system steam.desktop; ours has -steamdeck -silent in its Exec line.
+# -steamdeck matches what gaming mode launches Steam with: without it the two
+# sessions disagree on the client branch and the Steam Beta choice is lost (#109).
 STEAM_AUTOSTART="${XDG_CONFIG_HOME:-$HOME/.config}/autostart/steam.desktop"
 STEAM_SYSTEM_DESKTOP=/usr/share/applications/steam.desktop
 
@@ -42,9 +44,9 @@ silent_enable() {
     silent_old_unit_remove
     mkdir -p "$(dirname "$STEAM_AUTOSTART")"
     if [[ -f "$STEAM_SYSTEM_DESKTOP" ]]; then
-        sed 's|^Exec=/usr/bin/steam %U$|Exec=/usr/bin/steam -silent %U|' "$STEAM_SYSTEM_DESKTOP" > "$STEAM_AUTOSTART"
+        sed 's|^Exec=/usr/bin/steam %U$|Exec=/usr/bin/steam -steamdeck -silent %U|' "$STEAM_SYSTEM_DESKTOP" > "$STEAM_AUTOSTART"
     fi
-    silent_status || printf '%s\n' '[Desktop Entry]' 'Name=Steam' 'Exec=/usr/bin/steam -silent %U' \
+    silent_status || printf '%s\n' '[Desktop Entry]' 'Name=Steam' 'Exec=/usr/bin/steam -steamdeck -silent %U' \
         'Icon=steam' 'Terminal=false' 'Type=Application' 'Categories=Network;FileTransfer;Game;' > "$STEAM_AUTOSTART"
     ok "Steam starts silently on the desktop from the next login."
 }
