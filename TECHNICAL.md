@@ -132,7 +132,7 @@ logged straight back in to gamescope.
   autologin files and the sync bridge;
 - `KWIN_IM_SHOW_ALWAYS=1` for the virtual keyboard; the sub-option `silent`
   ("Start Steam silently in desktop mode", opt-in, always shown) writes
-  `~/.config/autostart/steam.desktop` (the system steam.desktop with `-silent` in its Exec line). That is the
+  `~/.config/autostart/steam.desktop` (the system steam.desktop with `-steamdeck -silent` in its Exec line). That is the
   file Steam's own setting "Run Steam when my computer starts" creates and removes, so the setting shows it. An older
   `steam-desktop-autostart` user unit is removed;
 - the **Return to Gaming Mode** shortcut ("Switch to Gaming Mode" when "Boot into" is the desktop); on plasma-login-manager with a
