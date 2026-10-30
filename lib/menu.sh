@@ -40,7 +40,7 @@ NO_PRESELECT=(boot silent nvsilent cec kpin hdmi extended_controller_support)
 # FEATURE_BASELINE.
 FEATURE_BASELINE=2.1.0
 declare -A FEATURE_VERSION=(
-    [gaming]=2.15.0 [boot]=2.12.1 [silent]=2.11.0 [nvidia]=2.12.0 [bigpicture]=2.10.0 [nvsilent]=2.11.0 [theme]=2.1.0 [gnometheme]=2.15.0 [glyphs]=2.1.0 [single]=2.13.0
+    [gaming]=2.16.0 [boot]=2.12.1 [silent]=2.11.0 [nvidia]=2.12.0 [bigpicture]=2.10.0 [nvsilent]=2.11.0 [theme]=2.1.0 [gnometheme]=2.16.0 [glyphs]=2.1.0 [single]=2.13.0
     [launcher]=2.1.0 [cec]=2.7.0 [machine]=2.9.0 [poweroff]=2.2.0 [vram]=2.3.0 [notify]=2.5.0 [steamgame]=2.5.1 [extended_controller_support]=2.10.0
     [kpin]=2.1.0 [hdmi]=2.1.0
 )

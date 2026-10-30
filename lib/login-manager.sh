@@ -16,7 +16,7 @@ GDM_SUDOERS=/etc/sudoers.d/steamify-gdm-relogin
 GDM_RELOGIN=/usr/local/libexec/steamify-gdm-relogin
 CONF_DIR="/etc/plasmalogin.conf.d"
 AUTOLOGIN_CONF="$CONF_DIR/10-gamescope-autologin.conf"
-# One drop-in for plasmalogin.service (plasmalogin_dropin_write). Before 2.15.0 it was two files.
+# One drop-in for plasmalogin.service (plasmalogin_dropin_write). Before 2.16.0 it was two files.
 PLM_DROPIN="/etc/systemd/system/plasmalogin.service.d/zz-steamify.conf"
 OLD_PLM_DROPINS=(/etc/systemd/system/plasmalogin.service.d/zz-steamify-temp-login.conf
     /etc/systemd/system/plasmalogin.service.d/zz-steamify-greeter-session.conf)

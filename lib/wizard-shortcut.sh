@@ -80,7 +80,7 @@ launcher_enable() {
     tmp="$(mktemp)"
     local theme="${XDG_DATA_HOME:-$HOME/.local/share}/icons/hicolor"
     # A PNG, by name, first: GNOME's dock can't always draw an SVG (blank icon, "Could not load a pixbuf from icon theme").
-    # (Releases before 2.15.0 only have the SVG.)
+    # (Releases before 2.16.0 only have the SVG.)
     if curl -fsSL --max-time 20 "$WIZARD_RELEASE/steam-gaming-settings.png" -o "$tmp" && head -c 8 "$tmp" | grep -q PNG; then
         install -D -m 644 "$tmp" "$theme/256x256/apps/io.github.theupriser.Steamify.png"
         icon=io.github.theupriser.Steamify

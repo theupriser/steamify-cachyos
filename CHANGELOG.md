@@ -5,9 +5,9 @@ All notable changes, per version and per commit. Versions follow
 `steamify.sh`. Versions before 0.7.0 were numbered afterwards,
 one per merged pull request.
 
-## 2.15.0 - 2026-10-15
+## 2.16.0 - 2026-10-15
 
-- **chore: bump VERSION to 2.15.0: this release was 2.14.0 (GNOME support, NVIDIA); 2.14.0 is now the Steam Beta, Wi-Fi firmware and Wake-on-LAN release. The GNOME theme's and the SteamOS conversion's feature versions follow**
+- **chore: bump VERSION to 2.15.0 (now 2.16.0): this release was 2.14.0 (GNOME support, NVIDIA); 2.14.0 is now the Steam Beta, Wi-Fi firmware and Wake-on-LAN release. The GNOME theme's and the SteamOS conversion's feature versions follow**
 - **feat: GNOME support (the "SteamOS theme for GNOME" option, GDM session switching, the GNOME launcher/notifier/tray behaviour): the Vapor colors, the Steam Deck wallpaper, Ubuntu Dock, Tiling Assistant, Desktop Icons NG, AppIndicator and Steamify's own Vapor shell extension, with Switch to Desktop remembering KDE or GNOME. Prototype work since 2.12.0: `5dfc916`, `fc28ea4`, `ae12c1b`, `2b84e6a`, `c5b59d9`, `62a30e6`, `039f269`, `12eb562`, `c7f5f51`, `7904833`, `ce1aa1b`, `ab3b581`, `eaa3f28`, `4221ae6`, `8432f63`, `09ef0b1`, `68342e7`, `0e0bf57`, `7a84b0d`, `dbaeaa1`**
 - `2ca288d` **fix: the NVIDIA gaming mode setup no longer fails with "the patched gamescope doesn't start" on a gamescope that works: the smoke test judged gamescope's exit status through a pipe into `grep -q` under `pipefail`, so gamescope's crash on the closed pipe (or a hung shutdown) counted as a failed test, intermittently, for the CPU-specific and the generic build alike (seen on an RTX 5080). The test now reads gamescope's output from a file and kills a hung shutdown (`timeout -k`)**
 - `645b331` **feat: the GNOME theme installs GNOME Settings with the "GNOME Desktop" panel (dock, desktop icons, tiling) as a prebuilt package, downloaded from the `settings` release of steamify-gnome-theme (built by GitHub Actions on current Arch, rebuilt weekly) and checked against its `.sha256`; a failure keeps the stock Settings. Turning the theme off puts the stock `gnome-control-center` back. Installs with the GNOME theme on re-apply it (feature version 2.14.0)**
