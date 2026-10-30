@@ -92,6 +92,15 @@ What Steamify can do on a Valve Steam Machine:
   **hardware settings** (fan, performance) work, and the power button puts
   it to sleep like a console. Steam's System settings show the serial
   number, and Steam's **Wi-Fi backend** setting works.
+  - **Fan monitoring / control (DKMS)** - optional: adds missing
+    `steamdeck` and `steamdeck_hwmon` module providers for installed standard
+    and LTS kernels, while reusing native providers such as Deckify's. It
+    installs `jupiter-fan-control` from the official CachyOS repository;
+    Steam's existing switch chooses between its OS fan curve and firmware
+    control. Module changes take effect after a restart. On Fremont,
+    `fan1_fault=1` and some Steam-Deck-specific sensor attributes are not
+    meaningful, while fan RPM and control still work
+    ([details](FREMONT-FANCONTROL.md)).
   - **Power-off fix** - on by default: shutting down really turns the Steam
     Machine off, also with the newest CachyOS kernel
     ([details](TECHNICAL.md#power-off-fix-steam-machine)).
@@ -203,6 +212,7 @@ Some files in `patches/` are not MIT. They keep their own license, and each file
 | File | What | License and source |
 |---|---|---|
 | `steamify-fremont-poweroff.c` | Kernel module for the Steam Machine's power-off fix. It does what Valve's Steam Machine kernel does for this (clears the S4 wake bit of GPIO pin 18 at probe), but at power-off, for kernels without Valve's change. Valve's kernel: [evlaV/linux-integration](https://github.com/evlaV/linux-integration). | GPL-2.0, like the Linux kernel it is built into |
+| `steamdeck.c`, `steamdeck_hwmon.c` | Valve's MFD and hwmon drivers used for optional Fremont fan monitoring and control. Steamify carries the tested snapshot from `firlin123/steamdeck-dkms` commit `99737c4`, documented through the `evlaV/linux-integration` mirror of Valve's integration tree. | GPL-2.0+, unmodified and SHA-256 pinned |
 | `cros-ec-cec.c` | Valve's Steam Machine HDMI-CEC driver (ChromeOS EC CEC, Copyright BayLibre; Valve's version of it), at a pinned commit of [evlaV/linux-integration](https://github.com/evlaV/linux-integration). Used when it can't be downloaded. | GPL-2.0+, unmodified (Steamify's `cros-ec-cec-single-port.patch` is applied when it is built) |
 | `gamescope-gbm-scanout.patch` | GBM scan-out for gamescope on NVIDIA: nine commits of [farnoy/gamescope](https://github.com/farnoy/gamescope) on [ValveSoftware/gamescope](https://github.com/ValveSoftware/gamescope). | gamescope's license (BSD-2-Clause) |
 | `gamescope-ui-native.patch` | Keeps Steam's interface at the display's size in gamescope on NVIDIA (a small patch after the one above). | gamescope's license (BSD-2-Clause) |

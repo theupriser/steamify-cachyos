@@ -21,8 +21,15 @@ Item {
         Column {
             width: 740; height: parent.height; spacing: 10
             Text { text: "What do you want?"; color: Theme.text; font.family: Theme.display; font.pixelSize: 30; font.weight: Font.DemiBold }
+            Text {
+                id: restartNote; visible: app.restartPending; width: parent.width
+                text: "A restart is still required for the prepared system changes."
+                color: Theme.warn; font.family: Theme.body; font.pixelSize: 14; wrapMode: Text.WordWrap
+            }
             ListView {
-                id: list; width: parent.width; height: parent.height - 50; clip: true
+                id: list; width: parent.width
+                height: parent.height - 50 - (restartNote.visible ? restartNote.implicitHeight + 10 : 0)
+                clip: true
                 // A fixed model: sub-items fold in and out instead of the
                 // list being rebuilt (and jumping) on every tick.
                 model: app.items

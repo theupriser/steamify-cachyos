@@ -19,7 +19,7 @@ VERSION=2.14.2
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-for lib in common state packages login-manager single-user steam-desktop steam-machine fremont-poweroff fremont-wifi wake-on-lan vram-booster hdmi-refresh nvidia gamescope-nvidia controllers cec cec-audio boot-session vapor-theme steamos-extras bios desktop-shortcut wizard-shortcut steam-game update-notifier first-login menu backend; do
+for lib in common state packages login-manager single-user steam-desktop steam-machine steamdeck-hwmon steamdeck-hwmon-state steamdeck-hwmon-install steamdeck-hwmon-remove fremont-poweroff fremont-wifi wake-on-lan vram-booster hdmi-refresh nvidia gamescope-nvidia controllers cec cec-audio boot-session vapor-theme steamos-extras bios desktop-shortcut wizard-shortcut steam-game update-notifier first-login menu backend; do
     # shellcheck source=/dev/null
     source "$SCRIPT_DIR/lib/$lib.sh"
 done
@@ -59,7 +59,10 @@ TARGET_USER="$(id -un)"
 migrate_layout
 notify_seen
 
-restart_needed() { [[ -n "${BIOS_NEEDS_RESTART:-}" || "$RESTART_FOR_LOGIN" == true ]]; }
+restart_needed() {
+    [[ -n "${BIOS_NEEDS_RESTART:-}" || "$RESTART_FOR_LOGIN" == true ]] ||
+        { steamdeck_ownership_status >/dev/null 2>&1 && steamdeck_ownership_restart_pending; }
+}
 
 restart_now() {
     if [[ -n "${BIOS_NEEDS_RESTART:-}" ]]; then

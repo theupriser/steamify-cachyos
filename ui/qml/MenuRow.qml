@@ -18,6 +18,7 @@ Item {
     readonly property bool unavailable: (it.kind === "action" && !(app.bios && app.bios.selectable)) || (it.kind === "toggle" && it.selectable === false)
     readonly property string hint: it.id === "bios" ? app.biosHint()
                                  : it.selectable === false ? it.hint
+                                 : it.notice ? it.notice
                                  : ((Texts.items[it.id] || {}).hint || it.hint)
 
     height: shown ? 62 : 0

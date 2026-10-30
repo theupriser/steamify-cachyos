@@ -37,7 +37,7 @@ backend_event() {
 }
 
 backend_status() {
-    local c first_run=true items="" kind parent now
+    local c first_run=true items="" kind parent now notice
     detect_components
     for c in "${COMPONENTS[@]}"; do
         component_available "$c" && ! is_action "$c" && [[ "${CURRENT[$c]}" == 1 ]] && first_run=false
@@ -56,6 +56,9 @@ backend_status() {
         items+=",\"update\":$(feature_outdated "$c" && echo true || echo false)"
         items+=",\"new\":$({ feature_new "$c" || feature_new_optin "$c"; } && echo true || echo false)"
         items+=",\"selectable\":$(component_selectable "$c" && echo true || echo false)"
+        notice=""
+        [[ "$c" == fancontrol ]] && steamdeck_ownership_jupiter_adoption_notice && notice="$(fancontrol_adoption_notice)"
+        [[ -n "$notice" ]] && items+=",\"notice\":$(json_str "$notice")"
         # Why it can't be turned on, for the app's explanation.
         [[ "$c" == vram && -n "${VRAM_NVIDIA_CASE:-}" ]] &&
             items+=",\"note\":$(json_str "$(vram_nvidia_note "$VRAM_NVIDIA_CASE")")"
@@ -67,9 +70,10 @@ backend_status() {
     if bios_available; then
         bios="{\"current\":$(json_str "$(bios_current)"),\"newest\":$(json_str "${BIOS_NEWEST:-}"),\"selectable\":$(bios_selectable && echo true || echo false),\"dryRun\":$([[ -n "$BIOS_DRY_RUN" ]] && echo true || echo false)}"
     fi
-    printf '{"version":%s,"firstRun":%s,"steamMachine":%s,"kernel":%s,"pinnedKernel":%s,"cecDevices":%s,"leds":%s,"bios":%s,"items":[%s]}\n' \
+    printf '{"version":%s,"firstRun":%s,"steamMachine":%s,"restartPending":%s,"kernel":%s,"pinnedKernel":%s,"cecDevices":%s,"leds":%s,"bios":%s,"items":[%s]}\n' \
         "$(json_str "$VERSION")" "$first_run" \
         "$(detect_valve_fremont && echo true || echo false)" \
+        "$(restart_needed && echo true || echo false)" \
         "$(json_str "$(uname -r)")" "$(json_str "${PINNED_KERNEL_VER:-}")" \
         "$(json_str "$cec")" \
         "$(compgen -G '/sys/class/leds/valve-leds*' | wc -l)" \
@@ -161,6 +165,7 @@ backend_apply() {
     [[ "${WANTED[gaming]:-0}" == 0 ]] && { WANTED[silent]=0; WANTED[glyphs]=0; }
     [[ "${WANTED[cecaudio]:-0}" == 1 ]] && WANTED[cec]=1
     [[ "${WANTED[cec]:-0}" == 0 ]] && WANTED[cecaudio]=0
+    [[ "${WANTED[fancontrol]:-0}" == 1 ]] && WANTED[machine]=1
     [[ "${WANTED[poweroff]:-0}" == 1 ]] && WANTED[machine]=1
     [[ "${WANTED[machine]:-0}" == 0 ]] && WANTED[poweroff]=0
     [[ "${WANTED[kpin]:-0}" == 1 ]] && WANTED[machine]=1
@@ -168,7 +173,7 @@ backend_apply() {
     [[ "${WANTED[wol]:-0}" == 1 ]] && WANTED[machine]=1
     [[ "${WANTED[wowlan]:-0}" == 1 ]] && { WANTED[machine]=1; WANTED[wifi]=1; }
     [[ "${WANTED[wifi]:-0}" == 0 ]] && WANTED[wowlan]=0
-    [[ "${WANTED[machine]:-0}" == 0 ]] && { WANTED[kpin]=0; WANTED[wifi]=0; WANTED[wol]=0; WANTED[wowlan]=0; }
+    [[ "${WANTED[machine]:-0}" == 0 ]] && { WANTED[fancontrol]=0; WANTED[kpin]=0; WANTED[wifi]=0; WANTED[wol]=0; WANTED[wowlan]=0; }
     # Retired: only ever removed.
     WANTED[hdmi]=0
     case "$boot" in desktop) WANTED[boot]=1; WANTED[gaming]=1 ;; gamescope) WANTED[boot]=0 ;; esac
@@ -178,7 +183,7 @@ backend_apply() {
     backend_event plan "\"disable\":$(json_list "${TO_DISABLE[@]}"),\"enable\":$(json_list "${TO_ENABLE[@]}")"
     if [[ ${#TO_DISABLE[@]} -eq 0 && ${#TO_ENABLE[@]} -eq 0 ]]; then
         feature_record_unticked
-        backend_event finished '"failed":[],"restart":false,"nothing":true'
+        backend_event finished "\"failed\":[],\"restart\":$(restart_needed && echo true || echo false),\"nothing\":true"
         return 0
     fi
 
@@ -186,6 +191,11 @@ backend_apply() {
 
     local -a failed=()
     for c in "${TO_DISABLE[@]}"; do
+        if component_has_failed_descendant "$c" "${failed[@]}"; then
+            backend_event log "\"id\":$(json_str "$c"),\"line\":$(json_str "Skipped: a sub-option could not be turned off.")"
+            failed+=("$c")
+            continue
+        fi
         if backend_run_component "$c" disable; then feature_record "$c" disable; else failed+=("$c"); fi
     done
     for c in "${TO_ENABLE[@]}"; do

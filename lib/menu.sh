@@ -5,19 +5,20 @@
 
 # Menu order. Components are turned on in this order and off in reverse;
 # gaming must come first (single user builds on it).
-COMPONENTS=(gaming boot silent glyphs nvidia bigpicture nvsilent theme single launcher steamgame notify extended_controller_support vram cec cecaudio machine poweroff wifi wol wowlan kpin hdmi bios)
+COMPONENTS=(gaming boot silent glyphs nvidia bigpicture nvsilent theme single launcher steamgame notify extended_controller_support vram cec cecaudio machine fancontrol poweroff wifi wol wowlan kpin hdmi bios)
 # One-off actions rather than on/off components: never preselected, never
 # re-applied, not listed as on or off.
 ACTIONS=(bios)
 # Sub-options, shown indented under their parent and only while it's ticked.
-declare -A PARENT=([boot]=gaming [silent]=gaming [glyphs]=gaming [bigpicture]=nvidia [nvsilent]=nvidia [steamgame]=launcher [cecaudio]=cec [poweroff]=machine [wifi]=machine [wol]=machine [wowlan]=machine [kpin]=machine [hdmi]=machine [bios]=machine)
+declare -A PARENT=([boot]=gaming [silent]=gaming [glyphs]=gaming [bigpicture]=nvidia [nvsilent]=nvidia [steamgame]=launcher [cecaudio]=cec [fancontrol]=machine [poweroff]=machine [wifi]=machine [wol]=machine [wowlan]=machine [kpin]=machine [hdmi]=machine [bios]=machine)
 # Never preselected on a first run: booting into the desktop is a choice,
 # gamescope is the default; HDMI-CEC is opt-in (it can wake the machine or
 # upset other devices on the TV, even on SteamOS), except on a Steam Machine,
 # which has CEC like on SteamOS. HDMI refresh boost needs someone at the
 # screen to confirm each step. Extended controller support builds kernel modules for
-# every installed kernel: opt-in. So is the Steam Machine's Wi-Fi firmware (a firmware from SteamOS).
-NO_PRESELECT=(boot silent nvsilent cec wifi wol wowlan kpin hdmi extended_controller_support)
+# every installed kernel: opt-in. So are Fremont fan control and the Steam
+# Machine's Wi-Fi firmware (a firmware from SteamOS).
+NO_PRESELECT=(boot silent nvsilent cec fancontrol wifi wol wowlan kpin hdmi extended_controller_support)
 # Feature versions: the Steamify version in which what a component's enable
 # sets up last changed; set it to the new VERSION whenever you change one.
 # Each successful run records it (state "features"); a component that's on
@@ -27,7 +28,7 @@ NO_PRESELECT=(boot silent nvsilent cec wifi wol wowlan kpin hdmi extended_contro
 FEATURE_BASELINE=2.1.0
 declare -A FEATURE_VERSION=(
     [gaming]=2.13.2 [boot]=2.12.1 [silent]=2.14.0 [nvidia]=2.12.0 [bigpicture]=2.10.0 [nvsilent]=2.11.0 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.13.0
-    [launcher]=2.1.0 [cec]=2.7.0 [machine]=2.9.0 [poweroff]=2.2.0 [vram]=2.3.0 [notify]=2.5.0 [steamgame]=2.5.1 [extended_controller_support]=2.10.0
+    [launcher]=2.1.0 [cec]=2.7.0 [machine]=2.9.0 [fancontrol]=2.14.2 [poweroff]=2.2.0 [vram]=2.3.0 [notify]=2.5.0 [steamgame]=2.5.1 [extended_controller_support]=2.10.0
     [kpin]=2.1.0 [hdmi]=2.1.0 [wifi]=2.14.0 [wol]=2.14.0 [wowlan]=2.14.2 [cecaudio]=2.14.1
 )
 
@@ -49,6 +50,7 @@ declare -A LABEL=(
     [cec]="HDMI-CEC: use Steam with the TV remote, TV on/off with the PC (experimental)"
     [cecaudio]="HDMI-CEC volume: the TV's volume buttons in Steam, with Valve's PipeWire and WirePlumber instead of CachyOS's"
     [machine]="Steam Machine support: LED bar driver, hardware settings in Steam"
+    [fancontrol]="Fan monitoring / control (DKMS): sensors and Steam's OS fan curve"
     [poweroff]="Power-off fix: the Steam Machine stays off after shutting down"
     [wifi]="Wi-Fi firmware from SteamOS: Wake-on-WLAN works, the Steam Machine wakes on a Wi-Fi magic packet"
     [wol]="Wake-on-LAN: the Steam Machine wakes on a magic packet over the cable"
@@ -65,6 +67,7 @@ component_available() {
         # and turns off "Gaming on NVIDIA" (lib/nvidia.sh), which is not offered any more (nvidia_available).
         nvidia|bigpicture|nvsilent) nvidia_available ;;
         machine|poweroff) machine_available ;;
+        fancontrol) fancontrol_available ;;
         cecaudio) cecaudio_available ;;
         wifi) wifi_available ;;
         wol) wol_available ;;
@@ -183,7 +186,16 @@ detect_components() {
     for c in "${COMPONENTS[@]}"; do CURRENT[$c]=0; WANTED[$c]=0; done
     for c in "${COMPONENTS[@]}"; do
         component_available "$c" || continue
-        if "${c}_status"; then CURRENT[$c]=1; any=true; else CURRENT[$c]=0; fi
+        if "${c}_status"; then
+            CURRENT[$c]=1; any=true
+        elif [[ "$c" == fancontrol ]] && steamdeck_ownership_inconsistent_artifacts; then
+            # Keep an inconsistent installation actionable: showing it as
+            # present lets an explicit off request reach the existing
+            # fail-closed remover instead of becoming a successful no-op.
+            CURRENT[$c]=1; any=true
+        else
+            CURRENT[$c]=0
+        fi
         WANTED[$c]=${CURRENT[$c]}
     done
     # HDMI-CEC set up by an older version: tick it, so a normal run fixes it.
@@ -229,6 +241,15 @@ detect_components() {
                 [[ " ${NO_PRESELECT[*]} " != *" $c "* ]] && WANTED[$c]=1
         done
         machine_available && WANTED[cec]=1
+    fi
+    # Resume only the interrupted fan-control operation. Its real system
+    # state remains the source of truth; these values merely make the normal
+    # component plan invoke the idempotent installer/remover again.
+    if component_available fancontrol; then
+        case "$(fancontrol_operation 2>/dev/null || true)" in
+            install) CURRENT[fancontrol]=0; WANTED[fancontrol]=1 ;;
+            remove) CURRENT[fancontrol]=1; WANTED[fancontrol]=0 ;;
+        esac
     fi
 }
 
@@ -337,8 +358,10 @@ toggle_component() {
     if [[ "$c" == cecaudio && "${WANTED[cecaudio]}" == 1 ]]; then WANTED[cec]=1; fi
     # The power-off fix is opt-out: ticked along with Steam Machine support.
     if [[ "$c" == machine ]]; then WANTED[poweroff]=${WANTED[machine]}; fi
+    # Fan control is deliberately opt-in: enabling the parent leaves it off.
+    if [[ "$c" == fancontrol && "${WANTED[fancontrol]}" == 1 ]]; then WANTED[machine]=1; fi
     if [[ "$c" == poweroff && "${WANTED[poweroff]}" == 1 ]]; then WANTED[machine]=1; fi
-    if [[ "$c" == machine && "${WANTED[machine]}" == 0 ]]; then WANTED[kpin]=0; WANTED[bios]=0; WANTED[wifi]=0; WANTED[wol]=0; WANTED[wowlan]=0; fi
+    if [[ "$c" == machine && "${WANTED[machine]}" == 0 ]]; then WANTED[fancontrol]=0; WANTED[kpin]=0; WANTED[bios]=0; WANTED[wifi]=0; WANTED[wol]=0; WANTED[wowlan]=0; fi
     if [[ "$c" == kpin && "${WANTED[kpin]}" == 1 ]]; then WANTED[machine]=1; fi
     if [[ "$c" == wifi && "${WANTED[wifi]}" == 1 ]]; then WANTED[machine]=1; fi
     if [[ "$c" == wol && "${WANTED[wol]}" == 1 ]]; then WANTED[machine]=1; fi
@@ -382,6 +405,9 @@ show_menu() {
             printf "  %-3s %b %-6s %b\n" "$i" "$now" "$want" "$(menu_label "$c")"
         fi
     done
+    if component_available fancontrol && steamdeck_ownership_jupiter_adoption_notice; then
+        warn "$(fancontrol_adoption_notice)"
+    fi
     echo
     echo -e "$KERNEL_OVERVIEW"
     echo
@@ -438,6 +464,10 @@ draw_menu_tui() {
         fi
         i=$((i + 1))
     done
+    if component_available fancontrol && steamdeck_ownership_jupiter_adoption_notice; then
+        echo
+        echo -e "  ${c_yellow}$(fancontrol_adoption_notice)${c_reset}"
+    fi
     echo
     echo -e "$KERNEL_OVERVIEW"
     echo
@@ -518,12 +548,32 @@ plan_changes() {
     done
 }
 
+component_has_failed_descendant() {
+    # component_has_failed_descendant <parent> <failed>...: a failed child
+    # keeps every ancestor in place during the reverse-order disable plan.
+    local parent="$1" failed cursor
+    shift
+    for failed in "$@"; do
+        cursor="$failed"
+        while [[ -n "${PARENT[$cursor]:-}" ]]; do
+            cursor="${PARENT[$cursor]}"
+            [[ "$cursor" == "$parent" ]] && return 0
+        done
+    done
+    return 1
+}
+
 apply_changes() {
     local c failed=()
 
     for c in "${TO_DISABLE[@]}"; do
         if [[ "$c" == boot ]]; then echo; echo -e "${c_bold}Boot into: gamescope${c_reset}"
         else echo; echo -e "${c_bold}Turning off: ${LABEL[$c]}${c_reset}"; fi
+        if component_has_failed_descendant "$c" "${failed[@]}"; then
+            warn "Skipping ${LABEL[$c]%%:*}: a sub-option could not be turned off."
+            failed+=("$c")
+            continue
+        fi
         if "${c}_disable"; then feature_record "$c" disable; else failed+=("$c"); fi
     done
     for c in "${TO_ENABLE[@]}"; do

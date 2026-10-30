@@ -29,6 +29,8 @@ Rectangle {
             }
             Text { text: detail.it ? app.label(detail.it) : ""; color: Theme.text; font.family: Theme.display; font.pixelSize: 26; font.weight: Font.DemiBold
                    wrapMode: Text.WordWrap; width: parent.width }
+            Text { visible: !!(detail.it && detail.it.notice); text: detail.it ? (detail.it.notice || "") : ""; color: Theme.warn
+                   font.family: Theme.body; font.pixelSize: 14; font.weight: Font.DemiBold; lineHeight: 1.25; wrapMode: Text.WordWrap; width: parent.width }
             Text { text: detail.tx.body || ""; color: Theme.soft; font.family: Theme.body; font.pixelSize: 15; lineHeight: 1.4; wrapMode: Text.WordWrap; width: parent.width }
             Text { text: "WHAT IT CHANGES"; color: Theme.faint; font.family: Theme.body; font.pixelSize: 12; font.weight: Font.DemiBold; font.letterSpacing: 0.8; topPadding: 4 }
             Repeater { model: detail.tx.changes || []

@@ -38,6 +38,7 @@ Item {
 
     readonly property var status: backend.status || ({})
     readonly property var items: status.items || []
+    readonly property bool restartPending: restartNeeded || !!status.restartPending
     // Hidden: Big Picture excludes a silent start.
     function hidden(i) { return i.id === "nvsilent" && want.bigpicture; }
     readonly property var rows: items.filter(function (i) { return (!i.parent || want[i.parent]) && !hidden(i); })
@@ -91,8 +92,11 @@ Item {
         if (id === "cec" && items.some(function (i) { return i.id === "cecaudio"; })) w.cecaudio = w.cec;
         if (id === "cecaudio" && w.cecaudio) w.cec = true;
         if (id === "machine") w.poweroff = w.machine;
+        // Fan control is opt-in: it brings its parent, but the parent never
+        // turns fan control on implicitly.
+        if (id === "fancontrol" && w.fancontrol) w.machine = true;
         if (id === "poweroff" && w.poweroff) w.machine = true;
-        if (id === "machine" && !w.machine) { w.kpin = false; w.wifi = false; w.wol = false; w.wowlan = false; }
+        if (id === "machine" && !w.machine) { w.fancontrol = false; w.kpin = false; w.wifi = false; w.wol = false; w.wowlan = false; }
         if (id === "wifi" && w.wifi) w.machine = true;
         if (id === "wol" && w.wol) w.machine = true;
         if (id === "wowlan" && w.wowlan) { w.machine = true; w.wifi = true; }
