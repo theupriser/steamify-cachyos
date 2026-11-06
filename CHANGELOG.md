@@ -7,6 +7,8 @@ one per merged pull request.
 
 ## 2.16.0 - 2026-11-06
 
+- **feature: gaming mode starts gamescope the way the desktop runs the display, on every GPU.** The display-mode wrapper (before: NVIDIA only) is set up by the SteamOS conversion everywhere. It now finds the display KDE saved by its EDID (a TV and a monitor that both used HDMI-A-1 no longer get each other's mode, which left a 4K120 TV at 60 Hz), reads the CVT modes KDE saves for 4K at 120 Hz, and passes `--adaptive-sync` and `--hdr-enabled` (SDR content at KDE's SDR brightness) as KDE has them for that display. Installs with an older wrapper show the conversion as an update.
+
 ## 2.15.1 - 2026-10-30
 
 - `7c7c866` **chore: bump VERSION to 2.15.1**

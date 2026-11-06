@@ -222,15 +222,18 @@ gsn_env_disable() {
 # gamescope-session starts gamescope without a size or a refresh rate, so it takes the display's *preferred* mode, which
 # many monitors declare as 60 Hz while the desktop runs them at their highest. patches/gamescope-display-wrapper.sh (put
 # first in the gaming session's PATH by a drop-in of gamescope-session.service) starts it on the mode KDE has saved for
-# the connected display, else the biggest mode at the highest refresh rate, read at every session start.
+# the connected display, else the biggest mode at the highest refresh rate, read at every session start. It also passes
+# KDE's variable refresh rate and HDR settings for that display. On every GPU, not only NVIDIA (gaming_enable).
 GSN_DISPLAY_WRAPPER="${GSN_DISPLAY_WRAPPER:-$STEAMIFY_BIN/gamescope}"
 GSN_DISPLAY_DROPIN="${GSN_DISPLAY_DROPIN:-$HOME/.config/systemd/user/gamescope-session.service.d/steamify-display.conf}"
 
 gsn_display_status() { [[ -x "$GSN_DISPLAY_WRAPPER" && -f "$GSN_DISPLAY_DROPIN" ]]; }
 
 gsn_display_pending() {
-    # The patched gamescope is in use but the session still starts it on the display's preferred mode: a normal run sets it up.
-    gsn_package_installed && gsn_env_set && ! gsn_display_status
+    # The session still starts gamescope on the display's preferred mode, or with an older wrapper than this version's: a
+    # normal run sets it up (the conversion is on; the caller checks).
+    gsn_display_status || return 0
+    ! cmp -s <(patch_file gamescope-display-wrapper.sh) "$GSN_DISPLAY_WRAPPER"
 }
 
 gsn_display_enable() {
@@ -296,7 +299,6 @@ gsn_enable() {
     state_set gamescope_nvidia failed ""
     steamify_repo_enable || warn "Couldn't add Steamify's pacman repository: new builds of the patched gamescope won't come with pacman -Syu."
     gsn_env_enable
-    gsn_display_enable || warn "Couldn't set up the display mode for gaming mode: gamescope takes the display's preferred mode."
     ok "gamescope draws NVIDIA's picture through GBM (gamescope_drm_gbm_scanout=1) from the next gaming mode start."
 }
 

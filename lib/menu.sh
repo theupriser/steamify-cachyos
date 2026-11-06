@@ -27,7 +27,7 @@ NO_PRESELECT=(boot silent nvsilent cec fancontrol wifi wol wowlan kpin hdmi exte
 # FEATURE_BASELINE.
 FEATURE_BASELINE=2.1.0
 declare -A FEATURE_VERSION=(
-    [gaming]=2.13.2 [boot]=2.12.1 [silent]=2.14.0 [nvidia]=2.12.0 [bigpicture]=2.10.0 [nvsilent]=2.11.0 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.13.0
+    [gaming]=2.16.0 [boot]=2.12.1 [silent]=2.14.0 [nvidia]=2.12.0 [bigpicture]=2.10.0 [nvsilent]=2.11.0 [theme]=2.1.0 [glyphs]=2.1.0 [single]=2.13.0
     [launcher]=2.1.0 [cec]=2.14.3 [machine]=2.14.3 [fancontrol]=2.15.0 [poweroff]=2.14.3 [vram]=2.3.0 [notify]=2.5.0 [steamgame]=2.5.1 [extended_controller_support]=2.10.0
     [kpin]=2.1.0 [hdmi]=2.1.0 [wifi]=2.14.0 [wol]=2.14.0 [wowlan]=2.14.2 [cecaudio]=2.14.1
 )
@@ -131,7 +131,7 @@ feature_outdated() {
     # came back): a normal run switches it again (switch_to_plasmalogin).
     [[ "$1" == gaming && "$(current_display_manager)" != plasmalogin ]] && return 0
     # NVIDIA: a newer patched gamescope is out (lib/gamescope-nvidia.sh): a normal run installs it.
-    [[ "$1" == gaming ]] && nvidia_present && { gsn_update_pending || gsn_display_pending; } && return 0
+    [[ "$1" == gaming ]] && { { nvidia_present && gsn_update_pending; } || gsn_display_pending; } && return 0
     have="$(state_get features "$1" "$FEATURE_BASELINE")"
     [[ "$have" == off ]] && have="$FEATURE_BASELINE"
     want="${FEATURE_VERSION[$1]:-$FEATURE_BASELINE}"
