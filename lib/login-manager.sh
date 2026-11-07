@@ -110,6 +110,8 @@ gaming_enable() {
     install_required_packages || return 1
     # NVIDIA: gamescope's picture is corrupted unless it is the patched one (no-op elsewhere).
     gsn_enable || return 1
+    # Gaming mode on the mode, variable refresh rate and HDR the desktop has for the display (every GPU).
+    gsn_display_enable || warn "Couldn't set up the display mode for gaming mode: gamescope takes the display's preferred mode."
     remove_sddm_autologin
     remove_session_sync
     switch_to_plasmalogin || return 1
